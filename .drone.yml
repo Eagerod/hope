@@ -1,0 +1,59 @@
+_:
+  - &docker_credentials
+    username: aleem
+    password:
+      from_secret: docker_registry
+  - &cached_volumes
+    - name: docker
+      path: /var/lib/docker
+    - name: go
+      path: /go-cache
+  - &ci_environment
+    GOOS: linux
+    GOARCH: amd64
+
+kind: pipeline
+name: default
+
+# Build and push a test image before using it in the next step to actually run
+#   the tests.
+steps:
+  - name: prepare-cache
+    image: busybox
+    commands:
+      - mkdir -p /cache/docker cache/go
+    volumes:
+      - name: cache
+        path: /cache
+
+  - name: test
+    image: golang:1.13
+    pull: false
+    commands:
+      - cp -r /go-cache/* /go/
+      - echo "I don't have any tests right now!"
+      - rm -rf /go-cache/* && cp -r /go/* /go-cache/
+    volumes: *cached_volumes
+    environment:
+      <<: *ci_environment
+
+  - name: notify
+    image: plugins/slack
+    settings:
+      webhook:
+        from_secret: slack_hook
+      channel: ci
+    when:
+      status:
+        - failure
+
+volumes:
+  - name: cache
+    host:
+      path: /var/cache
+  - name: docker
+    host:
+      path: /var/cache/docker
+  - name: go
+    host:
+      path: /var/cache/go
