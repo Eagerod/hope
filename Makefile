@@ -31,13 +31,12 @@ test: $(SRC)
 	fi
 
 .PHONY: system-test
-system-test: $(SRC)
+system-test: $(BIN_NAME)
 	@if [ -z $$T ]; then \
 		$(GO) test -v main_test.go; \
 	else \
 		$(GO) test -v main_test.go -run $$T; \
 	fi
-	
 
 .PHONY: test-cover
 test-cover:
