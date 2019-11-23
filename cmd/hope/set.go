@@ -9,11 +9,11 @@ import (
 )
 
 // rootCmd represents the base command when called without any subcommands
-var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Bootstrap the master node",
+var setCmd = &cobra.Command{
+	Use:   "set",
+	Short: "Set configs and secrets",
 	RunE: func(cmd *cobra.Command, args []string) error {
-    	fmt.Println("I'm going to install a bunch of dependencies, and turn this into a control plane node...")
+    	fmt.Println("I'm going set a configuration value or file, and maybe secrets...")
 		return nil
 	},
 }

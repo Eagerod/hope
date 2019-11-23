@@ -9,11 +9,11 @@ import (
 )
 
 // rootCmd represents the base command when called without any subcommands
-var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Bootstrap the master node",
+var deployCmd = &cobra.Command{
+	Use:   "deploy",
+	Short: "Deploy a Kubernetes yaml file",
 	RunE: func(cmd *cobra.Command, args []string) error {
-    	fmt.Println("I'm going to install a bunch of dependencies, and turn this into a control plane node...")
+    	fmt.Println("I'm going update some state on the cluster...")
 		return nil
 	},
 }

@@ -13,6 +13,9 @@ import (
 var bin string = filepath.Join(".", "build", "hope")
 var commands []string = []string{
 	"init",
+	"add",
+	"deploy",
+	"set",
 }
 
 func TestHelpExecutes(t *testing.T) {
