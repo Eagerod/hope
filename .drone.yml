@@ -18,6 +18,11 @@ name: default
 # Build and push a test image before using it in the next step to actually run
 #   the tests.
 steps:
+  - name: print-node
+    image: busybox
+    commands:
+      - echo "${DRONE_RUNNER_HOSTNAME}"
+
   - name: prepare-cache
     image: busybox
     commands:
