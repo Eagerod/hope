@@ -31,7 +31,7 @@ steps:
     pull: false
     commands:
       - cp -r /go-cache/* /go/
-      - echo "I don't have any tests right now!"
+      - make test system-test
       - rm -rf /go-cache/* && cp -r /go/* /go-cache/
     volumes: *cached_volumes
     environment:
