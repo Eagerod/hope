@@ -44,13 +44,15 @@ steps:
   - name: push-files
     image: golang:1.13
     commands:
-      - curl -fsSL https://blob.aleemhaji.com/client-bin/internal-latest/blob -o /usr/bin/blob
+      - curl -fsSL ${BLOBSTORE_URL}/client-bin/internal-latest/blob -o /usr/bin/blob
       - make upload
     volumes: *cached_volumes
     environment:
       <<: *ci_environment
       BLOBSTORE_WRITE_ACL:
         from_secret: blobstore_write_acl
+      BLOBSTORE_URL:
+        from_secret: blobstore_url
     # when:
     #   branch:
     #     - master
