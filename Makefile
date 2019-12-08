@@ -39,7 +39,7 @@ system-test: $(BIN_NAME)
 	fi
 
 .PHONY: test-cover
-test-cover:
+test-cover: $(SRC)
 	$(GO) test -v --coverprofile=coverage.out $(PACKAGE_PATHS)
 
 .PHONY: coverage
