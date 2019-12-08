@@ -39,9 +39,9 @@ Kubernetes resources I run.`,
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	rootCmd.AddCommand(initCmd)
-  	rootCmd.AddCommand(addCmd)
-  	rootCmd.AddCommand(setCmd)
-  	rootCmd.AddCommand(deployCmd)
+	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(setCmd)
+	rootCmd.AddCommand(deployCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
