@@ -18,6 +18,11 @@ name: default
 # Build and push a test image before using it in the next step to actually run
 #   the tests.
 steps:
+  - name: print-node
+    image: busybox
+    commands:
+      - echo "${DRONE_RUNNER_HOSTNAME}"
+
   - name: prepare-cache
     image: busybox
     commands:
@@ -31,7 +36,7 @@ steps:
     pull: false
     commands:
       - cp -r /go-cache/* /go/
-      - echo "I don't have any tests right now!"
+      - make test system-test
       - rm -rf /go-cache/* && cp -r /go/* /go-cache/
     volumes: *cached_volumes
     environment:
