@@ -44,13 +44,16 @@ steps:
   - name: push-files
     image: golang:1.13
     commands:
+      - curl -fsSL https://blob.aleemhaji.com/client-bin/internal-latest/blob -o /usr/bin/blob
       - make upload
     volumes: *cached_volumes
     environment:
       <<: *ci_environment
-    when:
-      branch:
-        - master
+      BLOBSTORE_WRITE_ACL:
+        from_secret: blobstore_write_acl
+    # when:
+    #   branch:
+    #     - master
 
   - name: notify
     image: plugins/slack
