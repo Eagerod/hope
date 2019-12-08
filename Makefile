@@ -9,6 +9,8 @@ BIN_NAME := $(BUILD_DIR)/$(EXECUTABLE)
 CMD_PACKAGE_DIR := ./cmd/hope
 PACKAGE_PATHS := $(CMD_PACKAGE_DIR)
 
+UPLOAD_DIR=files
+
 SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go") $(CMD_PACKAGE_DIR)/version.go
 
 .PHONY: all
@@ -29,6 +31,14 @@ test: $(SRC)
 	else \
 		$(GO) test -v $(PACKAGE_PATHS) -run $$T; \
 	fi
+
+.PHONY: upload
+upload:
+	@# Uploads all files to the blobstore to be downloaded as needed.
+	@source .env && find $(UPLOAD_DIR) -type f | sed 's:$(UPLOAD_DIR)/::' | while read f; do \
+		echo >&2 "$(UPLOAD_DIR)/$$f"; \
+		blob cp -f "$(UPLOAD_DIR)/$$f" "blob:/hope/$$f"; \
+	done
 
 .PHONY: system-test
 system-test: $(BIN_NAME)
