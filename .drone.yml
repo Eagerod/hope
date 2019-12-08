@@ -33,7 +33,6 @@ steps:
 
   - name: test
     image: golang:1.13
-    pull: false
     commands:
       - cp -r /go-cache/* /go/
       - make test system-test
@@ -41,6 +40,17 @@ steps:
     volumes: *cached_volumes
     environment:
       <<: *ci_environment
+
+  - name: push-files
+    image: golang:1.13
+    commands:
+      - make upload
+    volumes: *cached_volumes
+    environment:
+      <<: *ci_environment
+    when:
+      branch:
+        - master
 
   - name: notify
     image: plugins/slack
