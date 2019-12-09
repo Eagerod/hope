@@ -45,6 +45,7 @@ steps:
     image: golang:1.13
     commands:
       - curl -fsSL $${BLOBSTORE_URL}/client-bin/linux-amd64/latest-internal/blob -o /usr/bin/blob
+      - chmod 755 /usr/bin/blob
       - make upload
     volumes: *cached_volumes
     environment:
