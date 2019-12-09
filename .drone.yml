@@ -54,9 +54,9 @@ steps:
         from_secret: blobstore_write_acl
       BLOBSTORE_URL:
         from_secret: blobstore_url
-    # when:
-    #   branch:
-    #     - master
+    when:
+      branch:
+        - master
 
   - name: notify
     image: plugins/slack
