@@ -35,7 +35,7 @@ test: $(SRC)
 .PHONY: upload
 upload:
 	@# Uploads all files to the blobstore to be downloaded as needed.
-	@source .env && find $(UPLOAD_DIR) -type f | sed 's:$(UPLOAD_DIR)/::' | while read f; do \
+	@if [ -f .env ]; then . .env; fi && set -e && find $(UPLOAD_DIR) -type f | sed 's:$(UPLOAD_DIR)/::' | while read f; do \
 		echo >&2 "$(UPLOAD_DIR)/$$f"; \
 		blob cp -f "$(UPLOAD_DIR)/$$f" "blob:/hope/$$f"; \
 	done
