@@ -44,7 +44,7 @@ steps:
   - name: push-files
     image: golang:1.13
     commands:
-      - curl -fsSL ${BLOBSTORE_URL}/client-bin/internal-latest/blob -o /usr/bin/blob
+      - curl -fsSL $${BLOBSTORE_URL}/client-bin/internal-latest/blob -o /usr/bin/blob
       - make upload
     volumes: *cached_volumes
     environment:
