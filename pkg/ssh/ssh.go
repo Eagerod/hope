@@ -3,13 +3,14 @@ package ssh
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 )
 
 import (
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/Eagerod/hope/pkg/path"
 )
 
 type ExecSSHFunc func(args ...string) error
@@ -40,6 +41,8 @@ var GetSSH GetSSHFunc = func(args ...string) (string, error) {
 }
 
 var execSCP ExecSCPFunc = func(args ...string) error {
+	fmt.Println("scp", args)
+
 	osCmd := exec.Command("scp", args...)
 	osCmd.Stdin = os.Stdin
     osCmd.Stdout = os.Stdout
@@ -62,16 +65,13 @@ func TryConfigureSSH(ip string) error {
 		if strings.HasPrefix(s, "identityfile") {
 			fmt.Fprintln(os.Stderr, "Attempting to configure SSH on the remote machine")
 			fmt.Fprintln(os.Stderr, "You will be asked for the password for", ip, "several times")
+
 			privateKey := strings.Replace(s, "identityfile ", "", 1)
-
-			if strings.HasPrefix(privateKey, "~") {
-				home, err := homedir.Dir()
-				if err != nil {
-					return err
-				}
-
-				privateKey = strings.Replace(privateKey, "~", home, 1)
+			privateKey, err = path.ExpandHome(privateKey)
+			if err != nil {
+				return err
 			}
+
 			publicKey := fmt.Sprintf("%s.pub", privateKey)
 
 			if _, err = os.Stat(publicKey); err != nil && os.IsNotExist(err) {
@@ -79,9 +79,8 @@ func TryConfigureSSH(ip string) error {
 			}
 
 			destination := fmt.Sprintf("%s:tmp.pub", ip)
-			err = execSCP(publicKey, destination)
-
-			if err != nil {
+			
+			if err = CopyLocalFileToDest(publicKey, destination); err != nil {
 				return err
 			}
 
@@ -90,8 +89,7 @@ func TryConfigureSSH(ip string) error {
 			// TODO: Find the user's home directory and put the .ssh directory
 			//       in the right place.
 			c := fmt.Sprintf("'mkdir -p .ssh && mv tmp.pub .ssh/authorized_keys && chmod 700 .ssh && chmod 600 .ssh/authorized_keys'")
-			err = ExecSSH(ip, "sh", "-c", c)
-			if err != nil {
+			if err = ExecSSH(ip, "sh", "-c", c); err != nil {
 				return err
 			}
 
@@ -109,4 +107,31 @@ func TestPasswordlessSudo(ip string) error {
 
 func SetupPasswordlessSudo(ip string) error {
 	return errors.New("This hasn't been implemented yet.")
+}
+
+func CopyLocalFileToDest(localFile string, destFile string) error {
+	return execSCP(localFile, destFile)
+}
+
+func CopyStringToDest(s string, destFile string) error {
+	tmpfile, err := ioutil.TempFile("", "")
+	if err != nil {
+		return err
+	}
+
+	defer os.Remove(tmpfile.Name())
+
+	if _, err = tmpfile.Write([]byte(s)); err != nil {
+		return err
+	}
+
+	if err = execSCP(tmpfile.Name(), destFile); err != nil {
+		return err
+	}
+
+	if err = tmpfile.Close(); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -11,7 +11,7 @@ import (
 )
 
 import (
-	"github.com/Eagerod/hope/pkg"
+	"github.com/Eagerod/hope/pkg/ssh"
 )
 
 var initCmd = &cobra.Command{
@@ -40,6 +40,11 @@ var initCmd = &cobra.Command{
 		}
 
 		fmt.Println("Creating cluster at", masterIp)
+
+		dest := fmt.Sprintf("%s:%s", masterIp, "/etc/docker/daemon.json")
+		if err := ssh.CopyStringToDest(DockerDaemonJson, dest); err != nil {
+			return err
+		}
 
 		return nil
 	},
