@@ -109,6 +109,10 @@ func SetupPasswordlessSudo(ip string) error {
 	return errors.New("This hasn't been implemented yet.")
 }
 
+func DisablePasswordSSHAccess(ip string) error {
+	return errors.New("This hasn't been implemented yet.")
+}
+
 func CopyLocalFileToDest(localFile string, destFile string) error {
 	return execSCP(localFile, destFile)
 }

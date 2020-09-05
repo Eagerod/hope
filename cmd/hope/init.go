@@ -41,8 +41,77 @@ var initCmd = &cobra.Command{
 
 		fmt.Println("Creating cluster at", masterIp)
 
-		dest := fmt.Sprintf("%s:%s", masterIp, "/etc/docker/daemon.json")
+		// Write all the empty files that should exist first.
+		dest := fmt.Sprintf("%s:%s", masterIp, "/etc/sysconfig/docker-storage")
+		if err := ssh.CopyStringToDest("", dest); err != nil {
+			return err
+		}
+
+		dest = fmt.Sprintf("%s:%s", masterIp, "/etc/sysconfig/docker-storage-setup")
+		if err := ssh.CopyStringToDest("", dest); err != nil {
+			return err
+		}
+
+		// Write files with contents.
+		dest = fmt.Sprintf("%s:%s", masterIp, "/etc/docker/daemon.json")
 		if err := ssh.CopyStringToDest(DockerDaemonJson, dest); err != nil {
+			return err
+		}
+
+		dest = fmt.Sprintf("%s:%s", masterIp, "/etc/sysctl.d/k8s.conf")
+		if err := ssh.CopyStringToDest(K8SConf, dest); err != nil {
+			return err
+		}
+
+		dest = fmt.Sprintf("%s:%s", masterIp, "/proc/sys/net/ipv4/ip_forward")
+		if err := ssh.CopyStringToDest(IpForward, dest); err != nil {
+			return err
+		}
+
+		// Various other setups.
+		if err := ssh.ExecSSH(masterIp, "sed", "-i", "'/--exec-opt native.cgroupdriver/d'", "/usr/lib/systemd/system/docker.service"); err != nil {
+			return err
+		}
+
+		ssh.ExecSSH(masterIp, "sed", "-i", "'s/--log-driver=journald//'", "/etc/sysconfig/docker")
+
+		if err := ssh.ExecSSH(masterIp, "sysctl", "-p"); err != nil {
+			return err
+		}
+
+		if err := ssh.ExecSSH(masterIp, "sed", "-i", "'/ swap / s/^/#/'", "/etc/fstab"); err != nil {
+			return err
+		}
+
+		if err := ssh.ExecSSH(masterIp, "swapoff", "-a"); err != nil {
+			return err
+		}
+
+		if err := ssh.ExecSSH(masterIp, "systemctl", "daemon-reload"); err != nil {
+			return err
+		}
+
+		if err := ssh.ExecSSH(masterIp, "systemctl", "enable", "docker"); err != nil {
+			return err
+		}
+
+		if err := ssh.ExecSSH(masterIp, "systemctl", "enable", "kubelet"); err != nil {
+			return err
+		}
+
+		if err := ssh.ExecSSH(masterIp, "systemctl", "start", "docker"); err != nil {
+			return err
+		}
+
+		if err := ssh.ExecSSH(masterIp, "systemctl", "enable", "kubelet"); err != nil {
+			return err
+		}
+
+		if err := ssh.ExecSSH(masterIp, "setenforce", "0"); err != nil {
+			return err
+		}
+
+		if err := ssh.ExecSSH(masterIp, "sed", "-i", "'s/SELINUX=enforcing/SELINUX=disabled/g'", "/etc/selinux/config"); err != nil {
 			return err
 		}
 

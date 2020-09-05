@@ -14,3 +14,12 @@ var DockerDaemonJson = `{
     ]
 }
 `
+
+var K8SConf = `net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+`
+
+var IpForward = `1
+`
+
+var Kubelet = `KUBELET_EXTRA_ARGS=--runtime-cgroups=/systemd/system.slice --kubelet-cgroups=/systemd/system.slice`
