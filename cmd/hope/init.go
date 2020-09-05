@@ -23,6 +23,7 @@ var initCmd = &cobra.Command{
 
 		masterIp := args[0]
 		masterExpected := stringInSlice(masterIp, viper.GetStringSlice("masters"))
+		podNetworkCidr := viper.GetString("pod_network_cidr")
 
 		if !masterExpected {
 			return errors.New(fmt.Sprintf("Failed to find master %s in config", masterIp))
@@ -107,11 +108,14 @@ var initCmd = &cobra.Command{
 			return err
 		}
 
-		if err := ssh.ExecSSH(masterIp, "setenforce", "0"); err != nil {
+		ssh.ExecSSH(masterIp, "setenforce", "0")
+
+		if err := ssh.ExecSSH(masterIp, "sed", "-i", "'s/SELINUX=enforcing/SELINUX=disabled/g'", "/etc/selinux/config"); err != nil {
 			return err
 		}
 
-		if err := ssh.ExecSSH(masterIp, "sed", "-i", "'s/SELINUX=enforcing/SELINUX=disabled/g'", "/etc/selinux/config"); err != nil {
+		podNetworkCidrArg := fmt.Sprintf("--pod-network-cidr=%s", podNetworkCidr)
+		if err := ssh.ExecSSH(masterIp, "kubeadm", "init", podNetworkCidrArg); err != nil {
 			return err
 		}
 
