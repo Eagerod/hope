@@ -12,6 +12,7 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/ssh"
+	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
 var initCmd = &cobra.Command{
@@ -22,10 +23,9 @@ var initCmd = &cobra.Command{
 		fmt.Println("This command will attempt to bootstrap a master node.")
 
 		masterIp := args[0]
-		masterExpected := stringInSlice(masterIp, viper.GetStringSlice("masters"))
 		podNetworkCidr := viper.GetString("pod_network_cidr")
 
-		if !masterExpected {
+		if !sliceutil.StringInSlice(masterIp, viper.GetStringSlice("masters")) {
 			return errors.New(fmt.Sprintf("Failed to find master %s in config", masterIp))
 		}
 
@@ -121,14 +121,4 @@ var initCmd = &cobra.Command{
 
 		return nil
 	},
-}
-
-func stringInSlice(value string, slc []string) bool {
-	for _, s := range slc {
-		if s == value {
-			return true
-		}
-	}
-
-	return false
 }
