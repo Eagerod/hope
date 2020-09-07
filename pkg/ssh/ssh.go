@@ -10,7 +10,7 @@ import (
 )
 
 import (
-	"github.com/Eagerod/hope/pkg/path"
+	homedir "github.com/mitchellh/go-homedir"
 )
 
 type ExecSSHFunc func(args ...string) error
@@ -67,7 +67,7 @@ func TryConfigureSSH(ip string) error {
 			fmt.Fprintln(os.Stderr, "You will be asked for the password for", ip, "several times")
 
 			privateKey := strings.Replace(s, "identityfile ", "", 1)
-			privateKey, err = path.ExpandHome(privateKey)
+			privateKey, err = homedir.Expand(privateKey)
 			if err != nil {
 				return err
 			}
