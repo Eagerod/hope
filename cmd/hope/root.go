@@ -13,7 +13,6 @@ import (
 )
 
 var cfgFile string
-var printVersionFlag bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -23,16 +22,6 @@ var rootCmd = &cobra.Command{
 of managing my home Kubernetes cluster. It includes mechanisms for setting up 
 my router, my switch (maybe, eventually), and controlling the management of the
 Kubernetes resources I run.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		if printVersionFlag {
-			fmt.Println(os.Args[0] + ": " + VersionBuild)
-		} else {
-			cmd.Help()
-			os.Exit(1)
-		}
-
-		return
-	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -42,6 +31,7 @@ func Execute() {
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(setCmd)
 	rootCmd.AddCommand(deployCmd)
+	rootCmd.AddCommand(versionCmd)
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -53,8 +43,6 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.hope.yaml)")
-
-	rootCmd.Flags().BoolVarP(&printVersionFlag, "version", "v", false, "print the application version and exit")
 }
 
 // initConfig reads in config file and ENV variables if set.
