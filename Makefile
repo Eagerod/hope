@@ -12,7 +12,9 @@ PACKAGE_PATHS := $(CMD_PACKAGE_DIR)
 
 UPLOAD_DIR=files
 
-SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go") $(CMD_PACKAGE_DIR)/version.go
+AUTOGEN_VERSION_FILENAME=$(CMD_PACKAGE_DIR)/version-temp.go
+
+SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go") $(AUTOGEN_VERSION_FILENAME)
 
 .PHONY: all
 all: $(BIN_NAME)
@@ -59,8 +61,8 @@ test-cover: $(SRC)
 coverage: test-cover
 	$(GO) tool cover -func=coverage.out
 
-.INTERMEDIATE: $(CMD_PACKAGE_DIR)/version.go
-$(CMD_PACKAGE_DIR)/version.go:
+.INTERMEDIATE: $(AUTOGEN_VERSION_FILENAME)
+$(AUTOGEN_VERSION_FILENAME):
 	@version=$$(cat VERSION) && \
 	build=$$(git rev-parse --short HEAD && if [ ! -z "$$(git diff)" ]; then echo "- dirty"; fi) && \
 	printf \
