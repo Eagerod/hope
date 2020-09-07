@@ -5,6 +5,7 @@ MAIN_FILE := main.go
 BUILD_DIR := build
 EXECUTABLE := hope
 BIN_NAME := $(BUILD_DIR)/$(EXECUTABLE)
+INSTALLED_NAME := /usr/local/bin/$(EXECUTABLE)
 
 CMD_PACKAGE_DIR := ./cmd/hope
 PACKAGE_PATHS := $(CMD_PACKAGE_DIR)
@@ -21,8 +22,10 @@ $(BIN_NAME): $(SRC)
 	$(GO) build -o $(BIN_NAME) $(MAIN_FILE)
 
 .PHONY: install
-install: $(BIN_NAME)
-	cp $(BIN_NAME) /usr/local/bin/$(EXECUTABLE)
+install: $(INSTALLED_NAME)
+
+$(INSTALLED_NAME): $(BIN_NAME)
+	cp $(BIN_NAME) $(INSTALLED_NAME)
 
 .PHONY: test
 test: $(SRC)
