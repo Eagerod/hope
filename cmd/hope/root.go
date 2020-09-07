@@ -14,6 +14,8 @@ import (
 
 var cfgFile string
 var configParseError error
+var debugLogFlag bool
+var verboseLogFlag bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -44,6 +46,8 @@ func init() {
 	cobra.OnInitialize(initConfig, initLogger)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.hope.yaml)")
+	rootCmd.PersistentFlags().BoolVar(&debugLogFlag, "debug", false, "set the log level to debug; ignoring otherwise configured log levels")
+	rootCmd.PersistentFlags().BoolVar(&verboseLogFlag, "verbose", false, "set the log level to verbose; ignoring otherwise configured log levels")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -73,28 +77,35 @@ func initConfig() {
 func initLogger() {
 	failed := false
 
-	switch logLevel := viper.GetString("loglevel"); logLevel {
-	case "trace":
-	case "verbose":
+	if verboseLogFlag {
 		log.SetLevel(log.TraceLevel)
-	case "debug":
+	} else if debugLogFlag {
 		log.SetLevel(log.DebugLevel)
-	case "info":
-		log.SetLevel(log.InfoLevel)
-	case "warn":
-	case "warning":
-		log.SetLevel(log.WarnLevel)
-	case "error":
-		log.SetLevel(log.ErrorLevel)
-	default:
-		log.SetLevel(log.InfoLevel)
-		failed = true
+	} else {
+		switch logLevel := viper.GetString("loglevel"); logLevel {
+		case "trace":
+		case "verbose":
+			log.SetLevel(log.TraceLevel)
+		case "debug":
+			log.SetLevel(log.DebugLevel)
+		case "info":
+			log.SetLevel(log.InfoLevel)
+		case "warn":
+		case "warning":
+			log.SetLevel(log.WarnLevel)
+		case "error":
+			log.SetLevel(log.ErrorLevel)
+		default:
+			log.SetLevel(log.InfoLevel)
+			failed = true
+		}
 	}
-
 	log.SetOutput(os.Stdout)
 
 	if failed {
 		log.Info("Failed to parse loglevel. Defaulting to INFO")
+	} else {
+		log.Trace("Set log level to ", log.GetLevel())
 	}
 
 	if configParseError != nil {
