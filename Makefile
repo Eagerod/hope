@@ -5,13 +5,16 @@ MAIN_FILE := main.go
 BUILD_DIR := build
 EXECUTABLE := hope
 BIN_NAME := $(BUILD_DIR)/$(EXECUTABLE)
+INSTALLED_NAME := /usr/local/bin/$(EXECUTABLE)
 
 CMD_PACKAGE_DIR := ./cmd/hope
 PACKAGE_PATHS := $(CMD_PACKAGE_DIR)
 
 UPLOAD_DIR=files
 
-SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go") $(CMD_PACKAGE_DIR)/version.go
+AUTOGEN_VERSION_FILENAME=$(CMD_PACKAGE_DIR)/version-temp.go
+
+SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go") $(AUTOGEN_VERSION_FILENAME)
 
 .PHONY: all
 all: $(BIN_NAME)
@@ -21,8 +24,10 @@ $(BIN_NAME): $(SRC)
 	$(GO) build -o $(BIN_NAME) $(MAIN_FILE)
 
 .PHONY: install
-install: $(BIN_NAME)
-	cp $(BIN_NAME) /usr/local/bin/$(EXECUTABLE)
+install: $(INSTALLED_NAME)
+
+$(INSTALLED_NAME): $(BIN_NAME)
+	cp $(BIN_NAME) $(INSTALLED_NAME)
 
 .PHONY: test
 test: $(SRC)
@@ -56,8 +61,8 @@ test-cover: $(SRC)
 coverage: test-cover
 	$(GO) tool cover -func=coverage.out
 
-.INTERMEDIATE: $(CMD_PACKAGE_DIR)/version.go
-$(CMD_PACKAGE_DIR)/version.go:
+.INTERMEDIATE: $(AUTOGEN_VERSION_FILENAME)
+$(AUTOGEN_VERSION_FILENAME):
 	@version=$$(cat VERSION) && \
 	build=$$(git rev-parse --short HEAD && if [ ! -z "$$(git diff)" ]; then echo "- dirty"; fi) && \
 	printf \

@@ -6,14 +6,16 @@ import (
 )
 
 import (
-	"github.com/spf13/cobra"
-
 	homedir "github.com/mitchellh/go-homedir"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var cfgFile string
-var printVersionFlag bool
+var configParseError error
+var debugLogFlag bool
+var verboseLogFlag bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -23,16 +25,6 @@ var rootCmd = &cobra.Command{
 of managing my home Kubernetes cluster. It includes mechanisms for setting up 
 my router, my switch (maybe, eventually), and controlling the management of the
 Kubernetes resources I run.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		if printVersionFlag {
-			fmt.Println(os.Args[0] + ": " + VersionBuild)
-		} else {
-			cmd.Help()
-			os.Exit(1)
-		}
-
-		return
-	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -42,19 +34,20 @@ func Execute() {
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(setCmd)
 	rootCmd.AddCommand(deployCmd)
+	rootCmd.AddCommand(versionCmd)
 
+	log.Debug("Executing:", os.Args)
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(initConfig, initLogger)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.hope.yaml)")
-
-	rootCmd.Flags().BoolVarP(&printVersionFlag, "version", "v", false, "print the application version and exit")
+	rootCmd.PersistentFlags().BoolVar(&debugLogFlag, "debug", false, "set the log level to debug; ignoring otherwise configured log levels")
+	rootCmd.PersistentFlags().BoolVar(&verboseLogFlag, "verbose", false, "set the log level to verbose; ignoring otherwise configured log levels")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -78,7 +71,46 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	configParseError = viper.ReadInConfig()
+}
+
+func initLogger() {
+	failed := false
+
+	if verboseLogFlag {
+		log.SetLevel(log.TraceLevel)
+	} else if debugLogFlag {
+		log.SetLevel(log.DebugLevel)
+	} else {
+		switch logLevel := viper.GetString("loglevel"); logLevel {
+		case "trace":
+		case "verbose":
+			log.SetLevel(log.TraceLevel)
+		case "debug":
+			log.SetLevel(log.DebugLevel)
+		case "info":
+			log.SetLevel(log.InfoLevel)
+		case "warn":
+		case "warning":
+			log.SetLevel(log.WarnLevel)
+		case "error":
+			log.SetLevel(log.ErrorLevel)
+		default:
+			log.SetLevel(log.InfoLevel)
+			failed = true
+		}
 	}
+	log.SetOutput(os.Stdout)
+
+	if failed {
+		log.Info("Failed to parse loglevel. Defaulting to INFO")
+	} else {
+		log.Trace("Set log level to ", log.GetLevel())
+	}
+
+	if configParseError != nil {
+		log.Error(configParseError)
+	}
+
+	log.Debug("Using config file:", viper.ConfigFileUsed())
 }

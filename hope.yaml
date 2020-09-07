@@ -1,6 +1,7 @@
 masters:
   - root@192.168.1.31
-workers:
+nodes:
   - ubuntu@192.168.200.11
   - root@192.168.200.12
 pod_network_cidr: 10.244.0.0/16
+loglevel: "trace"
