@@ -20,8 +20,6 @@ type ExecSCPFunc func(args ...string) error
 var ExecSSH ExecSSHFunc = func(args ...string) error {
 	// For now, this is just implemented by using commands, but in the end,
 	//   it may be fun to try out using golang.org/x/crypto/ssh
-	fmt.Println("ssh", args)
-
 	osCmd := exec.Command("ssh", args...)
 	osCmd.Stdin = os.Stdin
     osCmd.Stdout = os.Stdout
@@ -33,16 +31,13 @@ var ExecSSH ExecSSHFunc = func(args ...string) error {
 var GetSSH GetSSHFunc = func(args ...string) (string, error) {
 	// For now, this is just implemented by using commands, but in the end,
 	//   it may be fun to try out using golang.org/x/crypto/ssh
-	fmt.Println("ssh", args)
-
 	osCmd := exec.Command("ssh", args...)
 	output, err := osCmd.CombinedOutput()
 	return string(output), err
 }
 
-var execSCP ExecSCPFunc = func(args ...string) error {
-	fmt.Println("scp", args)
-
+// TODO: Move SCP-only functions to an SCP pkg.
+var ExecSCP ExecSCPFunc = func(args ...string) error {
 	osCmd := exec.Command("scp", args...)
 	osCmd.Stdin = os.Stdin
     osCmd.Stdout = os.Stdout
@@ -114,7 +109,11 @@ func DisablePasswordSSHAccess(ip string) error {
 }
 
 func CopyLocalFileToDest(localFile string, destFile string) error {
-	return execSCP(localFile, destFile)
+	return ExecSCP(localFile, destFile)
+}
+
+func CopyDestFileToLocal(destFile string, localFile string) error {
+	return ExecSCP(destFile, localFile)
 }
 
 func CopyStringToDest(s string, destFile string) error {
@@ -129,7 +128,7 @@ func CopyStringToDest(s string, destFile string) error {
 		return err
 	}
 
-	if err = execSCP(tmpfile.Name(), destFile); err != nil {
+	if err = ExecSCP(tmpfile.Name(), destFile); err != nil {
 		return err
 	}
 

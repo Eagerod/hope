@@ -12,6 +12,10 @@ import (
 	"github.com/spf13/viper"
 )
 
+import (
+	"github.com/Eagerod/hope/pkg/ssh"
+)
+
 var cfgFile string
 var configParseError error
 var debugLogFlag bool
@@ -35,6 +39,9 @@ func Execute() {
 	rootCmd.AddCommand(setCmd)
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(configCmd)
+
+	initConfigCmdFlags()
 
 	log.Debug("Executing:", os.Args)
 	if err := rootCmd.Execute(); err != nil {
@@ -113,4 +120,23 @@ func initLogger() {
 	}
 
 	log.Debug("Using config file:", viper.ConfigFileUsed())
+
+	// Replace some pkg functions with logging enabled versions of themselves.
+	originalSSHExec := ssh.ExecSSH
+	ssh.ExecSSH = func(args ...string) error {
+		log.Debug("ssh", args)
+		return originalSSHExec(args...)
+	}
+
+	originalSSHGet := ssh.GetSSH
+	ssh.GetSSH = func(args ...string) (string, error) {
+		log.Debug("ssh", args)
+		return originalSSHGet(args...)
+	}
+
+	originalSCPExec := ssh.ExecSCP
+	ssh.ExecSCP = func(args ...string) error {
+		log.Debug("scp", args)
+		return originalSCPExec(args...)
+	}
 }

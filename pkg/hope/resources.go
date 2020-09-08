@@ -1,4 +1,4 @@
-package cmd
+package hope
 
 var DockerDaemonJson = `{
     "exec-opts": [
