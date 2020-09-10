@@ -3,6 +3,7 @@ package hope
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 )
 
@@ -16,16 +17,12 @@ import (
 )
 
 func KubeadmResetRemote(log *logrus.Entry, host string, force bool) error {
-	components := strings.Split(host, "@")
-	if len(components) != 2 {
-		return errors.New(fmt.Sprintf("Do no understand host: %s", host))
+	host_url, err := url.Parse(host)
+	if err != nil {
+		return err
 	}
 
-	// Try to run as many intermediate operations as possible regardless of the
-	//   force flag.
-	nodeHost := components[1]
-
-	log.Debug("Searching for node name for host: ", nodeHost)
+	log.Debug("Searching for node name for host: ", host_url.Host)
 
 	nodesOutput, err := kubeutil.GetKubectl("get", "nodes", "-o", "custom-columns=NODE:metadata.name,IP:status.addresses[?(@.type=='InternalIP')].address")
 	if err != nil {
@@ -40,13 +37,13 @@ func KubeadmResetRemote(log *logrus.Entry, host string, force bool) error {
 	//   address we're looking for.
 	var nodeName string = ""
 	for _, nodeRow := range nodeRows {
-		if strings.HasSuffix(nodeRow, nodeHost) {
+		if strings.HasSuffix(nodeRow, host_url.Host) {
 			nodeName = strings.Split(nodeRow, " ")[0]
 		}
 	}
 
 	if nodeName == "" && !force {
-		return errors.New(fmt.Sprintf("Failed to find a node with IP: %s", nodeHost))
+		return errors.New(fmt.Sprintf("Failed to find a node with IP: %s", host_url.Host))
 	} else if force {
 		log.Info("Did not find node in the cluster.")
 	} else {
