@@ -83,15 +83,13 @@ func initLogger() {
 		log.SetLevel(log.DebugLevel)
 	} else {
 		switch logLevel := viper.GetString("loglevel"); logLevel {
-		case "trace":
-		case "verbose":
+		case "trace", "verbose":
 			log.SetLevel(log.TraceLevel)
 		case "debug":
 			log.SetLevel(log.DebugLevel)
 		case "info":
 			log.SetLevel(log.InfoLevel)
-		case "warn":
-		case "warning":
+		case "warn", "warning":
 			log.SetLevel(log.WarnLevel)
 		case "error":
 			log.SetLevel(log.ErrorLevel)
