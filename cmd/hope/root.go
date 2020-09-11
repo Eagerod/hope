@@ -15,6 +15,7 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/kubeutil"
+	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
@@ -43,9 +44,11 @@ func Execute() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(resetCmd)
+	rootCmd.AddCommand(kubeconfigCmd)
 
 	initResetCmd()
 	initConfigCmdFlags()
+	initKubeconfigCmdFlags()
 
 	log.Debug("Executing:", os.Args)
 	if err := rootCmd.Execute(); err != nil {
@@ -135,6 +138,12 @@ func patchInvocations() {
 	kubeutil.GetKubectl = func(args ...string) (string, error) {
 		log.Debug("kubectl ", strings.Join(args, " "))
 		return oldGetKubectl(args...)
+	}
+
+	oldExecScp := scp.ExecSCP
+	scp.ExecSCP = func(args ...string) error {
+		log.Debug("scp ", strings.Join(args, " "))
+		return oldExecScp(args...)
 	}
 
 	oldExecSsh := ssh.ExecSSH
