@@ -35,6 +35,8 @@ func KubeadmResetRemote(log *logrus.Entry, host string, force bool) error {
 
 	// Search within each row for whatever second column contains the IP
 	//   address we're looking for.
+	// TODO: May actually have to check both prefix and suffix in case a
+	//   hostname shows up here.
 	var nodeName string = ""
 	for _, nodeRow := range nodeRows {
 		if strings.HasSuffix(nodeRow, host_url.Host) {
