@@ -8,7 +8,8 @@ BIN_NAME := $(BUILD_DIR)/$(EXECUTABLE)
 INSTALLED_NAME := /usr/local/bin/$(EXECUTABLE)
 
 CMD_PACKAGE_DIR := ./cmd/hope
-PACKAGE_PATHS := $(CMD_PACKAGE_DIR)
+PKG_PACKAGE_DIR := ./pkg/*
+PACKAGE_PATHS := $(CMD_PACKAGE_DIR) $(PKG_PACKAGE_DIR)
 
 UPLOAD_DIR=files
 
@@ -80,6 +81,7 @@ pretty-coverage: test-cover
 fmt:
 	@$(GO) fmt .
 	@$(GO) fmt $(CMD_PACKAGE_DIR)
+	@$(GO) fmt $(PKG_PACKAGE_DIR)
 
 .PHONY: clean
 clean:

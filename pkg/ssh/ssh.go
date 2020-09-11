@@ -22,8 +22,8 @@ var ExecSSH ExecSSHFunc = func(args ...string) error {
 	//   it may be fun to try out using golang.org/x/crypto/ssh
 	osCmd := exec.Command("ssh", args...)
 	osCmd.Stdin = os.Stdin
-    osCmd.Stdout = os.Stdout
-    osCmd.Stderr = os.Stderr
+	osCmd.Stdout = os.Stdout
+ 	osCmd.Stderr = os.Stderr
 
 	return osCmd.Run()
 }
@@ -40,8 +40,8 @@ var GetSSH GetSSHFunc = func(args ...string) (string, error) {
 var ExecSCP ExecSCPFunc = func(args ...string) error {
 	osCmd := exec.Command("scp", args...)
 	osCmd.Stdin = os.Stdin
-    osCmd.Stdout = os.Stdout
-    osCmd.Stderr = os.Stderr
+	osCmd.Stdout = os.Stdout
+	osCmd.Stderr = os.Stderr
 
 	return osCmd.Run()
 }

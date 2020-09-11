@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 import (
@@ -13,6 +14,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/pkg/kubeutil"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
@@ -40,7 +42,9 @@ func Execute() {
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(resetCmd)
 
+	initResetCmd()
 	initConfigCmdFlags()
 
 	log.Debug("Executing:", os.Args)
@@ -50,7 +54,7 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig, initLogger)
+	cobra.OnInitialize(initConfig, initLogger, patchInvocations)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.hope.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&debugLogFlag, "debug", false, "set the log level to debug; ignoring otherwise configured log levels")
@@ -90,15 +94,13 @@ func initLogger() {
 		log.SetLevel(log.DebugLevel)
 	} else {
 		switch logLevel := viper.GetString("loglevel"); logLevel {
-		case "trace":
-		case "verbose":
+		case "trace", "verbose":
 			log.SetLevel(log.TraceLevel)
 		case "debug":
 			log.SetLevel(log.DebugLevel)
 		case "info":
 			log.SetLevel(log.InfoLevel)
-		case "warn":
-		case "warning":
+		case "warn", "warning":
 			log.SetLevel(log.WarnLevel)
 		case "error":
 			log.SetLevel(log.ErrorLevel)
@@ -120,23 +122,24 @@ func initLogger() {
 	}
 
 	log.Debug("Using config file:", viper.ConfigFileUsed())
+}
 
-	// Replace some pkg functions with logging enabled versions of themselves.
-	originalSSHExec := ssh.ExecSSH
+func patchInvocations() {
+	oldExecKubectl := kubeutil.ExecKubectl
+	kubeutil.ExecKubectl = func(args ...string) error {
+		log.Debug("kubectl ", strings.Join(args, " "))
+		return oldExecKubectl(args...)
+	}
+
+	oldGetKubectl := kubeutil.GetKubectl
+	kubeutil.GetKubectl = func(args ...string) (string, error) {
+		log.Debug("kubectl ", strings.Join(args, " "))
+		return oldGetKubectl(args...)
+	}
+
+	oldExecSsh := ssh.ExecSSH
 	ssh.ExecSSH = func(args ...string) error {
-		log.Debug("ssh", args)
-		return originalSSHExec(args...)
-	}
-
-	originalSSHGet := ssh.GetSSH
-	ssh.GetSSH = func(args ...string) (string, error) {
-		log.Debug("ssh", args)
-		return originalSSHGet(args...)
-	}
-
-	originalSCPExec := ssh.ExecSCP
-	ssh.ExecSCP = func(args ...string) error {
-		log.Debug("scp", args)
-		return originalSCPExec(args...)
+		log.Debug("ssh ", strings.Join(args, " "))
+		return oldExecSsh(args...)
 	}
 }
