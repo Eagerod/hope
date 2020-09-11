@@ -1,5 +1,5 @@
-master:
-  - 192.168.200.10
+masters:
+  - root@192.168.200.10
 nodes:
-  - 192.168.200.11
+  - root@192.168.200.11
 loglevel: "trace"

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 import (
@@ -10,6 +11,11 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+)
+
+import (
+	"github.com/Eagerod/hope/pkg/kubeutil"
+	"github.com/Eagerod/hope/pkg/ssh"
 )
 
 var cfgFile string
@@ -35,6 +41,9 @@ func Execute() {
 	rootCmd.AddCommand(setCmd)
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(resetCmd)
+
+	initResetCmd()
 
 	log.Debug("Executing:", os.Args)
 	if err := rootCmd.Execute(); err != nil {
@@ -43,7 +52,7 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig, initLogger)
+	cobra.OnInitialize(initConfig, initLogger, patchInvocations)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.hope.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&debugLogFlag, "debug", false, "set the log level to debug; ignoring otherwise configured log levels")
@@ -111,4 +120,24 @@ func initLogger() {
 	}
 
 	log.Debug("Using config file:", viper.ConfigFileUsed())
+}
+
+func patchInvocations() {
+	oldExecKubectl := kubeutil.ExecKubectl
+	kubeutil.ExecKubectl = func(args ...string) error {
+		log.Debug("kubectl ", strings.Join(args, " "))
+		return oldExecKubectl(args...)
+	}
+
+	oldGetKubectl := kubeutil.GetKubectl
+	kubeutil.GetKubectl = func(args ...string) (string, error) {
+		log.Debug("kubectl ", strings.Join(args, " "))
+		return oldGetKubectl(args...)
+	}
+
+	oldExecSsh := ssh.ExecSSH
+	ssh.ExecSSH = func(args ...string) error {
+		log.Debug("ssh ", strings.Join(args, " "))
+		return oldExecSsh(args...)
+	}
 }
