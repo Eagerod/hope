@@ -3,6 +3,11 @@ package kubeutil
 import (
 	"os"
 	"os/exec"
+	"path"
+)
+
+import (
+	homedir "github.com/mitchellh/go-homedir"
 )
 
 type GetKubeutilFunc func(args ...string) (string, error)
@@ -23,4 +28,18 @@ var ExecKubectl ExecKubeutilFunc = func(args ...string) error {
 	osCmd.Stderr = os.Stderr
 
 	return osCmd.Run()
+}
+
+func GetKubeConfigPath() (string, error) {
+	kubeconfigEnv := os.Getenv("KUBECONFIG")
+	if kubeconfigEnv != "" {
+		return kubeconfigEnv, nil
+	}
+
+	home, err := homedir.Dir()
+	if err != nil {
+		return "", err
+	}
+
+	return path.Join(home, ".kube", "config"), nil
 }

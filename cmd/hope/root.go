@@ -43,8 +43,10 @@ func Execute() {
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(resetCmd)
+	rootCmd.AddCommand(kubeconfigCmd)
 
 	initResetCmd()
+	initKubeconfigCmdFlags()
 
 	log.Debug("Executing:", os.Args)
 	if err := rootCmd.Execute(); err != nil {
