@@ -1,10 +1,8 @@
 package hope
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
-	"strings"
 )
 
 import (
@@ -27,28 +25,10 @@ func KubeadmResetRemote(log *logrus.Entry, host string, force bool) error {
 
 	log.Debug("Searching for node name for host: ", host_url.Host)
 
-	nodesOutput, err := kubeutil.GetKubectl("get", "nodes", "-o", "custom-columns=NODE:metadata.name,IP:status.addresses[?(@.type=='InternalIP')].address")
-	if err != nil {
-		log.Error(nodesOutput)
+	nodeName, err := kubeutil.NodeNameFromHost(host_url.Host)
+
+	if err != nil && !force {
 		return err
-	}
-
-	// First row is headers
-	nodeRows := strings.Split(nodesOutput, "\n")[1:]
-
-	// Search within each row for whatever second column contains the IP
-	//   address we're looking for.
-	// TODO: May actually have to check both prefix and suffix in case a
-	//   hostname shows up here.
-	var nodeName string = ""
-	for _, nodeRow := range nodeRows {
-		if strings.HasSuffix(nodeRow, host_url.Host) {
-			nodeName = strings.Split(nodeRow, " ")[0]
-		}
-	}
-
-	if nodeName == "" && !force {
-		return errors.New(fmt.Sprintf("Failed to find a node with IP: %s", host_url.Host))
 	} else if force {
 		log.Info("Did not find node in the cluster.")
 	} else {
