@@ -41,12 +41,10 @@ func Execute() {
 	rootCmd.AddCommand(setCmd)
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(versionCmd)
-	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(resetCmd)
 	rootCmd.AddCommand(kubeconfigCmd)
 
 	initResetCmd()
-	initConfigCmdFlags()
 	initKubeconfigCmdFlags()
 
 	log.Debug("Executing:", os.Args)
