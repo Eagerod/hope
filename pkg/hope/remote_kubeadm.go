@@ -17,7 +17,10 @@ import (
 )
 
 func KubeadmResetRemote(log *logrus.Entry, host string, force bool) error {
-	host_url, err := url.Parse(host)
+	// URL parsing is a bit better at identifying parameters if there's a
+	//   protocol on the string passed in, so fake in ssh as the protocol to
+	//   help it parse a little more reliably.
+	host_url, err := url.Parse(fmt.Sprintf("ssh://%s", host))
 	if err != nil {
 		return err
 	}
