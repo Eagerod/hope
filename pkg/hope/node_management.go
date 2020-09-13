@@ -1,7 +1,11 @@
 package hope
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
+	"os"
+	"strings"
 )
 
 import (
@@ -9,10 +13,11 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/pkg/kubeutil"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
-func CreateClusterMaster(log *logrus.Entry, masterIp string, podNetworkCidr string) error {
+func setupCommonNodeRequirements(log *logrus.Entry, masterIp string) error {
 	log.Debug("Running some tests to ensure this process can be run properly...")
 
 	if err := ssh.TestCanSSH(masterIp); err != nil {
@@ -26,7 +31,7 @@ func CreateClusterMaster(log *logrus.Entry, masterIp string, podNetworkCidr stri
 		log.Trace("Passwordless SSH has already been configured on ", masterIp)
 	}
 
-	log.Debug("Creating cluster at", masterIp)
+	log.Debug("Preparing Kubernetes components at ", masterIp)
 
 	// Write all the empty files that should exist first.
 	dest := fmt.Sprintf("%s:%s", masterIp, "/etc/sysconfig/docker-storage")
@@ -94,8 +99,65 @@ func CreateClusterMaster(log *logrus.Entry, masterIp string, podNetworkCidr stri
 		return err
 	}
 
+	return nil
+}
+
+func CreateClusterMaster(log *logrus.Entry, masterIp string, podNetworkCidr string) error {
+	if err := setupCommonNodeRequirements(log, masterIp); err != nil {
+		return err
+	}
+
 	podNetworkCidrArg := fmt.Sprintf("--pod-network-cidr=%s", podNetworkCidr)
 	if err := ssh.ExecSSH(masterIp, "kubeadm", "init", podNetworkCidrArg); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CreateClusterNode(log *logrus.Entry, nodeIp string, masterIp string) error {
+	if err := setupCommonNodeRequirements(log, nodeIp); err != nil {
+		return err
+	}
+
+	hostname, err := ssh.GetSSH(nodeIp, "hostname")
+	if err != nil {
+		return err
+	}
+
+	trimmedHostname := strings.TrimSpace(hostname)
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("Creating a node in the cluster called:", trimmedHostname)
+	fmt.Print("If this is correct, re-enter the hostname: ")
+
+	inputHostname, _ := reader.ReadString('\n')
+	trimmedInput := strings.TrimSpace(inputHostname)
+
+	if trimmedHostname != trimmedInput {
+		return errors.New(fmt.Sprintf("Node init aborted. Hostname not confirmed (%s != %s).", trimmedHostname, trimmedInput))
+	}
+
+	joinCommand, err := ssh.GetSSH(masterIp, "kubeadm", "token", "create", "--print-join-command")
+	if err != nil {
+		return err
+	}
+
+	joinComponents := strings.Split(joinCommand, " ")
+	allArguments := append([]string{nodeIp}, joinComponents...)
+	if err := ssh.ExecSSH(allArguments...); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func TaintNodeByHost(host string, taint string) error {
+	nodeName, err := kubeutil.NodeNameFromHost(host)
+	if err != nil {
+		return err
+	}
+
+	if err := kubeutil.ExecKubectl("taint", "nodes", nodeName, taint); err != nil {
 		return err
 	}
 
