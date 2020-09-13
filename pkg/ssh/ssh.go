@@ -13,9 +13,12 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 )
 
+import (
+	"github.com/Eagerod/hope/pkg/scp"
+)
+
 type ExecSSHFunc func(args ...string) error
 type GetSSHFunc func(args ...string) (string, error)
-type ExecSCPFunc func(args ...string) error
 
 var ExecSSH ExecSSHFunc = func(args ...string) error {
 	// For now, this is just implemented by using commands, but in the end,
@@ -23,7 +26,7 @@ var ExecSSH ExecSSHFunc = func(args ...string) error {
 	osCmd := exec.Command("ssh", args...)
 	osCmd.Stdin = os.Stdin
 	osCmd.Stdout = os.Stdout
- 	osCmd.Stderr = os.Stderr
+	osCmd.Stderr = os.Stderr
 
 	return osCmd.Run()
 }
@@ -34,16 +37,6 @@ var GetSSH GetSSHFunc = func(args ...string) (string, error) {
 	osCmd := exec.Command("ssh", args...)
 	output, err := osCmd.CombinedOutput()
 	return string(output), err
-}
-
-// TODO: Move SCP-only functions to an SCP pkg.
-var ExecSCP ExecSCPFunc = func(args ...string) error {
-	osCmd := exec.Command("scp", args...)
-	osCmd.Stdin = os.Stdin
-	osCmd.Stdout = os.Stdout
-	osCmd.Stderr = os.Stderr
-
-	return osCmd.Run()
 }
 
 // Attempt to SSH into a machine without allowing password authentication.
@@ -74,7 +67,7 @@ func TryConfigureSSH(ip string) error {
 			}
 
 			destination := fmt.Sprintf("%s:tmp.pub", ip)
-			
+
 			if err = CopyLocalFileToDest(publicKey, destination); err != nil {
 				return err
 			}
@@ -109,11 +102,11 @@ func DisablePasswordSSHAccess(ip string) error {
 }
 
 func CopyLocalFileToDest(localFile string, destFile string) error {
-	return ExecSCP(localFile, destFile)
+	return scp.ExecSCP(localFile, destFile)
 }
 
 func CopyDestFileToLocal(destFile string, localFile string) error {
-	return ExecSCP(destFile, localFile)
+	return scp.ExecSCP(destFile, localFile)
 }
 
 func CopyStringToDest(s string, destFile string) error {
@@ -128,7 +121,7 @@ func CopyStringToDest(s string, destFile string) error {
 		return err
 	}
 
-	if err = ExecSCP(tmpfile.Name(), destFile); err != nil {
+	if err = scp.ExecSCP(tmpfile.Name(), destFile); err != nil {
 		return err
 	}
 
