@@ -11,9 +11,9 @@ import (
 func TestStringInSlice(t *testing.T) {
 	var tests = []struct {
 		name string
-		ret bool
-		val string
-		sli []string
+		ret  bool
+		val  string
+		sli  []string
 	}{
 		{"Contains", true, "something", []string{"anything", "in", "something", "else"}},
 		{"Contains End", true, "anything", []string{"anything", "in", "something", "else"}},
