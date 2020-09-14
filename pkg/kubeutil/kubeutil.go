@@ -19,9 +19,11 @@ type ExecKubeutilFunc func(args ...string) error
 var GetKubectl GetKubeutilFunc = func(args ...string) (string, error) {
 	osCmd := exec.Command("kubectl", args...)
 	osCmd.Stdin = os.Stdin
-	output, err := osCmd.CombinedOutput()
+	osCmd.Stdin = os.Stdin
+	osCmd.Stderr = os.Stderr
 
-	return string(output), err
+	outputBytes, err := osCmd.Output()
+	return string(outputBytes), err
 }
 
 var ExecKubectl ExecKubeutilFunc = func(args ...string) error {
