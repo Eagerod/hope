@@ -35,8 +35,11 @@ var GetSSH GetSSHFunc = func(args ...string) (string, error) {
 	// For now, this is just implemented by using commands, but in the end,
 	//   it may be fun to try out using golang.org/x/crypto/ssh
 	osCmd := exec.Command("ssh", args...)
-	output, err := osCmd.CombinedOutput()
-	return string(output), err
+	osCmd.Stdin = os.Stdin
+	osCmd.Stderr = os.Stderr
+
+	outputBytes, err := osCmd.Output()
+	return string(outputBytes), err
 }
 
 // Attempt to SSH into a machine without allowing password authentication.
