@@ -2,4 +2,4 @@ masters:
   - root@192.168.200.10
 nodes:
   - root@192.168.200.11
-loglevel: "trace"
+loglevel: trace

@@ -28,16 +28,22 @@ var resetCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		host := args[0]
+		masters := viper.GetStringSlice("masters")
 
-		isMaster := sliceutil.StringInSlice(host, viper.GetStringSlice("masters"))
+		isMaster := sliceutil.StringInSlice(host, masters)
 		isNode := sliceutil.StringInSlice(host, viper.GetStringSlice("nodes"))
 
 		if !isMaster && !isNode {
 			return errors.New(fmt.Sprintf("Host (%s) not found in list of masters or nodes.", host))
 		}
 
+		kubectl, err := getKubectlFromAnyMaster(log.WithFields(log.Fields{}), masters)
+		if err != nil {
+			return err
+		}
+
 		// TODO: may need to add more validation, like that this isn't the
 		//   only master and is being removed, unless force is provided.
-		return hope.KubeadmResetRemote(log.WithFields(log.Fields{}), host, resetCmdForce)
+		return hope.KubeadmResetRemote(log.WithFields(log.Fields{}), kubectl, host, resetCmdForce)
 	},
 }
