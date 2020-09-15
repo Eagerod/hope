@@ -3,3 +3,4 @@ masters:
 nodes:
   - root@192.168.200.11
 loglevel: trace
+pod_network_cidr: 10.244.0.0/16

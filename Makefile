@@ -11,8 +11,6 @@ CMD_PACKAGE_DIR := ./cmd/hope
 PKG_PACKAGE_DIR := ./pkg/*
 PACKAGE_PATHS := $(CMD_PACKAGE_DIR) $(PKG_PACKAGE_DIR)
 
-UPLOAD_DIR=files
-
 AUTOGEN_VERSION_FILENAME=$(CMD_PACKAGE_DIR)/version-temp.go
 
 SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go") $(AUTOGEN_VERSION_FILENAME)
@@ -37,14 +35,6 @@ test: $(SRC)
 	else \
 		$(GO) test -v $(PACKAGE_PATHS) -run $$T; \
 	fi
-
-.PHONY: upload
-upload:
-	@# Uploads all files to the blobstore to be downloaded as needed.
-	@if [ -f .env ]; then . .env; fi && set -e && find $(UPLOAD_DIR) -type f | sed 's:$(UPLOAD_DIR)/::' | while read f; do \
-		echo >&2 "$(UPLOAD_DIR)/$$f"; \
-		blob cp -f "$(UPLOAD_DIR)/$$f" "blob:/hope/$$f"; \
-	done
 
 .PHONY: system-test
 system-test: $(BIN_NAME)

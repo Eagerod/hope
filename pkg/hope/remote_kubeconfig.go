@@ -26,6 +26,11 @@ func GetKubectl(host string) (*kubeutil.Kubectl, error) {
 		return nil, err
 	}
 
+	// Close the file immediately, because it will be written by a subprocess.
+	if err := tempFile.Close(); err != nil {
+		return nil, err
+	}
+
 	if err = scp.ExecSCP(remoteFile, tempFile.Name()); err != nil {
 		return nil, err
 	}

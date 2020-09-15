@@ -1,4 +1,6 @@
-{
+package hope
+
+var DockerDaemonJson = `{
     "exec-opts": [
         "native.cgroupdriver=systemd"
     ],
@@ -11,3 +13,11 @@
         "overlay2.override_kernel_check=true"
     ]
 }
+`
+
+var K8SConf = `net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+`
+
+var IpForward = `1
+`
