@@ -41,23 +41,6 @@ steps:
     environment:
       <<: *ci_environment
 
-  - name: push-files
-    image: golang:1.13
-    commands:
-      - curl -fsSL $${BLOBSTORE_URL}/client-bin/linux-amd64/latest-internal/blob -o /usr/bin/blob
-      - chmod 755 /usr/bin/blob
-      - make upload
-    volumes: *cached_volumes
-    environment:
-      <<: *ci_environment
-      BLOBSTORE_WRITE_ACL:
-        from_secret: blobstore_write_acl
-      BLOBSTORE_URL:
-        from_secret: blobstore_url
-    when:
-      branch:
-        - master
-
   - name: notify
     image: plugins/slack
     settings:
