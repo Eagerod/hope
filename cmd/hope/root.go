@@ -128,15 +128,15 @@ func initLogger() {
 
 func patchInvocations() {
 	oldExecKubectl := kubeutil.ExecKubectl
-	kubeutil.ExecKubectl = func(args ...string) error {
+	kubeutil.ExecKubectl = func(kubectl *kubeutil.Kubectl, args ...string) error {
 		log.Debug("kubectl ", strings.Join(args, " "))
-		return oldExecKubectl(args...)
+		return oldExecKubectl(kubectl, args...)
 	}
 
 	oldGetKubectl := kubeutil.GetKubectl
-	kubeutil.GetKubectl = func(args ...string) (string, error) {
+	kubeutil.GetKubectl = func(kubectl *kubeutil.Kubectl, args ...string) (string, error) {
 		log.Debug("kubectl ", strings.Join(args, " "))
-		return oldGetKubectl(args...)
+		return oldGetKubectl(kubectl, args...)
 	}
 
 	oldExecScp := scp.ExecSCP

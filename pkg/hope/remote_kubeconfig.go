@@ -16,9 +16,25 @@ import (
 	"github.com/Eagerod/hope/pkg/scp"
 )
 
-func FetchKubeconfig(log *logrus.Entry, host string, merge bool) error {
+func GetKubectl(host string) (*kubeutil.Kubectl, error) {
 	remoteFile := fmt.Sprintf("%s:/etc/kubernetes/admin.conf", host)
 
+	// Do not delete.
+	// Leave deletion up to destroying the kubectl instance.
+	tempFile, err := ioutil.TempFile("", "")
+	if err != nil {
+		return nil, err
+	}
+
+	if err = scp.ExecSCP(remoteFile, tempFile.Name()); err != nil {
+		return nil, err
+	}
+
+	kubectl := kubeutil.NewKubectl(tempFile.Name())
+	return kubectl, nil
+}
+
+func FetchKubeconfig(log *logrus.Entry, host string, merge bool) error {
 	kubeconfigFile, err := kubeutil.GetKubeConfigPath()
 	if err != nil {
 		return err
@@ -30,34 +46,19 @@ func FetchKubeconfig(log *logrus.Entry, host string, merge bool) error {
 		if !merge {
 			return errors.New("Refusing to overwrite existing kubeconfig file.")
 		}
-	} else {
-		log.Debug("No file found at KUBECONFIG path. Writing file directly.")
-		return scp.ExecSCP(remoteFile, kubeconfigFile)
 	}
 
-	tempFile, err := ioutil.TempFile("", "")
+	kubectl, err := GetKubectl(host)
 	if err != nil {
 		return err
 	}
 
-	defer os.Remove(tempFile.Name())
-
-	if err = scp.ExecSCP(remoteFile, tempFile.Name()); err != nil {
-		return err
-	}
+	defer kubectl.Destroy()
 
 	log.Debug("Merging existing KUBECONFIG file with file downloaded from ", host)
 
-	// TODO: This _should_ be done by providing the environment to the
-	//   subprocess, rather than modifying the current process' env, just so
-	//   the subprocess inherits it.
-	// TODO: This currently gets the combined stdout+err stream. It should only
-	//   take stdout.
-	kubeconfigEnv := kubeconfigFile + ":" + tempFile.Name()
-	oldKubeconfigEnv := os.Getenv("KUBECONFIG")
-	os.Setenv("KUBECONFIG", kubeconfigEnv)
-	kubeconfigContents, err := kubeutil.GetKubectl("config", "view", "--raw")
-	os.Setenv("KUBECONFIG", oldKubeconfigEnv)
+	combinerKubeconfig := kubeutil.NewKubectl(kubeconfigFile + ":" + kubectl.KubeconfigPath)
+	kubeconfigContents, err := kubeutil.GetKubectl(combinerKubeconfig, "config", "view", "--raw")
 	if err != nil {
 		return err
 	}

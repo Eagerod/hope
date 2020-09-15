@@ -14,7 +14,7 @@ import (
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
-func KubeadmResetRemote(log *logrus.Entry, host string, force bool) error {
+func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, host string, force bool) error {
 	// URL parsing is a bit better at identifying parameters if there's a
 	//   protocol on the string passed in, so fake in ssh as the protocol to
 	//   help it parse a little more reliably.
@@ -26,7 +26,6 @@ func KubeadmResetRemote(log *logrus.Entry, host string, force bool) error {
 	log.Debug("Searching for node name for host: ", host_url.Host)
 
 	nodeName, err := kubeutil.NodeNameFromHost(host_url.Host)
-
 	if err != nil && !force {
 		return err
 	} else if force {
@@ -34,7 +33,7 @@ func KubeadmResetRemote(log *logrus.Entry, host string, force bool) error {
 	} else {
 		log.Info("Draining node ", nodeName, " from the cluster")
 
-		if err := kubeutil.ExecKubectl("drain", nodeName, "--ignore-daemonsets"); err != nil {
+		if err := kubeutil.ExecKubectl(kubectl, "drain", nodeName, "--ignore-daemonsets"); err != nil {
 			return err
 		}
 	}
@@ -45,7 +44,7 @@ func KubeadmResetRemote(log *logrus.Entry, host string, force bool) error {
 	}
 
 	if nodeName != "" {
-		if err := kubeutil.ExecKubectl("delete", "node", nodeName); err != nil {
+		if err := kubeutil.ExecKubectl(kubectl, "delete", "node", nodeName); err != nil {
 			return err
 		}
 	}

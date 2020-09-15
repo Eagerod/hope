@@ -13,11 +13,26 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 )
 
-type GetKubeutilFunc func(args ...string) (string, error)
-type ExecKubeutilFunc func(args ...string) error
+// Kubectl struct allows for execution of a kubectl command with a
+//   non-environment set kubeconfig path.
+type Kubectl struct {
+	KubeconfigPath string
+}
 
-var GetKubectl GetKubeutilFunc = func(args ...string) (string, error) {
+func NewKubectl(kubeconfigPath string) *Kubectl {
+	return &Kubectl{kubeconfigPath}
+}
+
+func (kubectl *Kubectl) Destroy() error {
+	return os.Remove(kubectl.KubeconfigPath)
+}
+
+type GetKubectlFunc func(kubectl *Kubectl, args ...string) (string, error)
+type ExecKubectlFunc func(kubectl *Kubectl, args ...string) error
+
+var GetKubectl GetKubectlFunc = func(kubectl *Kubectl, args ...string) (string, error) {
 	osCmd := exec.Command("kubectl", args...)
+    osCmd.Env = append(os.Environ(), fmt.Sprintf("KUBECONFIG=%s", kubectl.KubeconfigPath))
 	osCmd.Stdin = os.Stdin
 	osCmd.Stdin = os.Stdin
 	osCmd.Stderr = os.Stderr
@@ -26,8 +41,9 @@ var GetKubectl GetKubeutilFunc = func(args ...string) (string, error) {
 	return string(outputBytes), err
 }
 
-var ExecKubectl ExecKubeutilFunc = func(args ...string) error {
+var ExecKubectl ExecKubectlFunc = func(kubectl *Kubectl, args ...string) error {
 	osCmd := exec.Command("kubectl", args...)
+    osCmd.Env = append(os.Environ(), fmt.Sprintf("KUBECONFIG=%s", kubectl.KubeconfigPath))
 	osCmd.Stdin = os.Stdin
 	osCmd.Stdout = os.Stdout
 	osCmd.Stderr = os.Stderr
