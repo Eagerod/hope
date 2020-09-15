@@ -71,7 +71,7 @@ func TryConfigureSSH(ip string) error {
 
 			destination := fmt.Sprintf("%s:tmp.pub", ip)
 
-			if err = CopyLocalFileToDest(publicKey, destination); err != nil {
+			if err := scp.ExecSCP(publicKey, destination); err != nil {
 				return err
 			}
 
@@ -102,14 +102,6 @@ func SetupPasswordlessSudo(ip string) error {
 
 func DisablePasswordSSHAccess(ip string) error {
 	return errors.New("This hasn't been implemented yet.")
-}
-
-func CopyLocalFileToDest(localFile string, destFile string) error {
-	return scp.ExecSCP(localFile, destFile)
-}
-
-func CopyDestFileToLocal(destFile string, localFile string) error {
-	return scp.ExecSCP(destFile, localFile)
 }
 
 func CopyStringToDest(s string, destFile string) error {
