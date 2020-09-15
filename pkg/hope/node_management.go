@@ -21,6 +21,8 @@ import (
 func setupCommonNodeRequirements(log *logrus.Entry, masterIp string) error {
 	log.Debug("Running some tests to ensure this process can be run properly...")
 
+	// TODO: Move this somewhere more appropriate. Maybe its own function in
+	//   unix_config.
 	if err := ssh.TestCanSSH(masterIp); err != nil {
 		// Try to recover this.
 		if err = ssh.TryConfigureSSH(masterIp); err != nil {
