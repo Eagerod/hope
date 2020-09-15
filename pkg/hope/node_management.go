@@ -14,6 +14,7 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/kubeutil"
+	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
@@ -35,28 +36,28 @@ func setupCommonNodeRequirements(log *logrus.Entry, masterIp string) error {
 
 	// Write all the empty files that should exist first.
 	dest := fmt.Sprintf("%s:%s", masterIp, "/etc/sysconfig/docker-storage")
-	if err := ssh.CopyStringToDest("", dest); err != nil {
+	if err := scp.ExecSCPBytes([]byte(""), dest); err != nil {
 		return err
 	}
 
 	dest = fmt.Sprintf("%s:%s", masterIp, "/etc/sysconfig/docker-storage-setup")
-	if err := ssh.CopyStringToDest("", dest); err != nil {
+	if err := scp.ExecSCPBytes([]byte(""), dest); err != nil {
 		return err
 	}
 
 	// Write files with contents.
 	dest = fmt.Sprintf("%s:%s", masterIp, "/etc/docker/daemon.json")
-	if err := ssh.CopyStringToDest(DockerDaemonJson, dest); err != nil {
+	if err := scp.ExecSCPBytes([]byte(DockerDaemonJson), dest); err != nil {
 		return err
 	}
 
 	dest = fmt.Sprintf("%s:%s", masterIp, "/etc/sysctl.d/k8s.conf")
-	if err := ssh.CopyStringToDest(K8SConf, dest); err != nil {
+	if err := scp.ExecSCPBytes([]byte(K8SConf), dest); err != nil {
 		return err
 	}
 
 	dest = fmt.Sprintf("%s:%s", masterIp, "/proc/sys/net/ipv4/ip_forward")
-	if err := ssh.CopyStringToDest(IpForward, dest); err != nil {
+	if err := scp.ExecSCPBytes([]byte(IpForward), dest); err != nil {
 		return err
 	}
 

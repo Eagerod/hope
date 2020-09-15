@@ -3,7 +3,6 @@ package ssh
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -102,27 +101,4 @@ func SetupPasswordlessSudo(ip string) error {
 
 func DisablePasswordSSHAccess(ip string) error {
 	return errors.New("This hasn't been implemented yet.")
-}
-
-func CopyStringToDest(s string, destFile string) error {
-	tmpfile, err := ioutil.TempFile("", "")
-	if err != nil {
-		return err
-	}
-
-	defer os.Remove(tmpfile.Name())
-
-	if _, err = tmpfile.Write([]byte(s)); err != nil {
-		return err
-	}
-
-	if err = scp.ExecSCP(tmpfile.Name(), destFile); err != nil {
-		return err
-	}
-
-	if err = tmpfile.Close(); err != nil {
-		return err
-	}
-
-	return nil
 }
