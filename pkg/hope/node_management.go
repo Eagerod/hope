@@ -108,6 +108,10 @@ func CreateClusterMaster(log *logrus.Entry, masterIp string, podNetworkCidr stri
 		return err
 	}
 
+	if err := forceUserToEnterHostnameToContinue(masterIp); err != nil {
+		return err
+	}
+
 	podNetworkCidrArg := fmt.Sprintf("--pod-network-cidr=%s", podNetworkCidr)
 	if err := ssh.ExecSSH(masterIp, "kubeadm", "init", podNetworkCidrArg); err != nil {
 		return err
@@ -121,21 +125,8 @@ func CreateClusterNode(log *logrus.Entry, nodeIp string, masterIp string) error 
 		return err
 	}
 
-	hostname, err := ssh.GetSSH(nodeIp, "hostname")
-	if err != nil {
+	if err := forceUserToEnterHostnameToContinue(nodeIp); err != nil {
 		return err
-	}
-
-	trimmedHostname := strings.TrimSpace(hostname)
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("Creating a node in the cluster called:", trimmedHostname)
-	fmt.Print("If this is correct, re-enter the hostname: ")
-
-	inputHostname, _ := reader.ReadString('\n')
-	trimmedInput := strings.TrimSpace(inputHostname)
-
-	if trimmedHostname != trimmedInput {
-		return errors.New(fmt.Sprintf("Node init aborted. Hostname not confirmed (%s != %s).", trimmedHostname, trimmedInput))
 	}
 
 	joinCommand, err := ssh.GetSSH(masterIp, "kubeadm", "token", "create", "--print-join-command")
@@ -160,9 +151,9 @@ func TaintNodeByHost(kubectl *kubeutil.Kubectl, host string, taint string) error
 
 	if err := kubeutil.ExecKubectl(kubectl, "taint", "nodes", nodeName, taint); err != nil {
 		return err
- 	}
+	}
 
- 	return nil
+	return nil
 }
 
 func SetHostname(log *logrus.Entry, host string, hostname string, force bool) error {
@@ -199,6 +190,27 @@ func SetHostname(log *logrus.Entry, host string, hostname string, force bool) er
 	// Host _should_ come up before SSH times out.
 	log.Info("Restarting networking on ", host)
 	if err := ssh.ExecSSH(host, "systemctl", "restart", "network"); err != nil {
+	}
+
+	return nil
+}
+
+func forceUserToEnterHostnameToContinue(host string) error {
+	hostname, err := ssh.GetSSH(host, "hostname")
+	if err != nil {
+		return err
+	}
+
+	trimmedHostname := strings.TrimSpace(hostname)
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("Creating a node in the cluster called:", trimmedHostname)
+	fmt.Print("If this is correct, re-enter the hostname: ")
+
+	inputHostname, _ := reader.ReadString('\n')
+	trimmedInput := strings.TrimSpace(inputHostname)
+
+	if trimmedHostname != trimmedInput {
+		return errors.New(fmt.Sprintf("Node init aborted. Hostname not confirmed (%s != %s).", trimmedHostname, trimmedInput))
 	}
 
 	return nil
