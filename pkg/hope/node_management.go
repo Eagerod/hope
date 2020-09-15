@@ -76,23 +76,17 @@ func setupCommonNodeRequirements(log *logrus.Entry, masterIp string) error {
 		return err
 	}
 
-	if err := ssh.ExecSSH(masterIp, "systemctl", "daemon-reload"); err != nil {
-		return err
-	}
-
-	if err := ssh.ExecSSH(masterIp, "systemctl", "enable", "docker"); err != nil {
-		return err
-	}
-
-	if err := ssh.ExecSSH(masterIp, "systemctl", "enable", "kubelet"); err != nil {
-		return err
-	}
-
-	if err := ssh.ExecSSH(masterIp, "systemctl", "start", "docker"); err != nil {
-		return err
-	}
-
-	if err := ssh.ExecSSH(masterIp, "systemctl", "enable", "kubelet"); err != nil {
+	daemonsScript := fmt.Sprintf("\"%s\"", strings.Join(
+		[]string{
+			"systemctl daemon-reload",
+			"systemctl enable docker",
+			"systemctl enable kubelet",
+			"systemctl start docker",
+			"systemctl enable kubelet",
+		},
+		" && ",
+	))
+	if err := ssh.ExecSSH(masterIp, "bash", "-c", daemonsScript); err != nil {
 		return err
 	}
 
