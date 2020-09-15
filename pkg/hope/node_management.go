@@ -151,13 +151,13 @@ func CreateClusterNode(log *logrus.Entry, nodeIp string, masterIp string) error 
 	return nil
 }
 
-func TaintNodeByHost(host string, taint string) error {
-	nodeName, err := kubeutil.NodeNameFromHost(host)
+func TaintNodeByHost(kubectl *kubeutil.Kubectl, host string, taint string) error {
+	nodeName, err := kubeutil.NodeNameFromHost(kubectl, host)
 	if err != nil {
 		return err
 	}
 
-	if err := kubeutil.ExecKubectl("taint", "nodes", nodeName, taint); err != nil {
+	if err := kubeutil.ExecKubectl(kubectl, "taint", "nodes", nodeName, taint); err != nil {
 		return err
  	}
 

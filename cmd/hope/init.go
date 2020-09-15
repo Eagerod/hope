@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"net/url"
 )
 
 import (
@@ -23,6 +24,14 @@ var initCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		host := args[0]
 
+		// URL parsing is a bit better at identifying parameters if there's a
+		//   protocol on the string passed in, so fake in ssh as the protocol to
+		//   help it parse a little more reliably.
+		host_url, err := url.Parse(fmt.Sprintf("ssh://%s", host))
+		if err != nil {
+			return err
+		}
+
 		log.Info("Bootstrapping a node...")
 
 		podNetworkCidr := viper.GetString("pod_network_cidr")
@@ -38,11 +47,17 @@ var initCmd = &cobra.Command{
 				return err
 			}
 
-			if err := hope.TaintNodeByHost(host, "key:NoSchedule-"); err != nil {
+			kubectl, err := getKubectlFromAnyMaster(log.WithFields(log.Fields{}), masters)
+			if err != nil {
 				return err
 			}
-		}
-		if isMaster {
+
+			defer kubectl.Destroy()
+
+			if err := hope.TaintNodeByHost(kubectl, host_url.Host, "node-role.kubernetes.io/master:NoSchedule-"); err != nil {
+				return err
+			}
+		} else if isMaster {
 			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), host, podNetworkCidr)
 		} else if isWorker {
 			// Have to send in a master ip for it to grab a join token.

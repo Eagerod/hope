@@ -52,8 +52,8 @@ var ExecKubectl ExecKubectlFunc = func(kubectl *Kubectl, args ...string) error {
 }
 
 // Get the name by which the cluster recognizes a given host.
-func NodeNameFromHost(host string) (string, error) {
-	nodesOutput, err := GetKubectl("get", "nodes", "-o", "custom-columns=NODE:metadata.name,IP:status.addresses[?(@.type=='InternalIP')].address")
+func NodeNameFromHost(kubectl *Kubectl, host string) (string, error) {
+	nodesOutput, err := GetKubectl(kubectl, "get", "nodes", "-o", "custom-columns=NODE:metadata.name,IP:status.addresses[?(@.type=='InternalIP')].address")
 	if err != nil {
 		return "", errors.New(strings.Join([]string{nodesOutput, err.Error()}, " "))
 	}

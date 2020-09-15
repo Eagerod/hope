@@ -25,7 +25,7 @@ func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, host strin
 
 	log.Debug("Searching for node name for host: ", host_url.Host)
 
-	nodeName, err := kubeutil.NodeNameFromHost(host_url.Host)
+	nodeName, err := kubeutil.NodeNameFromHost(kubectl, host_url.Host)
 	if err != nil && !force {
 		return err
 	} else if force {
