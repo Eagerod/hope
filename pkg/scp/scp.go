@@ -32,11 +32,11 @@ var ExecSCPBytes ExecSCPBytesFunc = func(bytes []byte, dest string) error {
 		return err
 	}
 
-	if err = ExecSCP(tmpfile.Name(), dest); err != nil {
+	if err = tmpfile.Close(); err != nil {
 		return err
 	}
 
-	if err = tmpfile.Close(); err != nil {
+	if err = ExecSCP(tmpfile.Name(), dest); err != nil {
 		return err
 	}
 
