@@ -44,10 +44,12 @@ func Execute() {
 	rootCmd.AddCommand(hostnameCmd)
 	rootCmd.AddCommand(kubeconfigCmd)
 	rootCmd.AddCommand(resetCmd)
+	rootCmd.AddCommand(tokenCmd)
 
 	initHostnameCmdFlags()
 	initKubeconfigCmdFlags()
 	initResetCmd()
+	initTokenCmd()
 
 	log.Debug("Executing:", os.Args)
 	if err := rootCmd.Execute(); err != nil {
