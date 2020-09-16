@@ -12,10 +12,13 @@ import (
 
 var bin string = filepath.Join(".", "build", "hope")
 var commands []string = []string{
-	"init",
-	"add",
 	"deploy",
+	"hostname",
+	"init",
+	"reset",
 	"set",
+	"set",
+	"version",
 }
 
 func TestHelpExecutes(t *testing.T) {
