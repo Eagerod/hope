@@ -32,6 +32,8 @@ var deployCmd = &cobra.Command{
 			return err
 		}
 
+		defer kubectl.Destroy()
+
 		resourcesToDeploy := []Resource{}
 
 		if len(args) == 0 {
