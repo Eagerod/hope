@@ -22,8 +22,8 @@ $(BIN_NAME): $(SRC)
 	@mkdir -p $(BUILD_DIR)
 	$(GO) build -o $(BIN_NAME) $(MAIN_FILE)
 
-.PHONY: install
-install: $(INSTALLED_NAME)
+.PHONY: install isntall
+install isntall: $(INSTALLED_NAME)
 
 $(INSTALLED_NAME): $(BIN_NAME)
 	cp $(BIN_NAME) $(INSTALLED_NAME)
