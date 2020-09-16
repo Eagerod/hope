@@ -22,6 +22,8 @@ resources:
   # Values passed in through `inline` will be fed through `envsubst` before
   #   being passed off to kubectl, so any values that are dynamic/secret can be
   #   passed in through using environment variables.
+  # As is the case with anything else hitting kubectl apply -f, multiple
+  #   objects can be provided by --- separators.
   - name: load-balancer-config
     inline: |
       apiVersion: v1

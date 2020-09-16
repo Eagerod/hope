@@ -60,7 +60,7 @@ var deployCmd = &cobra.Command{
 			}
 		}
 
-		// Should be done in hope pkf
+		// TODO: Should be done in hope pkg
 		for _, resource := range resourcesToDeploy {
 			resourceType, err := resource.GetType()
 			if err != nil {
