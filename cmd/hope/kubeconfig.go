@@ -25,13 +25,22 @@ func initKubeconfigCmdFlags() {
 var kubeconfigCmd = &cobra.Command{
 	Use:   "kubeconfig",
 	Short: "Fetch the kubeconfig from a master node",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.RangeArgs(0, 1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		masterIp := args[0]
+		var masterIp string
+		masters := viper.GetStringSlice("masters")
+		if len(args) == 0 {
+			masterIp = masters[0]
+			log.Debug("No host given to kubeconfig command. Using first master from masters list.")
+		} else {
+			masterIp = args[0]
 
-		if !sliceutil.StringInSlice(masterIp, viper.GetStringSlice("masters")) {
-			return errors.New(fmt.Sprintf("Failed to find master %s in config", masterIp))
+			if !sliceutil.StringInSlice(masterIp, masters) {
+				return errors.New(fmt.Sprintf("Failed to find master %s in config", masterIp))
+			}
 		}
+
+		log.Debug("Fetching admin kubeconfig file from ", masterIp)
 
 		return hope.FetchKubeconfig(log.WithFields(log.Fields{}), masterIp, kubeconfigCmdMergeFlag)
 	},
