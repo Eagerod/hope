@@ -29,6 +29,7 @@ func (kubectl *Kubectl) Destroy() error {
 
 type GetKubectlFunc func(kubectl *Kubectl, args ...string) (string, error)
 type ExecKubectlFunc func(kubectl *Kubectl, args ...string) error
+type InKubectlFunc func(kubectl *Kubectl, stdin string, args ...string) error
 
 var GetKubectl GetKubectlFunc = func(kubectl *Kubectl, args ...string) (string, error) {
 	osCmd := exec.Command("kubectl", args...)
@@ -45,6 +46,16 @@ var ExecKubectl ExecKubectlFunc = func(kubectl *Kubectl, args ...string) error {
 	osCmd := exec.Command("kubectl", args...)
 	osCmd.Env = append(os.Environ(), fmt.Sprintf("KUBECONFIG=%s", kubectl.KubeconfigPath))
 	osCmd.Stdin = os.Stdin
+	osCmd.Stdout = os.Stdout
+	osCmd.Stderr = os.Stderr
+
+	return osCmd.Run()
+}
+
+var InKubectl InKubectlFunc = func(kubectl *Kubectl, stdin string, args ...string) error {
+	osCmd := exec.Command("kubectl", args...)
+	osCmd.Env = append(os.Environ(), fmt.Sprintf("KUBECONFIG=%s", kubectl.KubeconfigPath))
+	osCmd.Stdin = strings.NewReader(stdin)
 	osCmd.Stdout = os.Stdout
 	osCmd.Stderr = os.Stderr
 

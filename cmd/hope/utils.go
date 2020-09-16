@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 )
 
 import (
@@ -14,9 +16,35 @@ import (
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
+const (
+	ResourceTypeFile   string = "file"
+	ResourceTypeInline string = "inline"
+)
+
+// Should be defined in hope pkg
 type Resource struct {
-	Name string
-	File string
+	Name   string
+	File   string
+	Inline string
+}
+
+func (resource *Resource) GetType() (string, error) {
+	detectedTypes := []string{}
+	if len(resource.File) != 0 {
+		detectedTypes = append(detectedTypes, ResourceTypeFile)
+	}
+	if len(resource.Inline) != 0 {
+		detectedTypes = append(detectedTypes, ResourceTypeInline)
+	}
+
+	switch len(detectedTypes) {
+	case 0:
+		return "", errors.New(fmt.Sprintf("Failed to find type of resource '%s'", resource.Name))
+	case 1:
+		return detectedTypes[0], nil
+	default:
+		return "", errors.New(fmt.Sprintf("Detected multiple types for resource '%s': %s", resource.Name, strings.Join(detectedTypes, ", ")))
+	}
 }
 
 // Loops through the list of hosts in order, and attempts to fetch a

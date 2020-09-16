@@ -5,7 +5,9 @@ nodes:
 loglevel: trace
 pod_network_cidr: 10.244.0.0/16
 resources:
+    # It looks like calico will select the `pod_network_cidr` as its default
+    #   IP Pool.
   - name: calico
     file: https://docs.projectcalico.org/manifests/calico.yaml
-  - name: calico-pool
-    file: file:///Users/Aleem/Desktop/calico-pool
+  - name: dashboard
+    file: https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.4/aio/deploy/recommended.yaml

@@ -44,24 +44,37 @@ var deployCmd = &cobra.Command{
 			resourcesMap := map[string]Resource{}
 			for _, resource := range *resources {
 				resourcesMap[resource.Name] = resource
-			} 
+			}
 
 			// Do an initial pass to ensure that no invalid resources were
 			//   provided
 			for _, expectedResource := range args {
 				resource, ok := resourcesMap[expectedResource]
 				if !ok {
-				    return errors.New(fmt.Sprintf("Cannot find resource '%s' in configuration file.", expectedResource))
+					return errors.New(fmt.Sprintf("Cannot find resource '%s' in configuration file.", expectedResource))
 				}
 				resourcesToDeploy = append(resourcesToDeploy, resource)
 			}
 		}
 
-
+		// Should be done in hope pkf
 		for _, resource := range resourcesToDeploy {
-			if err := hope.KubectlApplyF(kubectl, resource.File); err != nil {
+			resourceType, err := resource.GetType()
+			if err != nil {
 				return err
 			}
+
+			switch resourceType {
+			case ResourceTypeFile:
+				if err := hope.KubectlApplyF(kubectl, resource.File); err != nil {
+					return err
+				}
+			case ResourceTypeInline:
+				if err := hope.KubectlApplyStdIn(kubectl, resource.Inline); err != nil {
+					return err
+				}
+			}
+
 		}
 
 		return nil
