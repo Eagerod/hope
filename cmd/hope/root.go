@@ -143,7 +143,7 @@ func patchInvocations() {
 
 	oldInKubectl := kubeutil.InKubectl
 	kubeutil.InKubectl = func(kubectl *kubeutil.Kubectl, stdin string, args ...string) error {
-		log.Debug("echo **(", len(stdin), ")** | kubectl ", strings.Join(args, " "))
+		log.Debug("echo **(", len(stdin), " chars)** | kubectl ", strings.Join(args, " "))
 		return oldInKubectl(kubectl, stdin, args...)
 	}
 
