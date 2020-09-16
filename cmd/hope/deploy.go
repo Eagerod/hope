@@ -82,6 +82,8 @@ var deployCmd = &cobra.Command{
 				if err := hope.KubectlApplyStdIn(kubectl, inline); err != nil {
 					return err
 				}
+			default:
+				return errors.New(fmt.Sprintf("Resource type unknown. Check %s for issues", resource.Name))
 			}
 		}
 
