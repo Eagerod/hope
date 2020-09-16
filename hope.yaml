@@ -1,7 +1,7 @@
 masters:
-  - root@192.168.200.10
+  - root@192.168.1.31
 nodes:
-  - root@192.168.200.11
+  - root@192.168.1.30
 loglevel: trace
 pod_network_cidr: 10.244.0.0/16
 resources:
@@ -11,3 +11,52 @@ resources:
     file: https://docs.projectcalico.org/manifests/calico.yaml
   - name: dashboard
     file: https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.4/aio/deploy/recommended.yaml
+  - name: service-account
+    inline: |
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: aleem
+        namespace: kube-system
+      ---
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: aleem
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: cluster-admin
+      subjects:
+      - kind: ServiceAccount
+        name: aleem
+        namespace: kube-system
+  - name: load-balancer-namespace
+    file: https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/namespace.yaml
+  - name: load-balancer
+    file: https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/metallb.yaml
+  - name: load-balancer-config
+    inline: |
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        namespace: metallb-system
+        name: config
+      data:
+        config: |
+          address-pools:
+          - name: default
+            protocol: layer2
+            addresses:
+            - 192.168.1.16-192.168.1.24
+      ---
+      apiVersion: v1
+      data:
+        secretkey: ${METALLB_SYSTEM_MEMBERLIST_SECRET_KEY}
+      kind: Secret
+      metadata:
+        creationTimestamp: null
+        name: memberlist
+        namespace: metallb-system
+  - name: ingress-controller
+    file: https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.35.0/deploy/static/provider/baremetal/deploy.yaml
