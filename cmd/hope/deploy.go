@@ -46,6 +46,11 @@ var deployCmd = &cobra.Command{
 			// Map the slice by name so they can be fetched in order.
 			resourcesMap := map[string]Resource{}
 			for _, resource := range *resources {
+				_, ok := resourcesMap[resource.Name]
+				if ok {
+					return errors.New(fmt.Sprintf("Multiple resources found with name %s. Aborting deploy", resource.Name))
+				}
+
 				resourcesMap[resource.Name] = resource
 			}
 
@@ -56,6 +61,7 @@ var deployCmd = &cobra.Command{
 				if !ok {
 					return errors.New(fmt.Sprintf("Cannot find resource '%s' in configuration file.", expectedResource))
 				}
+
 				resourcesToDeploy = append(resourcesToDeploy, resource)
 			}
 		}
