@@ -13,6 +13,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
@@ -72,11 +73,16 @@ var deployCmd = &cobra.Command{
 					return err
 				}
 			case ResourceTypeInline:
-				if err := hope.KubectlApplyStdIn(kubectl, resource.Inline); err != nil {
+				inline := resource.Inline
+				inline, err := envsubst.GetEnvsubst(inline)
+				if err != nil {
+					return err
+				}
+
+				if err := hope.KubectlApplyStdIn(kubectl, inline); err != nil {
 					return err
 				}
 			}
-
 		}
 
 		return nil

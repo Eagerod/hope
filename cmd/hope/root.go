@@ -14,6 +14,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
@@ -129,6 +130,12 @@ func initLogger() {
 }
 
 func patchInvocations() {
+	oldEnvSubst := envsubst.GetEnvsubst
+	envsubst.GetEnvsubst = func(str string) (string, error) {
+		log.Debug("echo **(", len(str), " chars)** | envsubst ")
+		return oldEnvSubst(str)
+	}
+
 	oldExecKubectl := kubeutil.ExecKubectl
 	kubeutil.ExecKubectl = func(kubectl *kubeutil.Kubectl, args ...string) error {
 		log.Debug("kubectl ", strings.Join(args, " "))
