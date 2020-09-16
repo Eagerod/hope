@@ -4,37 +4,24 @@ nodes:
   - root@192.168.1.30
 loglevel: trace
 pod_network_cidr: 10.244.0.0/16
+# Resource list of all things to deploy to the cluster, and the order in which
+#   to deploy them.
+# Resources can be defined in the following different ways:
 resources:
-    # It looks like calico will select the `pod_network_cidr` as its default
-    #   IP Pool.
+  # Using a url to a file that can be passed directly to kubectl apply -f.
+  # These can be http(s):// urls, or just file path.
+  # It will always be preferred that urls appearing here are to stable yaml
+  #   files available on the Internet, rather than anything loaded from the
+  #   local machine.
+  # Local paths can be used for testing, but ultimately, whatever ends up being
+  #   deployed should be done so using GitHub tags/releases.
   - name: calico
     file: https://docs.projectcalico.org/manifests/calico.yaml
-  - name: dashboard
-    file: https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.4/aio/deploy/recommended.yaml
-  - name: service-account
-    inline: |
-      apiVersion: v1
-      kind: ServiceAccount
-      metadata:
-        name: aleem
-        namespace: kube-system
-      ---
-      apiVersion: rbac.authorization.k8s.io/v1
-      kind: ClusterRoleBinding
-      metadata:
-        name: aleem
-      roleRef:
-        apiGroup: rbac.authorization.k8s.io
-        kind: ClusterRole
-        name: cluster-admin
-      subjects:
-      - kind: ServiceAccount
-        name: aleem
-        namespace: kube-system
-  - name: load-balancer-namespace
-    file: https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/namespace.yaml
-  - name: load-balancer
-    file: https://raw.githubusercontent.com/metallb/metallb/v0.9.3/manifests/metallb.yaml
+  # Inline definitions are also supported.
+  # These values have to be provided as yaml strings under the `inline` key.
+  # Values passed in through `inline` will be fed through `envsubst` before
+  #   being passed off to kubectl, so any values that are dynamic/secret can be
+  #   passed in through using environment variables.
   - name: load-balancer-config
     inline: |
       apiVersion: v1
@@ -58,5 +45,3 @@ resources:
         creationTimestamp: null
         name: memberlist
         namespace: metallb-system
-  - name: ingress-controller
-    file: https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.35.0/deploy/static/provider/baremetal/deploy.yaml
