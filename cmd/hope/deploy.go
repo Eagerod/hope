@@ -32,11 +32,11 @@ var deployCmd = &cobra.Command{
 			return err
 		}
 
+		resourcesToDeploy := []Resource{}
+
 		if len(args) == 0 {
 			log.Debug("Received no arguments for deployment. Deploying all resources.")
-			for _, resource := range *resources {
-				hope.KubectlApplyF(kubectl, resource.File)
-			}
+			resourcesToDeploy = *resources
 		} else {
 			log.Debug("Deploying these resources: \n\t", strings.Join(args, "\n\t"), "\nIn the order given.")
 
@@ -49,16 +49,18 @@ var deployCmd = &cobra.Command{
 			// Do an initial pass to ensure that no invalid resources were
 			//   provided
 			for _, expectedResource := range args {
-				if _, ok := resourcesMap[expectedResource]; !ok {
+				resource, ok := resourcesMap[expectedResource]
+				if !ok {
 				    return errors.New(fmt.Sprintf("Cannot find resource '%s' in configuration file.", expectedResource))
 				}
+				resourcesToDeploy = append(resourcesToDeploy, resource)
 			}
+		}
 
-			for _, expectedResource := range args {
-				resource, _ := resourcesMap[expectedResource]
-				if err := hope.KubectlApplyF(kubectl, resource.File); err != nil {
-					return err
-				}
+
+		for _, resource := range resourcesToDeploy {
+			if err := hope.KubectlApplyF(kubectl, resource.File); err != nil {
+				return err
 			}
 		}
 
