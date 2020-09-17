@@ -14,6 +14,7 @@ PACKAGE_PATHS := $(CMD_PACKAGE_DIR) $(PKG_PACKAGE_DIR)
 AUTOGEN_VERSION_FILENAME=$(CMD_PACKAGE_DIR)/version-temp.go
 
 SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go") $(AUTOGEN_VERSION_FILENAME)
+PUBLISH := publish/linux-amd64 publish/darwin-amd64
 
 .PHONY: all
 all: $(BIN_NAME)
@@ -21,6 +22,24 @@ all: $(BIN_NAME)
 $(BIN_NAME): $(SRC)
 	@mkdir -p $(BUILD_DIR)
 	$(GO) build -o $(BIN_NAME) $(MAIN_FILE)
+
+
+publish: $(PUBLISH)
+
+publish/linux-amd64:
+	# Force build; don't let existing versions interfere.
+	rm -rf $(BIN_NAME)
+	GOOS=linux GOARCH=amd64 $(MAKE) $(BIN_NAME)
+	mkdir -p $$(dirname "$@")
+	mv $(BIN_NAME) $@
+
+publish/darwin-amd64:
+	# Force build; don't let existing versions interfere.
+	rm -rf $(BIN_NAME)
+	GOOS=darwin GOARCH=amd64 $(MAKE) $(BIN_NAME)
+	mkdir -p $$(dirname "$@")
+	mv $(BIN_NAME) $@
+
 
 .PHONY: install isntall
 install isntall: $(INSTALLED_NAME)
