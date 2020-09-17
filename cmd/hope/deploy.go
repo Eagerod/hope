@@ -88,6 +88,9 @@ var deployCmd = &cobra.Command{
 				if err := hope.KubectlApplyStdIn(kubectl, inline); err != nil {
 					return err
 				}
+			case ResourceTypeDockerBuild: {
+				return errors.New("Cannot run docker builds yet.")
+			}
 			default:
 				return errors.New(fmt.Sprintf("Resource type unknown. Check %s for issues", resource.Name))
 			}

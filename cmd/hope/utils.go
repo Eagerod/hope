@@ -17,15 +17,22 @@ import (
 )
 
 const (
-	ResourceTypeFile   string = "file"
-	ResourceTypeInline string = "inline"
+	ResourceTypeFile        string = "file"
+	ResourceTypeInline      string = "inline"
+	ResourceTypeDockerBuild string = "build"
 )
 
 // Should be defined in hope pkg
+type BuildSpec struct {
+	Path string
+	Tag  string
+}
+
 type Resource struct {
 	Name   string
 	File   string
 	Inline string
+	Build  BuildSpec
 }
 
 func (resource *Resource) GetType() (string, error) {
@@ -35,6 +42,9 @@ func (resource *Resource) GetType() (string, error) {
 	}
 	if len(resource.Inline) != 0 {
 		detectedTypes = append(detectedTypes, ResourceTypeInline)
+	}
+	if len(resource.Build.Path) != 0 && len(resource.Build.Tag) != 0 {
+		detectedTypes = append(detectedTypes, ResourceTypeDockerBuild)
 	}
 
 	switch len(detectedTypes) {
