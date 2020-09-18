@@ -59,3 +59,12 @@ resources:
     build:
       path: some-dir-with-dockerfile
       tag: registry.internal.aleemhaji.com/example-repo:latest
+  # When a spec comes with an initialization procedure, a job type can be used.
+  # These will wait until the job with the specified name is completed.
+  # If the job fails, the deployment stops so that other resources that may
+  #   depend on the job aren't pushed before the job has completed
+  #   successfully.
+  # For the sake of idempotence, jobs tested using this mechanism shouldn't be
+  #   set to be deleted by any mechanism.
+  - name: wait-for-some-kind-of-job
+    job: init-the-database

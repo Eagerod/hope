@@ -3,7 +3,9 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strings"
+	"time"
 )
 
 import (
@@ -16,6 +18,7 @@ import (
 	"github.com/Eagerod/hope/pkg/docker"
 	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/hope"
+	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -90,37 +93,78 @@ var deployCmd = &cobra.Command{
 					return err
 				}
 			case ResourceTypeDockerBuild:
-				{
-					// Strip the actual tag off the repo so that it defaults to the
-					//   latest.
-					tagSeparator := strings.LastIndex(resource.Build.Tag, ":")
-					pullImage := resource.Build.Tag
-					if tagSeparator != -1 {
-						pullImage = pullImage[:tagSeparator]
-					}
+				// Strip the actual tag off the repo so that it defaults to the
+				//   latest.
+				tagSeparator := strings.LastIndex(resource.Build.Tag, ":")
+				pullImage := resource.Build.Tag
+				if tagSeparator != -1 {
+					pullImage = pullImage[:tagSeparator]
+				}
 
-					if err := docker.ExecDocker("pull", pullImage); err != nil {
-						// Maybe the image was pushed with the given tag.
-						// Maybe the tag is something like :stable.
-						// Hopefully we can grab a few layers at least.
-						if err := docker.ExecDocker("pull", resource.Build.Tag); err != nil {
-							log.Warn("Failed to pull existing images for ", pullImage, ". Maybe this image doesn't exist?")
+				if err := docker.ExecDocker("pull", pullImage); err != nil {
+					// Maybe the image was pushed with the given tag.
+					// Maybe the tag is something like :stable.
+					// Hopefully we can grab a few layers at least.
+					if err := docker.ExecDocker("pull", resource.Build.Tag); err != nil {
+						log.Warn("Failed to pull existing images for ", pullImage, ". Maybe this image doesn't exist?")
 
-							// Don't return any errors here.
-							// If this is the first time this image is being
-							//   pushed, there will be nothing to pull, and
-							//   this will never succeed.
-						}
-					}
-					if err := docker.ExecDocker("build", resource.Build.Path, "-t", resource.Build.Tag); err != nil {
-						return err
-					}
-					if err := docker.ExecDocker("push", resource.Build.Tag); err != nil {
-						return err
+						// Don't return any errors here.
+						// If this is the first time this image is being
+						//   pushed, there will be nothing to pull, and
+						//   this will never succeed.
 					}
 				}
+				if err := docker.ExecDocker("build", resource.Build.Path, "-t", resource.Build.Tag); err != nil {
+					return err
+				}
+				if err := docker.ExecDocker("push", resource.Build.Tag); err != nil {
+					return err
+				}
+			case ResourceTypeJob:
+				// Exponential backoff maxing out at 60 seconds.
+				// TODO: Implement maximum retries, or other throughput-related
+				//   controls
+				// TODO: Fetch more detailed job status information to show on
+				//   the console.
+				// TODO: Fetch the success and failure properties together in
+				//  some easy to parse way.
+				attempts := 1
+				for {
+					status, err := kubeutil.GetKubectl(kubectl, "get", "job", resource.Job, "-o", "template={{.status.succeeded}}")
+					if err != nil {
+						return err
+					}
+
+					if strings.TrimSpace(status) != "1" {
+						// Check to see if the job actually failed.
+						status, err := kubeutil.GetKubectl(kubectl, "get", "job", resource.Job, "-o", "template={{.status.failed}}")
+						if err != nil {
+							return err
+						}
+
+						if strings.TrimSpace(status) == "1" {
+							return errors.New(fmt.Sprintf("Job %s failed.", resource.Job))
+						}
+
+						attemptsDuration := math.Pow(2, float64(attempts-1))
+						sleepSeconds := int(math.Min(attemptsDuration, 60))
+
+						log.Debug("Job ", resource.Job, " not complete yet. Waiting ", sleepSeconds, " seconds before checking again.")
+						time.Sleep(time.Second * time.Duration(sleepSeconds))
+						attempts = attempts + 1
+					} else {
+						log.Debug("Job ", resource.Job, " successful.")
+						break
+					}
+				}
+				if err := docker.ExecDocker("build", resource.Build.Path, "-t", resource.Build.Tag); err != nil {
+					return err
+				}
+				if err := docker.ExecDocker("push", resource.Build.Tag); err != nil {
+					return err
+				}
 			default:
-				return errors.New(fmt.Sprintf("Resource type unknown. Check %s for issues", resource.Name))
+				return errors.New(fmt.Sprintf("Resource type (%s) not implemented.", resourceType))
 			}
 		}
 
