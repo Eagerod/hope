@@ -24,18 +24,21 @@ $(BIN_NAME): $(SRC)
 	$(GO) build -o $(BIN_NAME) $(MAIN_FILE)
 
 
+.PHONY: publish
 publish: $(PUBLISH)
 
+.PHONY: publish/linux-amd64
 publish/linux-amd64:
 	# Force build; don't let existing versions interfere.
-	rm -rf $(BIN_NAME)
+	rm -f $(BIN_NAME)
 	GOOS=linux GOARCH=amd64 $(MAKE) $(BIN_NAME)
 	mkdir -p $$(dirname "$@")
 	mv $(BIN_NAME) $@
 
+.PHONY: publish/darwin-amd64
 publish/darwin-amd64:
 	# Force build; don't let existing versions interfere.
-	rm -rf $(BIN_NAME)
+	rm -f $(BIN_NAME)
 	GOOS=darwin GOARCH=amd64 $(MAKE) $(BIN_NAME)
 	mkdir -p $$(dirname "$@")
 	mv $(BIN_NAME) $@
