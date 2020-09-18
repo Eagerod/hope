@@ -122,8 +122,12 @@ var deployCmd = &cobra.Command{
 				}
 			case ResourceTypeJob:
 				// Exponential backoff maxing out at 60 seconds.
-				// TODO: implement maximum retries, or other throughput-related
+				// TODO: Implement maximum retries, or other throughput-related
 				//   controls
+				// TODO: Fetch more detailed job status information to show on
+				//   the console.
+				// TODO: Fetch the success and failure properties together in
+				//  some easy to parse way.
 				attempts := 1
 				for {
 					status, err := kubeutil.GetKubectl(kubectl, "get", "job", resource.Job, "-o", "template={{.status.succeeded}}")
@@ -132,7 +136,17 @@ var deployCmd = &cobra.Command{
 					}
 
 					if strings.TrimSpace(status) != "1" {
-						attemptsDuration := math.Pow(2, float64(attempts - 1))
+						// Check to see if the job actually failed.
+						status, err := kubeutil.GetKubectl(kubectl, "get", "job", resource.Job, "-o", "template={{.status.failed}}")
+						if err != nil {
+							return err
+						}
+
+						if strings.TrimSpace(status) == "1" {
+							return errors.New(fmt.Sprintf("Job %s failed.", resource.Job))
+						}
+
+						attemptsDuration := math.Pow(2, float64(attempts-1))
 						sleepSeconds := int(math.Min(attemptsDuration, 60))
 
 						log.Debug("Job ", resource.Job, " not complete yet. Waiting ", sleepSeconds, " seconds before checking again.")
