@@ -157,12 +157,6 @@ var deployCmd = &cobra.Command{
 						break
 					}
 				}
-				if err := docker.ExecDocker("build", resource.Build.Path, "-t", resource.Build.Tag); err != nil {
-					return err
-				}
-				if err := docker.ExecDocker("push", resource.Build.Tag); err != nil {
-					return err
-				}
 			default:
 				return errors.New(fmt.Sprintf("Resource type (%s) not implemented.", resourceType))
 			}
