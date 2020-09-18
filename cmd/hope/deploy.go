@@ -3,7 +3,9 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strings"
+	"time"
 )
 
 import (
@@ -16,6 +18,7 @@ import (
 	"github.com/Eagerod/hope/pkg/docker"
 	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/hope"
+	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -109,6 +112,35 @@ var deployCmd = &cobra.Command{
 						// If this is the first time this image is being
 						//   pushed, there will be nothing to pull, and
 						//   this will never succeed.
+					}
+				}
+				if err := docker.ExecDocker("build", resource.Build.Path, "-t", resource.Build.Tag); err != nil {
+					return err
+				}
+				if err := docker.ExecDocker("push", resource.Build.Tag); err != nil {
+					return err
+				}
+			case ResourceTypeJob:
+				// Exponential backoff maxing out at 60 seconds.
+				// TODO: implement maximum retries, or other throughput-related
+				//   controls
+				attempts := 1
+				for {
+					status, err := kubeutil.GetKubectl(kubectl, "get", "job", resource.Job, "-o", "template={{.status.succeeded}}")
+					if err != nil {
+						return err
+					}
+
+					if strings.TrimSpace(status) != "1" {
+						attemptsDuration := math.Pow(2, float64(attempts - 1))
+						sleepSeconds := int(math.Min(attemptsDuration, 60))
+
+						log.Debug("Job ", resource.Job, " not complete yet. Waiting ", sleepSeconds, " seconds before checking again.")
+						time.Sleep(time.Second * time.Duration(sleepSeconds))
+						attempts = attempts + 1
+					} else {
+						log.Debug("Job ", resource.Job, " successful.")
+						break
 					}
 				}
 				if err := docker.ExecDocker("build", resource.Build.Path, "-t", resource.Build.Tag); err != nil {
