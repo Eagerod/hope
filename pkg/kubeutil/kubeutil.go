@@ -15,6 +15,10 @@ import (
 
 // Kubectl struct allows for execution of a kubectl command with a
 //   non-environment set kubeconfig path.
+// TODO: Set up methods on Kubectl that invocations look like this:
+//   kubectl.GetPods(...)
+// rather than
+//   kubeutil.ExecKubectl(kubectl, "get", "pods", ...)
 type Kubectl struct {
 	KubeconfigPath string
 }

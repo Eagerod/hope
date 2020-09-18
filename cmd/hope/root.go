@@ -14,6 +14,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/pkg/docker"
 	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 	"github.com/Eagerod/hope/pkg/scp"
@@ -130,6 +131,14 @@ func initLogger() {
 }
 
 func patchInvocations() {
+	// TODO: Probably create a single os.Exec wrapper of some kind, cause this
+	//   is getting ridiculous.
+	oldExecDocker := docker.ExecDocker
+	docker.ExecDocker = func(args ...string) error {
+		log.Debug("docker ", strings.Join(args, " "))
+		return oldExecDocker(args...)
+	}
+
 	oldEnvSubst := envsubst.GetEnvsubst
 	envsubst.GetEnvsubst = func(str string) (string, error) {
 		log.Debug("echo **(", len(str), " chars)** | envsubst ")

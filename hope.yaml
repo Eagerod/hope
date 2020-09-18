@@ -47,3 +47,15 @@ resources:
         creationTimestamp: null
         name: memberlist
         namespace: metallb-system
+  # Build and push a docker image to the registry.
+  # Doesn't include a kubectl command at all, so that can be done in a step
+  #   after a step like this appears.
+  # Hope will pull the latest image available from the registry before building
+  #   it in an attempt to save some compute time rebuilding layers that haven't
+  #   changed since the last deployment.
+  # Because docker builds tend to require a bit more state in them, providing a
+  #   local path is all that's currently supported.
+  - name: build-some-image
+    build:
+      path: some-dir-with-dockerfile
+      tag: registry.internal.aleemhaji.com/example-repo:latest

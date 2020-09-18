@@ -13,6 +13,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/pkg/docker"
 	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/hope"
 )
@@ -87,6 +88,36 @@ var deployCmd = &cobra.Command{
 
 				if err := hope.KubectlApplyStdIn(kubectl, inline); err != nil {
 					return err
+				}
+			case ResourceTypeDockerBuild:
+				{
+					// Strip the actual tag off the repo so that it defaults to the
+					//   latest.
+					tagSeparator := strings.LastIndex(resource.Build.Tag, ":")
+					pullImage := resource.Build.Tag
+					if tagSeparator != -1 {
+						pullImage = pullImage[:tagSeparator]
+					}
+
+					if err := docker.ExecDocker("pull", pullImage); err != nil {
+						// Maybe the image was pushed with the given tag.
+						// Maybe the tag is something like :stable.
+						// Hopefully we can grab a few layers at least.
+						if err := docker.ExecDocker("pull", resource.Build.Tag); err != nil {
+							log.Warn("Failed to pull existing images for ", pullImage, ". Maybe this image doesn't exist?")
+
+							// Don't return any errors here.
+							// If this is the first time this image is being
+							//   pushed, there will be nothing to pull, and
+							//   this will never succeed.
+						}
+					}
+					if err := docker.ExecDocker("build", resource.Build.Path, "-t", resource.Build.Tag); err != nil {
+						return err
+					}
+					if err := docker.ExecDocker("push", resource.Build.Tag); err != nil {
+						return err
+					}
 				}
 			default:
 				return errors.New(fmt.Sprintf("Resource type unknown. Check %s for issues", resource.Name))
