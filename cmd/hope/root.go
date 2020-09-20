@@ -46,11 +46,13 @@ func Execute() {
 	rootCmd.AddCommand(hostnameCmd)
 	rootCmd.AddCommand(kubeconfigCmd)
 	rootCmd.AddCommand(resetCmd)
+	rootCmd.AddCommand(runCmd)
 	rootCmd.AddCommand(tokenCmd)
 
 	initHostnameCmdFlags()
 	initKubeconfigCmdFlags()
 	initResetCmd()
+	initRunCmdFlags()
 	initTokenCmd()
 
 	log.Debug("Executing:", os.Args)
@@ -141,8 +143,19 @@ func patchInvocations() {
 
 	oldEnvSubst := envsubst.GetEnvsubst
 	envsubst.GetEnvsubst = func(str string) (string, error) {
-		log.Debug("echo **(", len(str), " chars)** | envsubst ")
+		log.Debug("echo **(", len(str), " chars)** | envsubst")
 		return oldEnvSubst(str)
+	}
+
+	oldEnvSubstArgs := envsubst.GetEnvsubstArgs
+	envsubst.GetEnvsubstArgs = func(args map[string]string, str string) (string, error) {
+		argsKeys := []string{}
+		for key, _ := range args {
+			argsKeys = append(argsKeys, fmt.Sprintf("$%s", key))
+		}
+
+		log.Debug("echo **(", len(str), " chars)** | envsubst ", strings.Join(argsKeys, ","))
+		return oldEnvSubstArgs(args, str)
 	}
 
 	oldExecKubectl := kubeutil.ExecKubectl

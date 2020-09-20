@@ -11,3 +11,11 @@ func KubectlApplyF(kubectl *kubeutil.Kubectl, path string) error {
 func KubectlApplyStdIn(kubectl *kubeutil.Kubectl, stdin string) error {
 	return kubeutil.InKubectl(kubectl, stdin, "apply", "-f", "-")
 }
+
+func KubectlCreateStdIn(kubectl *kubeutil.Kubectl, stdin string) error {
+	return kubeutil.InKubectl(kubectl, stdin, "create", "-f", "-")
+}
+
+func KubectlGetCreateStdIn(kubectl *kubeutil.Kubectl, stdin string) (string, error) {
+	return kubeutil.GetInKubectl(kubectl, stdin, "create", "-f", "-")
+}

@@ -21,7 +21,6 @@ import (
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
-// rootCmd represents the base command when called without any subcommands
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
 	Short: "Deploy a Kubernetes yaml file",

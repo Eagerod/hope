@@ -34,11 +34,11 @@ func (kubectl *Kubectl) Destroy() error {
 type GetKubectlFunc func(kubectl *Kubectl, args ...string) (string, error)
 type ExecKubectlFunc func(kubectl *Kubectl, args ...string) error
 type InKubectlFunc func(kubectl *Kubectl, stdin string, args ...string) error
+type GetInKubectlFunc func(kubectl *Kubectl, stdin string, args ...string) (string, error)
 
 var GetKubectl GetKubectlFunc = func(kubectl *Kubectl, args ...string) (string, error) {
 	osCmd := exec.Command("kubectl", args...)
 	osCmd.Env = append(os.Environ(), fmt.Sprintf("KUBECONFIG=%s", kubectl.KubeconfigPath))
-	osCmd.Stdin = os.Stdin
 	osCmd.Stdin = os.Stdin
 	osCmd.Stderr = os.Stderr
 
@@ -64,6 +64,16 @@ var InKubectl InKubectlFunc = func(kubectl *Kubectl, stdin string, args ...strin
 	osCmd.Stderr = os.Stderr
 
 	return osCmd.Run()
+}
+
+var GetInKubectl GetInKubectlFunc = func(kubectl *Kubectl, stdin string, args ...string) (string, error) {
+	osCmd := exec.Command("kubectl", args...)
+	osCmd.Env = append(os.Environ(), fmt.Sprintf("KUBECONFIG=%s", kubectl.KubeconfigPath))
+	osCmd.Stdin = strings.NewReader(stdin)
+	osCmd.Stderr = os.Stderr
+
+	outputBytes, err := osCmd.Output()
+	return string(outputBytes), err
 }
 
 // Get the name by which the cluster recognizes a given host.

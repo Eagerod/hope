@@ -37,6 +37,12 @@ type Resource struct {
 	Job    string
 }
 
+type Job struct {
+	Name       string
+	File       string
+	Parameters []string
+}
+
 func (resource *Resource) GetType() (string, error) {
 	detectedTypes := []string{}
 	if len(resource.File) != 0 {
@@ -80,4 +86,19 @@ func getResources() (*[]Resource, error) {
 	var resources []Resource
 	err := viper.UnmarshalKey("resources", &resources)
 	return &resources, err
+}
+
+func getJob(jobName string) (*Job, error) {
+	var jobs []Job
+	err := viper.UnmarshalKey("jobs", &jobs)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, job := range jobs {
+		if job.Name == jobName {
+			return &job, nil
+		}
+	}
+	return nil, errors.New(fmt.Sprintf("Failed to find a job named %s", jobName))
 }
