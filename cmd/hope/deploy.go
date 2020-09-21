@@ -71,6 +71,8 @@ var deployCmd = &cobra.Command{
 		}
 
 		// TODO: Should be done in hope pkg
+		// TODO: Add validation to ensure each type of deployment can run given
+		//   the current dev environment -- ensure docker is can connect, etc.
 		for _, resource := range resourcesToDeploy {
 			resourceType, err := resource.GetType()
 			if err != nil {
@@ -126,35 +128,52 @@ var deployCmd = &cobra.Command{
 				//   controls
 				// TODO: Fetch more detailed job status information to show on
 				//   the console.
-				// TODO: Fetch the success and failure properties together in
-				//  some easy to parse way.
 				attempts := 1
-				for {
-					status, err := kubeutil.GetKubectl(kubectl, "get", "job", resource.Job, "-o", "template={{.status.succeeded}}")
+				jobLogger := log.WithFields(log.Fields{})
+				for ok := false; !ok; {
+					status, err := hope.GetJobStatus(jobLogger, kubectl, resource.Job)
 					if err != nil {
 						return err
 					}
 
-					if strings.TrimSpace(status) != "1" {
-						// Check to see if the job actually failed.
-						status, err := kubeutil.GetKubectl(kubectl, "get", "job", resource.Job, "-o", "template={{.status.failed}}")
-						if err != nil {
-							return err
-						}
-
-						if strings.TrimSpace(status) == "1" {
-							return errors.New(fmt.Sprintf("Job %s failed.", resource.Job))
-						}
-
-						attemptsDuration := math.Pow(2, float64(attempts-1))
-						sleepSeconds := int(math.Min(attemptsDuration, 60))
-
-						log.Debug("Job ", resource.Job, " not complete yet. Waiting ", sleepSeconds, " seconds before checking again.")
-						time.Sleep(time.Second * time.Duration(sleepSeconds))
-						attempts = attempts + 1
-					} else {
+					switch status {
+					case hope.JobStatusFailed:
+						return errors.New(fmt.Sprintf("Job %s failed.", resource.Job))
+					case hope.JobStatusComplete:
 						log.Debug("Job ", resource.Job, " successful.")
+						ok = true
 						break
+					default:
+						// If the job is running, start polling for logs.
+						// Jobs that failed or completed long in the past may
+						//   have had their pods wiped since they ran.
+						if err := hope.AttachToLogsIfContainersRunning(kubectl, resource.Job); err != nil {
+							log.Warn(err)
+							attemptsDuration := math.Pow(2, float64(attempts-1))
+							sleepSeconds := int(math.Min(attemptsDuration, 12))
+					
+							if sleepSeconds == 12 {
+								log.Debug("Checking pod events for details...")
+								// Check the event log for the pods associated
+								//   with this job.
+								// There may be something useful in there.
+								pods, err := hope.GetPodsForJob(kubectl, resource.Job)
+								if err != nil {
+									log.Warn(err)
+									continue
+								}
+					
+								for _, pods := range *pods {
+									involvedObject := fmt.Sprintf("involvedObject.name=%s", pods)
+									kubeutil.ExecKubectl(kubectl, "get", "events", "--field-selector", involvedObject)
+								}
+							}
+					
+							log.Warn("Failed to attach to logs for job ", resource.Job, ". Waiting ", sleepSeconds, " seconds and trying again.")
+					
+							time.Sleep(time.Second * time.Duration(sleepSeconds))
+							attempts = attempts + 1
+						}
 					}
 				}
 			default:
