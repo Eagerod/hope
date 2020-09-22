@@ -21,6 +21,8 @@ import (
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
+const MaximumJobDeploymentPollSeconds int = 60
+
 // rootCmd represents the base command when called without any subcommands
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
@@ -150,9 +152,9 @@ var deployCmd = &cobra.Command{
 						if err := hope.AttachToLogsIfContainersRunning(kubectl, resource.Job); err != nil {
 							log.Warn(err)
 							attemptsDuration := math.Pow(2, float64(attempts-1))
-							sleepSeconds := int(math.Min(attemptsDuration, 12))
+							sleepSeconds := int(math.Min(attemptsDuration, float64(MaximumJobDeploymentPollSeconds)))
 					
-							if sleepSeconds == 12 {
+							if sleepSeconds == MaximumJobDeploymentPollSeconds {
 								log.Debug("Checking pod events for details...")
 								// Check the event log for the pods associated
 								//   with this job.
