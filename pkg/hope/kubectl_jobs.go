@@ -39,7 +39,7 @@ func GetJobStatus(log *logrus.Entry, kubectl *kubeutil.Kubectl, job string) (Job
 	}
 }
 
-func AttachToLogsIfContainersRunning(kubectl *kubeutil.Kubectl, job string) error {
+func FollowLogsIfContainersRunning(kubectl *kubeutil.Kubectl, job string) error {
 	jobSelector := fmt.Sprintf("job-name=%s", job)
 	
 	// Wait for this loop to finish without failure.

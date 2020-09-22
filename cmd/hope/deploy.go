@@ -149,7 +149,7 @@ var deployCmd = &cobra.Command{
 						// If the job is running, start polling for logs.
 						// Jobs that failed or completed long in the past may
 						//   have had their pods wiped since they ran.
-						if err := hope.AttachToLogsIfContainersRunning(kubectl, resource.Job); err != nil {
+						if err := hope.FollowLogsIfContainersRunning(kubectl, resource.Job); err != nil {
 							log.Warn(err)
 							attemptsDuration := math.Pow(2, float64(attempts-1))
 							sleepSeconds := int(math.Min(attemptsDuration, float64(MaximumJobDeploymentPollSeconds)))
