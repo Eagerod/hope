@@ -46,11 +46,13 @@ func Execute() {
 	rootCmd.AddCommand(hostnameCmd)
 	rootCmd.AddCommand(kubeconfigCmd)
 	rootCmd.AddCommand(resetCmd)
+	rootCmd.AddCommand(sshCmd)
 	rootCmd.AddCommand(tokenCmd)
 
 	initHostnameCmdFlags()
 	initKubeconfigCmdFlags()
 	initResetCmd()
+	initSshCmd()
 	initTokenCmd()
 
 	log.Debug("Executing:", os.Args)
