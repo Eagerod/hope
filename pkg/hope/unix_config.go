@@ -71,6 +71,7 @@ func EnsureSSHWithoutPassword(log *logrus.Entry, host string) error {
 	//   enabled on the host.
 	for _, line := range strings.Split(out, "\n") {
 		if strings.Contains(line, "Authentications that can continue") && strings.Contains(line, "password") {
+			log.Debug("Password authentication may be possible on ", host, ". Attempting password session")
 			if err := TryConfigureSSH(log, host); err != nil {
 				return err
 			} else {
@@ -79,7 +80,7 @@ func EnsureSSHWithoutPassword(log *logrus.Entry, host string) error {
 		}
 	}
 
-	return nil
+	return errors.New("Failed to set up passwordless SSH because SSH key not present on remote, and password auth is disabled.")
 }
 
 // Attempt to SSH into a machine without allowing password authentication.
