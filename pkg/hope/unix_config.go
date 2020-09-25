@@ -126,6 +126,9 @@ func CopySSHKeyToAuthorizedKeys(log *logrus.Entry, keyPath string, host string) 
 		return errors.New(fmt.Sprintf("Failed to find public key to set up authorized_keys from %s", keyPath))
 	}
 
+	// TODO: Because this is run as separate ssh sessions, each session
+	//   results in asking the user to password for the destination host.
+	//   Limiting this to a single invocation would be nice.
 	// TODO: Don't even copy the public key to a file on the remote.
 	//   Just write it through stdin from the ssh command.
 	destination := fmt.Sprintf("%s:tmp.pub", host)
@@ -133,8 +136,6 @@ func CopySSHKeyToAuthorizedKeys(log *logrus.Entry, keyPath string, host string) 
 		return err
 	}
 
-	// This could be a single dedicated script, but this doesn't need to
-	//   be that optimized.
 	if err := ssh.ExecSSH(host, "sh", "-c", "'mkdir -p $HOME/.ssh && chmod 700 $HOME/.ssh'"); err != nil {
 		return err
 	}
