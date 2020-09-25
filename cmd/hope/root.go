@@ -182,4 +182,10 @@ func patchInvocations() {
 		log.Debug("ssh ", strings.Join(args, " "))
 		return oldGetSsh(args...)
 	}
+
+	oldGetErrorSsh := ssh.GetErrorSSH
+	ssh.GetErrorSSH = func(args ...string) (string, error) {
+		log.Debug("ssh ", strings.Join(args, " "))
+		return oldGetErrorSsh(args...)
+	}
 }

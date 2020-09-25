@@ -18,25 +18,8 @@ import (
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
-func EnsureSSHWithoutPassword(log *logrus.Entry, host string) error {
-	// TODO: Move this somewhere more appropriate. Maybe its own function in
-	//   unix_config.
-	if err := ssh.TestCanSSH(host); err != nil {
-		// Try to recover this.
-		if err = ssh.TryConfigureSSH(host); err != nil {
-			return err
-		}
-
-		log.Info("Configured passwordless SSH using the identity file for ", host)
-	} else {
-		log.Trace("Passwordless SSH has already been configured on ", host)
-	}
-
-	return nil
-}
-
 func setupCommonNodeRequirements(log *logrus.Entry, masterIp string) error {
-	if err := ssh.TestCanSSH(masterIp); err != nil {
+	if err := TestCanSSHWithoutPassword(masterIp); err != nil {
 		return err
 	}
 
