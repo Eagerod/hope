@@ -139,6 +139,8 @@ func CopySSHKeyToAuthorizedKeys(log *logrus.Entry, keyPath string, host string) 
 		return err
 	}
 
+	// TODO: This should check to see if the given key already exists in the
+	//   authorized keys.
 	if err := ssh.ExecSSH(host, "sh", "-c", "'cat tmp.pub >> $HOME/.ssh/authorized_keys && rm tmp.pub && chmod 600 $HOME/.ssh/authorized_keys'"); err != nil {
 		return err
 	}
