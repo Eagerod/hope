@@ -44,4 +44,3 @@ var GetErrorSSH GetSSHFunc = func(args ...string) (string, error) {
 
 	return stderrBytes.String(), err
 }
-
