@@ -131,7 +131,7 @@ func initLogger() {
 		log.Error(configParseError)
 	}
 
-	log.Debug("Using config file:", viper.ConfigFileUsed())
+	log.Debug("Using config file: ", viper.ConfigFileUsed())
 }
 
 func patchInvocations() {

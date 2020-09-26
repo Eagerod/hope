@@ -37,6 +37,8 @@ type Resource struct {
 	Job    string
 }
 
+// TODO: Allow jobs to define max retry parameters, or accept them on the
+//   command line.
 type Job struct {
 	Name       string
 	File       string
