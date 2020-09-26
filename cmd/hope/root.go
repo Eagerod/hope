@@ -47,12 +47,14 @@ func Execute() {
 	rootCmd.AddCommand(kubeconfigCmd)
 	rootCmd.AddCommand(resetCmd)
 	rootCmd.AddCommand(runCmd)
+	rootCmd.AddCommand(sshCmd)
 	rootCmd.AddCommand(tokenCmd)
 
 	initHostnameCmdFlags()
 	initKubeconfigCmdFlags()
 	initResetCmd()
 	initRunCmdFlags()
+	initSshCmd()
 	initTokenCmd()
 
 	log.Debug("Executing:", os.Args)
@@ -192,5 +194,11 @@ func patchInvocations() {
 	ssh.GetSSH = func(args ...string) (string, error) {
 		log.Debug("ssh ", strings.Join(args, " "))
 		return oldGetSsh(args...)
+	}
+
+	oldGetErrorSsh := ssh.GetErrorSSH
+	ssh.GetErrorSSH = func(args ...string) (string, error) {
+		log.Debug("ssh ", strings.Join(args, " "))
+		return oldGetErrorSsh(args...)
 	}
 }

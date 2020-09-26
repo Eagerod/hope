@@ -13,24 +13,6 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 )
 
-// Kubectl struct allows for execution of a kubectl command with a
-//   non-environment set kubeconfig path.
-// TODO: Set up methods on Kubectl that invocations look like this:
-//   kubectl.GetPods(...)
-// rather than
-//   kubeutil.ExecKubectl(kubectl, "get", "pods", ...)
-type Kubectl struct {
-	KubeconfigPath string
-}
-
-func NewKubectl(kubeconfigPath string) *Kubectl {
-	return &Kubectl{kubeconfigPath}
-}
-
-func (kubectl *Kubectl) Destroy() error {
-	return os.Remove(kubectl.KubeconfigPath)
-}
-
 type GetKubectlFunc func(kubectl *Kubectl, args ...string) (string, error)
 type ExecKubectlFunc func(kubectl *Kubectl, args ...string) error
 type InKubectlFunc func(kubectl *Kubectl, stdin string, args ...string) error
