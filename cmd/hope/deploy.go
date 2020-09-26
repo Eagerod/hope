@@ -72,10 +72,20 @@ var deployCmd = &cobra.Command{
 			}
 		}
 
+		docker.SetUseSudo()
+		if docker.UseSudo {
+			log.Info("Docker needs sudo to continue. Checking if elevated permissions are available...")
+			err := docker.AskSudo()
+			if err != nil {
+				return err
+			}
+		}
+
 		// TODO: Should be done in hope pkg
 		// TODO: Add validation to ensure each type of deployment can run given
 		//   the current dev environment -- ensure docker is can connect, etc.
 		for _, resource := range resourcesToDeploy {
+			log.Debug("Starting deployment of ", resource.Name)
 			resourceType, err := resource.GetType()
 			if err != nil {
 				return err
@@ -88,6 +98,11 @@ var deployCmd = &cobra.Command{
 				}
 			case ResourceTypeInline:
 				inline := resource.Inline
+
+				// Log out the inline resource before substituting it; secrets
+				//   are likely being populated.
+				log.Trace(inline)
+
 				inline, err := envsubst.GetEnvsubst(inline)
 				if err != nil {
 					return err
@@ -153,7 +168,7 @@ var deployCmd = &cobra.Command{
 							log.Warn(err)
 							attemptsDuration := math.Pow(2, float64(attempts-1))
 							sleepSeconds := int(math.Min(attemptsDuration, float64(MaximumJobDeploymentPollSeconds)))
-					
+
 							if sleepSeconds == MaximumJobDeploymentPollSeconds {
 								log.Debug("Checking pod events for details...")
 								// Check the event log for the pods associated
@@ -164,15 +179,15 @@ var deployCmd = &cobra.Command{
 									log.Warn(err)
 									continue
 								}
-					
+
 								for _, pods := range *pods {
 									involvedObject := fmt.Sprintf("involvedObject.name=%s", pods)
 									kubeutil.ExecKubectl(kubectl, "get", "events", "--field-selector", involvedObject)
 								}
 							}
-					
+
 							log.Warn("Failed to attach to logs for job ", resource.Job, ". Waiting ", sleepSeconds, " seconds and trying again.")
-					
+
 							time.Sleep(time.Second * time.Duration(sleepSeconds))
 							attempts = attempts + 1
 						}

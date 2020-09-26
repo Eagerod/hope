@@ -137,7 +137,11 @@ func patchInvocations() {
 	//   is getting ridiculous.
 	oldExecDocker := docker.ExecDocker
 	docker.ExecDocker = func(args ...string) error {
-		log.Debug("docker ", strings.Join(args, " "))
+		if docker.UseSudo {
+			log.Debug("sudo docker ", strings.Join(args, " "))
+		} else {
+			log.Debug("docker ", strings.Join(args, " "))
+		}
 		return oldExecDocker(args...)
 	}
 
