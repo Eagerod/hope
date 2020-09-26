@@ -126,6 +126,8 @@ func CopySSHKeyToAuthorizedKeys(log *logrus.Entry, keyPath string, host string) 
 		return errors.New(fmt.Sprintf("Failed to find public key to set up authorized_keys from %s", keyPath))
 	}
 
+	// TODO: Maybe confirm that this actually is a public key, and if it looks
+	//   like a private key, try to add .pub and see if there's a file there.
 	// TODO: Because this is run as separate ssh sessions, each session
 	//   results in asking the user to password for the destination host.
 	//   Limiting this to a single invocation would be nice.
