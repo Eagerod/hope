@@ -6,9 +6,14 @@ import (
 	"math"
 	"strings"
 	"time"
+)
 
-	"github.com/Eagerod/hope/pkg/kubeutil"
+import (
 	"github.com/sirupsen/logrus"
+)
+
+import (
+	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
 type JobStatus int

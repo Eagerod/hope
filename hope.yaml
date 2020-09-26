@@ -82,7 +82,7 @@ resources:
 #   spec.
 # Jobs will be started, and logs will be streamed to the client.
 jobs:
-  - name: mysql-restore
-    file: ../home-network/mysql/mysql-restore.yaml
+  - name: some-unscheduled-job
+    file: /path/to/some/job.yaml
     parameters:
-      - MYSQL_DATABASE_NAME
+      - SOMETHING_TO_POPULATE
