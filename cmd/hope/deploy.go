@@ -3,9 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"math"
 	"strings"
-	"time"
 )
 
 import (
@@ -18,12 +16,10 @@ import (
 	"github.com/Eagerod/hope/pkg/docker"
 	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/hope"
-	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
 const MaximumJobDeploymentPollSeconds int = 60
 
-// rootCmd represents the base command when called without any subcommands
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
 	Short: "Deploy a Kubernetes yaml file",
@@ -140,58 +136,8 @@ var deployCmd = &cobra.Command{
 					return err
 				}
 			case ResourceTypeJob:
-				// Exponential backoff maxing out at 60 seconds.
-				// TODO: Implement maximum retries, or other throughput-related
-				//   controls
-				// TODO: Fetch more detailed job status information to show on
-				//   the console.
-				attempts := 1
-				jobLogger := log.WithFields(log.Fields{})
-				for ok := false; !ok; {
-					status, err := hope.GetJobStatus(jobLogger, kubectl, resource.Job)
-					if err != nil {
-						return err
-					}
-
-					switch status {
-					case hope.JobStatusFailed:
-						return errors.New(fmt.Sprintf("Job %s failed.", resource.Job))
-					case hope.JobStatusComplete:
-						log.Debug("Job ", resource.Job, " successful.")
-						ok = true
-						break
-					default:
-						// If the job is running, start polling for logs.
-						// Jobs that failed or completed long in the past may
-						//   have had their pods wiped since they ran.
-						if err := hope.FollowLogsIfContainersRunning(kubectl, resource.Job); err != nil {
-							log.Warn(err)
-							attemptsDuration := math.Pow(2, float64(attempts-1))
-							sleepSeconds := int(math.Min(attemptsDuration, float64(MaximumJobDeploymentPollSeconds)))
-
-							if sleepSeconds == MaximumJobDeploymentPollSeconds {
-								log.Debug("Checking pod events for details...")
-								// Check the event log for the pods associated
-								//   with this job.
-								// There may be something useful in there.
-								pods, err := hope.GetPodsForJob(kubectl, resource.Job)
-								if err != nil {
-									log.Warn(err)
-									continue
-								}
-
-								for _, pods := range *pods {
-									involvedObject := fmt.Sprintf("involvedObject.name=%s", pods)
-									kubeutil.ExecKubectl(kubectl, "get", "events", "--field-selector", involvedObject)
-								}
-							}
-
-							log.Warn("Failed to attach to logs for job ", resource.Job, ". Waiting ", sleepSeconds, " seconds and trying again.")
-
-							time.Sleep(time.Second * time.Duration(sleepSeconds))
-							attempts = attempts + 1
-						}
-					}
+				if err := hope.FollowLogsAndPollUntilJobComplete(log.WithFields(log.Fields{}), kubectl, resource.Job, 10, 60); err != nil {
+					return err
 				}
 			default:
 				return errors.New(fmt.Sprintf("Resource type (%s) not implemented.", resourceType))

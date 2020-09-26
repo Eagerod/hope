@@ -68,3 +68,21 @@ resources:
   #   set to be deleted by any mechanism.
   - name: wait-for-some-kind-of-job
     job: init-the-database
+# Jobs contains a collection of specifications of templated jobs that can be
+#   run on demand in the cluster.
+# These jobs shouldn't be associated to the deployment of any particular
+#   service, or be a part of the main execution of a service.
+# These should be used for more operational repairs/manipulations.
+# Jobs should use generateName to ensure that unique instances are created when
+#   called upon, rather than failing to create because of duplicate names.
+# Parameters for these jobs should be provided using the -p X=Y flag; these
+#   parameters will be populated in the source file using envsubst.
+# Arguments not provided in the args list will not be populated in the given
+#   file, as those may be arguments intended to be populated through the job's
+#   spec.
+# Jobs will be started, and logs will be streamed to the client.
+jobs:
+  - name: some-unscheduled-job
+    file: /path/to/some/job.yaml
+    parameters:
+      - SOMETHING_TO_POPULATE
