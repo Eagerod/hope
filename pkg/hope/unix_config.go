@@ -10,7 +10,6 @@ import (
 import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/sirupsen/logrus"
-
 )
 
 import (
@@ -87,7 +86,7 @@ func EnsureSSHWithoutPassword(log *logrus.Entry, host string) error {
 // Also disables strict host checking to prevent the unattended nature of the
 //   execution from causing the script to fail.
 func TestCanSSHWithoutPassword(host string) error {
-	return ssh.ExecSSH("-o", "Batchmode=yes", "-o", "StrictHostKeyChecking=no" ,"-o", "PasswordAuthentication=no", host, "exit")
+	return ssh.ExecSSH("-o", "Batchmode=yes", "-o", "StrictHostKeyChecking=no", "-o", "PasswordAuthentication=no", host, "exit")
 }
 
 // See what SSH key this host is trying to use, and try copying it over to the
