@@ -22,6 +22,9 @@ resources:
   # Values passed in through `inline` will be fed through `envsubst` before
   #   being passed off to kubectl, so any values that are dynamic/secret can be
   #   passed in through using environment variables.
+  # Values that envsubst will be required to populate are provided in the
+  #   parameters list.
+  # If no parameters are provided, envsubst is skipped.
   # As is the case with anything else hitting kubectl apply -f, multiple
   #   objects can be provided by --- separators.
   - name: load-balancer-config
@@ -47,6 +50,8 @@ resources:
         creationTimestamp: null
         name: memberlist
         namespace: metallb-system
+    parameters:
+      - METALLB_SYSTEM_MEMBERLIST_SECRET_KEY
   # Build and push a docker image to the registry.
   # Doesn't include a kubectl command at all, so that can be done in a step
   #   after a step like this appears.

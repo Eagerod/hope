@@ -18,8 +18,6 @@ import (
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
-const MaximumJobDeploymentPollSeconds int = 60
-
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
 	Short: "Deploy a Kubernetes yaml file",
@@ -113,9 +111,14 @@ var deployCmd = &cobra.Command{
 				//   are likely being populated.
 				log.Trace(inline)
 
-				inline, err := envsubst.GetEnvsubst(inline)
-				if err != nil {
-					return err
+				if len(resource.Parameters) != 0 {
+					log.Trace("Populating parameters: ", strings.Join(resource.Parameters, ", "))
+					inline, err = envsubst.GetEnvsubstArgsFromEnv(resource.Parameters, inline)
+					if err != nil {
+						return err
+					}
+				} else {
+					log.Trace(resource.Name, " does not have any parameters. Skipping envsubst.")
 				}
 
 				if err := hope.KubectlApplyStdIn(kubectl, inline); err != nil {
