@@ -166,7 +166,12 @@ func patchInvocations() {
 
 	oldEnvSubstArgsFromEnv := envsubst.GetEnvsubstArgsFromEnv
 	envsubst.GetEnvsubstArgsFromEnv = func(args []string, str string) (string, error) {
-		log.Debug("echo **(", len(str), " chars)** | envsubst ", strings.Join(args, ","))
+		argsKeys := []string{}
+		for _, key := range args {
+			argsKeys = append(argsKeys, fmt.Sprintf("$%s", key))
+		}
+
+		log.Debug("echo **(", len(str), " chars)** | envsubst ", strings.Join(argsKeys, ","))
 		return oldEnvSubstArgsFromEnv(args, str)
 	}
 
