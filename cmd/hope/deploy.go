@@ -68,12 +68,26 @@ var deployCmd = &cobra.Command{
 			}
 		}
 
-		docker.SetUseSudo()
-		if docker.UseSudo {
-			log.Info("Docker needs sudo to continue. Checking if elevated permissions are available...")
-			err := docker.AskSudo()
-			if err != nil {
-				return err
+		// Do a pass over the resources, and make sure that there's a docker
+		//   build step before potentially asking the user to type in their
+		//   password to elevate
+		hasDockerResource := false
+		for _, resource := range resourcesToDeploy {
+			resourceType, _ := resource.GetType()
+			if resourceType == ResourceTypeDockerBuild {
+				hasDockerResource = true
+				break
+			}
+		}
+
+		if hasDockerResource {
+			docker.SetUseSudo()
+			if docker.UseSudo {
+				log.Info("Docker needs sudo to continue. Checking if elevated permissions are available...")
+				err := docker.AskSudo()
+				if err != nil {
+					return err
+				}
 			}
 		}
 
