@@ -30,11 +30,12 @@ type BuildSpec struct {
 }
 
 type Resource struct {
-	Name   string
-	File   string
-	Inline string
-	Build  BuildSpec
-	Job    string
+	Name       string
+	File       string
+	Inline     string
+	Parameters []string
+	Build      BuildSpec
+	Job        string
 }
 
 // TODO: Allow jobs to define max retry parameters, or accept them on the

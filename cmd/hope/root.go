@@ -164,6 +164,17 @@ func patchInvocations() {
 		return oldEnvSubstArgs(args, str)
 	}
 
+	oldEnvSubstArgsFromEnv := envsubst.GetEnvsubstArgsFromEnv
+	envsubst.GetEnvsubstArgsFromEnv = func(args []string, str string) (string, error) {
+		argsKeys := []string{}
+		for _, key := range args {
+			argsKeys = append(argsKeys, fmt.Sprintf("$%s", key))
+		}
+
+		log.Debug("echo **(", len(str), " chars)** | envsubst ", strings.Join(argsKeys, ","))
+		return oldEnvSubstArgsFromEnv(args, str)
+	}
+
 	oldExecKubectl := kubeutil.ExecKubectl
 	kubeutil.ExecKubectl = func(kubectl *kubeutil.Kubectl, args ...string) error {
 		log.Debug("kubectl ", strings.Join(args, " "))
