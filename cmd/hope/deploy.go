@@ -16,6 +16,7 @@ import (
 	"github.com/Eagerod/hope/pkg/docker"
 	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/hope"
+	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
 var deployCmd = &cobra.Command{
@@ -154,6 +155,18 @@ var deployCmd = &cobra.Command{
 				}
 			case ResourceTypeJob:
 				if err := hope.FollowLogsAndPollUntilJobComplete(log.WithFields(log.Fields{}), kubectl, resource.Job, 10, 60); err != nil {
+					return err
+				}
+			case ResourceTypeExec:
+				allArgs := []string{"exec", "-it", resource.Exec.Selector}
+				if len(resource.Exec.Timeout) != 0 {
+					allArgs = append(allArgs, "--pod-running-timeout", resource.Exec.Timeout)
+				}
+
+				allArgs = append(allArgs, "--")
+				allArgs = append(allArgs, resource.Exec.Command...)
+
+				if err := kubeutil.ExecKubectl(kubectl, allArgs...); err != nil {
 					return err
 				}
 			default:
