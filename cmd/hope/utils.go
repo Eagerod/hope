@@ -21,12 +21,19 @@ const (
 	ResourceTypeInline      string = "inline"
 	ResourceTypeDockerBuild string = "build"
 	ResourceTypeJob         string = "job"
+	ResourceTypeExec        string = "exec"
 )
 
 // Should be defined in hope pkg
 type BuildSpec struct {
 	Path string
 	Tag  string
+}
+
+type ExecSpec struct {
+	Selector string
+	Timeout  string
+	Command  []string
 }
 
 type Resource struct {
@@ -36,6 +43,7 @@ type Resource struct {
 	Parameters []string
 	Build      BuildSpec
 	Job        string
+	Exec       ExecSpec
 }
 
 // TODO: Allow jobs to define max retry parameters, or accept them on the
@@ -59,6 +67,9 @@ func (resource *Resource) GetType() (string, error) {
 	}
 	if len(resource.Job) != 0 {
 		detectedTypes = append(detectedTypes, ResourceTypeJob)
+	}
+	if len(resource.Exec.Selector) != 0 && len(resource.Exec.Command) != 0 {
+		detectedTypes = append(detectedTypes, ResourceTypeExec)
 	}
 
 	switch len(detectedTypes) {
