@@ -75,6 +75,7 @@ resources:
     job: init-the-database
   # If something needs to be executed against pods of an existing set of pods,
   #   the exec resource will run a script against a running instance.
+  # A timeout can optionally be provided to wait for pods to start.
   - name: exec-in-a-running-pod
     exec:
       selector: deploy/mysql
