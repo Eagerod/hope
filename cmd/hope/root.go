@@ -50,6 +50,7 @@ func Execute() {
 	rootCmd.AddCommand(sshCmd)
 	rootCmd.AddCommand(tokenCmd)
 
+	initDeployCmdFlags()
 	initHostnameCmdFlags()
 	initKubeconfigCmdFlags()
 	initResetCmd()

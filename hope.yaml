@@ -13,10 +13,14 @@ resources:
   # It will always be preferred that urls appearing here are to stable yaml
   #   files available on the Internet, rather than anything loaded from the
   #   local machine.
-  # Local paths can be used for testing, but ultimately, whatever ends up being
-  #   deployed should be done so using GitHub tags/releases.
+  # Local paths can be used for testing, but ultimately, whatever ends up
+  #   being deployed should be done so using GitHub tags/releases.
+  # Every resource can provide a set of tags that will allow for the
+  #   deployment of multiple resources without naming every resource
+  #   explicitly
   - name: calico
     file: https://docs.projectcalico.org/manifests/calico.yaml
+    tags: [network]
   # Inline definitions are also supported.
   # These values have to be provided as yaml strings under the `inline` key.
   # Values passed in through `inline` will be fed through `envsubst` before
@@ -52,6 +56,7 @@ resources:
         namespace: metallb-system
     parameters:
       - METALLB_SYSTEM_MEMBERLIST_SECRET_KEY
+    tags: [network]
   # Build and push a docker image to the registry.
   # Doesn't include a kubectl command at all, so that can be done in a step
   #   after a step like this appears.
@@ -64,6 +69,7 @@ resources:
     build:
       path: some-dir-with-dockerfile
       tag: registry.internal.aleemhaji.com/example-repo:latest
+    tags: [app1]
   # When a spec comes with an initialization procedure, a job type can be used.
   # These will wait until the job with the specified name is completed.
   # If the job fails, the deployment stops so that other resources that may
@@ -73,6 +79,7 @@ resources:
   #   set to be deleted by any mechanism.
   - name: wait-for-some-kind-of-job
     job: init-the-database
+    tags: [database]
   # If something needs to be executed against pods of an existing set of pods,
   #   the exec resource will run a script against a running instance.
   # A timeout can optionally be provided to wait for pods to start.
@@ -84,6 +91,7 @@ resources:
         - mysql
         - -e
         - select 1;
+    tags: [database]
 # Jobs contains a collection of specifications of templated jobs that can be
 #   run on demand in the cluster.
 # These jobs shouldn't be associated to the deployment of any particular
