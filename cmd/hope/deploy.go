@@ -22,7 +22,7 @@ import (
 var deployCmdTagSlice *[]string
 
 func initDeployCmdFlags() {
-	deployCmdTagSlice = deployCmd.Flags().StringArrayP("tags", "t", []string{}, "tags to deploy")
+	deployCmdTagSlice = deployCmd.Flags().StringArrayP("tag", "t", []string{}, "deploy resources with this tag")
 }
 
 var deployCmd = &cobra.Command{
