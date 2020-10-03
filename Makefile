@@ -76,14 +76,10 @@ coverage: test-cover
 
 .INTERMEDIATE: $(AUTOGEN_VERSION_FILENAME)
 $(AUTOGEN_VERSION_FILENAME):
-	@version=$$(cat VERSION) && \
-	build=$$(git rev-parse --short HEAD && if [ ! -z "$$(git diff)" ]; then echo "- dirty"; fi) && \
-	printf \
-		"%s\n\n%s\n%s\n\n%s\n" \
-		"package cmd" \
-		"const Version string = \"v$$(printf '%s' $$version)\"" \
-		"const Build string = \"$$(printf '%s' $$build)\"" \
-		"const VersionBuild string = Version + \"-\" + Build" > $@
+	@version="v$$(cat VERSION)" && \
+	build="$$(if [ "$$(git describe)" != "$$version" ]; then echo "-$$(git rev-parse --short HEAD)"; fi)" && \
+	dirty="$$(if [ ! -z "$$(git diff)" ]; then echo "-dirty"; fi)" && \
+	printf "package cmd\n\nconst VersionBuild = \"%s%s%s\"" $$version $$build $$dirty > $@
 
 .PHONY: pretty-coverage
 pretty-coverage: test-cover
