@@ -65,8 +65,8 @@ var deployCmd = &cobra.Command{
 					}
 				}
 
-					log.Debug("Deploying these resources: \n\t", strings.Join(args, "\n\t"), "\nFrom provided tags.")
-				} else {
+				log.Debug("Deploying these resources: \n\t", strings.Join(args, "\n\t"), "\nFrom provided tags.")
+			} else {
 				log.Debug("Received no arguments for deployment. Deploying all resources.")
 				resourcesToDeploy = *resources
 			}
