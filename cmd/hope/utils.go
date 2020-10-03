@@ -44,6 +44,7 @@ type Resource struct {
 	Build      BuildSpec
 	Job        string
 	Exec       ExecSpec
+	Tags       []string
 }
 
 // TODO: Allow jobs to define max retry parameters, or accept them on the

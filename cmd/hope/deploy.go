@@ -19,13 +19,24 @@ import (
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
+var deployCmdTagSlice *[]string
+
+func initDeployCmdFlags() {
+	deployCmdTagSlice = deployCmd.Flags().StringArrayP("tag", "t", []string{}, "deploy resources with this tag")
+}
+
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
-	Short: "Deploy a Kubernetes yaml file",
+	Short: "Deploy Kubernetes resources defined in the hope file",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		resources, err := getResources()
 		if err != nil {
 			return err
+		}
+
+		// TODO: Re-evaluate; maybe just deploy everything in order defined.
+		if len(args) != 0 && len(*deployCmdTagSlice) != 0 {
+			return errors.New("Cannot deploy tags and named resources together.")
 		}
 
 		masters := viper.GetStringSlice("masters")
@@ -39,8 +50,26 @@ var deployCmd = &cobra.Command{
 		resourcesToDeploy := []Resource{}
 
 		if len(args) == 0 {
-			log.Debug("Received no arguments for deployment. Deploying all resources.")
-			resourcesToDeploy = *resources
+			if len(*deployCmdTagSlice) != 0 {
+				tagMap := map[string]bool{}
+				for _, tag := range *deployCmdTagSlice {
+					tagMap[tag] = true
+				}
+
+				for _, resource := range *resources {
+					for _, tag := range resource.Tags {
+						if _, ok := tagMap[tag]; ok {
+							resourcesToDeploy = append(resourcesToDeploy, resource)
+							continue
+						}
+					}
+				}
+
+				log.Debug("Deploying these resources: \n\t", strings.Join(args, "\n\t"), "\nFrom provided tags.")
+			} else {
+				log.Debug("Received no arguments for deployment. Deploying all resources.")
+				resourcesToDeploy = *resources
+			}
 		} else {
 			log.Debug("Deploying these resources: \n\t", strings.Join(args, "\n\t"), "\nIn the order given.")
 
