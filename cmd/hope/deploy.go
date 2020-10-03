@@ -73,7 +73,6 @@ var deployCmd = &cobra.Command{
 		} else {
 			log.Debug("Deploying these resources: \n\t", strings.Join(args, "\n\t"), "\nIn the order given.")
 
-			// TODO: Lots of duplicated code; maybe a helper?
 			// Map the slice by name so they can be fetched in order.
 			resourcesMap := map[string]Resource{}
 			for _, resource := range *resources {
