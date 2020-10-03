@@ -36,14 +36,6 @@ type ExecSpec struct {
 	Command  []string
 }
 
-// TODO: Allow jobs to define max retry parameters, or accept them on the
-//   command line.
-type Job struct {
-	Name       string
-	File       string
-	Parameters []string
-}
-
 type Resource struct {
 	Name       string
 	File       string
@@ -53,6 +45,14 @@ type Resource struct {
 	Job        string
 	Exec       ExecSpec
 	Tags       []string
+}
+
+// TODO: Allow jobs to define max retry parameters, or accept them on the
+//   command line.
+type Job struct {
+	Name       string
+	File       string
+	Parameters []string
 }
 
 func (resource *Resource) GetType() (string, error) {

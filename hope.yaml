@@ -17,7 +17,7 @@ resources:
   #   being deployed should be done so using GitHub tags/releases.
   # Every resource can provide a set of tags that will allow for the
   #   deployment of multiple resources without naming every resource
-  #   explicitly
+  #   explicitly.
   - name: calico
     file: https://docs.projectcalico.org/manifests/calico.yaml
     tags: [network]
