@@ -148,12 +148,6 @@ func patchInvocations() {
 		return oldExecDocker(args...)
 	}
 
-	oldEnvSubst := envsubst.GetEnvsubst
-	envsubst.GetEnvsubst = func(str string) (string, error) {
-		log.Debug("echo **(", len(str), " chars)** | envsubst")
-		return oldEnvSubst(str)
-	}
-
 	oldEnvSubstArgs := envsubst.GetEnvsubstArgs
 	envsubst.GetEnvsubstArgs = func(args map[string]string, str string) (string, error) {
 		argsKeys := []string{}

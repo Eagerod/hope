@@ -9,20 +9,11 @@ import (
 	"strings"
 )
 
-type GetEnvsubstStringFunc func(str string) (string, error)
 type GetEnvsubstStringArgsFunc func(args map[string]string, str string) (string, error)
 type GetEnvsubstBytesArgsFunc func(args map[string]string, bytes []byte) ([]byte, error)
 type GetEnvsubstBytesArgsFromEnvFunc func(args []string, bytes []byte) ([]byte, error)
 type GetEnvsubstStringArgsFromEnvFunc func(args []string, str string) (string, error)
 
-var GetEnvsubst GetEnvsubstStringFunc = func(str string) (string, error) {
-	osCmd := exec.Command("envsubst")
-	osCmd.Stdin = strings.NewReader(str)
-	osCmd.Stderr = os.Stderr
-
-	outputBytes, err := osCmd.Output()
-	return string(outputBytes), err
-}
 
 var GetEnvsubstBytes GetEnvsubstBytesArgsFromEnvFunc = func(args []string, contents []byte) ([]byte, error) {
 	if len(args) == 0 {
