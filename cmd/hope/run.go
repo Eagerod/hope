@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"errors"
 	"fmt"
 	"regexp"
@@ -15,7 +14,6 @@ import (
 )
 
 import (
-	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
@@ -77,16 +75,16 @@ var runCmd = &cobra.Command{
 		defer kubectl.Destroy()
 
 		// TODO: Move to pkg
-		jobContents, err := ioutil.ReadFile(job.File)
+		t, err := hope.TextSubstitutorFromFilepath(job.File)
 		if err != nil {
 			return err
 		}
 
-		jobText, err := envsubst.GetEnvsubstArgs(params, string(jobContents))
-		if err != nil {
+		if err := t.SubstituteTextFromMap(params); err != nil {
 			return err
 		}
 
+		jobText := string(*t.Bytes)
 		output, err := hope.KubectlGetCreateStdIn(kubectl, jobText)
 		if err != nil {
 			return err

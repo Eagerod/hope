@@ -14,7 +14,6 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/docker"
-	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
@@ -148,12 +147,14 @@ var deployCmd = &cobra.Command{
 
 				if len(resource.Parameters) != 0 {
 					log.Trace("Populating parameters: ", strings.Join(resource.Parameters, ", "))
-					inline, err = envsubst.GetEnvsubstArgsFromEnv(resource.Parameters, inline)
+					t := hope.NewTextSubstitutorFromString(inline)
+					err := t.SubstituteTextFromEnv(resource.Parameters)
 					if err != nil {
 						return err
 					}
+					inline = string(*t.Bytes)
 				} else {
-					log.Trace(resource.Name, " does not have any parameters. Skipping envsubst.")
+					log.Trace(resource.Name, " does not have any parameters. Skipping population.")
 				}
 
 				if err := hope.KubectlApplyStdIn(kubectl, inline); err != nil {
