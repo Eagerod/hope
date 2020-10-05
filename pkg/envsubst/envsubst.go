@@ -9,10 +9,8 @@ import (
 	"strings"
 )
 
-type GetEnvsubstStringArgsFunc func(args map[string]string, str string) (string, error)
 type GetEnvsubstBytesArgsFunc func(args map[string]string, bytes []byte) ([]byte, error)
 type GetEnvsubstBytesArgsFromEnvFunc func(args []string, bytes []byte) ([]byte, error)
-type GetEnvsubstStringArgsFromEnvFunc func(args []string, str string) (string, error)
 
 
 var GetEnvsubstBytes GetEnvsubstBytesArgsFromEnvFunc = func(args []string, contents []byte) ([]byte, error) {
@@ -57,7 +55,7 @@ var GetEnvsubstBytesArgs GetEnvsubstBytesArgsFunc = func(args map[string]string,
 }
 
 
-var GetEnvsubstArgs GetEnvsubstStringArgsFunc = func(args map[string]string, str string) (string, error) {
+func GetEnvsubstArgs(args map[string]string, str string) (string, error) {
 	outputBytes, err := GetEnvsubstBytesArgs(args, []byte(str))
 	if err != nil {
 		return "", err
@@ -66,7 +64,7 @@ var GetEnvsubstArgs GetEnvsubstStringArgsFunc = func(args map[string]string, str
 	return string(outputBytes), nil
 }
 
-var GetEnvsubstArgsFromEnv GetEnvsubstStringArgsFromEnvFunc = func(args []string, str string) (string, error) {
+func GetEnvsubstArgsFromEnv(args []string, str string) (string, error) {
 	outputBytes, err := GetEnvsubstBytes(args, []byte(str))
 	if err != nil {
 		return "", err

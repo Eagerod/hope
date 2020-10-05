@@ -148,26 +148,26 @@ func patchInvocations() {
 		return oldExecDocker(args...)
 	}
 
-	oldEnvSubstArgs := envsubst.GetEnvsubstArgs
-	envsubst.GetEnvsubstArgs = func(args map[string]string, str string) (string, error) {
+	oldEnvsubstBytes := envsubst.GetEnvsubstBytes
+	envsubst.GetEnvsubstBytes = func(args []string, contents []byte) ([]byte, error) {
 		argsKeys := []string{}
 		for key, _ := range args {
 			argsKeys = append(argsKeys, fmt.Sprintf("$%s", key))
 		}
 
-		log.Debug("echo **(", len(str), " chars)** | envsubst ", strings.Join(argsKeys, ","))
-		return oldEnvSubstArgs(args, str)
+		log.Debug("echo **(", len(contents), " chars)** | envsubst ", strings.Join(argsKeys, ","))
+		return oldEnvsubstBytes(args, contents)
 	}
 
-	oldEnvSubstArgsFromEnv := envsubst.GetEnvsubstArgsFromEnv
-	envsubst.GetEnvsubstArgsFromEnv = func(args []string, str string) (string, error) {
+	oldEnvsubstBytesArgs := envsubst.GetEnvsubstBytesArgs
+	envsubst.GetEnvsubstBytesArgs = func(args map[string]string, contents []byte) ([]byte, error) {
 		argsKeys := []string{}
 		for _, key := range args {
 			argsKeys = append(argsKeys, fmt.Sprintf("$%s", key))
 		}
 
-		log.Debug("echo **(", len(str), " chars)** | envsubst ", strings.Join(argsKeys, ","))
-		return oldEnvSubstArgsFromEnv(args, str)
+		log.Debug("echo **(", len(contents), " chars)** | envsubst ", strings.Join(argsKeys, ","))
+		return oldEnvsubstBytesArgs(args, contents)
 	}
 
 	oldExecKubectl := kubeutil.ExecKubectl
