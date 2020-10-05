@@ -36,6 +36,14 @@ func TestSubstituteTextFromEnv(t *testing.T) {
 	os.Unsetenv("WORLD")
 }
 
+func TestSubstituteTextFromEnvMissingEnv(t *testing.T) {
+	//Slightly over-reaching test, since the text sub isn't responsible for
+	//   this error message.
+	ts := NewTextSubstitutorFromString("${HELLO} $WORLD")
+	err := ts.SubstituteTextFromEnv([]string{"HELLO"})
+	assert.Equal(t, err.Error(), "Failed to find HELLO in environment.")
+}
+
 func TestSubstituteTextFromVars(t *testing.T) {
 	// Set the envs to make sure they aren't being pulled from there.
 	os.Setenv("HELLO", "Goodnight,")
