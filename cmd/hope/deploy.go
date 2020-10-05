@@ -39,14 +39,6 @@ var deployCmd = &cobra.Command{
 			return errors.New("Cannot deploy tags and named resources together.")
 		}
 
-		masters := viper.GetStringSlice("masters")
-		kubectl, err := getKubectlFromAnyMaster(log.WithFields(log.Fields{}), masters)
-		if err != nil {
-			return err
-		}
-
-		defer kubectl.Destroy()
-
 		resourcesToDeploy := []Resource{}
 
 		if len(args) == 0 {
@@ -118,6 +110,19 @@ var deployCmd = &cobra.Command{
 				}
 			}
 		}
+
+		// Wait as long as possible before pulling the temporary kubectl from
+		//   a master node.
+		// TODO: Implement something similar to the hasDockerResource process
+		//   above; if there isn't anything that needs to talk to kubernetes,
+		//   don't even bother pulling the kubeconfig.
+		masters := viper.GetStringSlice("masters")
+		kubectl, err := getKubectlFromAnyMaster(log.WithFields(log.Fields{}), masters)
+		if err != nil {
+			return err
+		}
+
+		defer kubectl.Destroy()
 
 		// TODO: Should be done in hope pkg
 		// TODO: Add validation to ensure each type of deployment can run given
