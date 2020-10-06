@@ -12,7 +12,6 @@ import (
 type GetEnvsubstBytesArgsFunc func(args map[string]string, bytes []byte) ([]byte, error)
 type GetEnvsubstBytesArgsFromEnvFunc func(args []string, bytes []byte) ([]byte, error)
 
-
 var GetEnvsubstBytes GetEnvsubstBytesArgsFromEnvFunc = func(args []string, contents []byte) ([]byte, error) {
 	if len(args) == 0 {
 		return contents, nil
@@ -53,7 +52,6 @@ var GetEnvsubstBytesArgs GetEnvsubstBytesArgsFunc = func(args map[string]string,
 
 	return osCmd.Output()
 }
-
 
 func GetEnvsubstArgs(args map[string]string, str string) (string, error) {
 	outputBytes, err := GetEnvsubstBytesArgs(args, []byte(str))
