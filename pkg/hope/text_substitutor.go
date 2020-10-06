@@ -31,6 +31,12 @@ func TextSubstitutorFromFilepath(filepath string) (*TextSubstitutor, error) {
 }
 
 func (t *TextSubstitutor) SubstituteTextFromEnv(envVarsNames []string) error {
+	// Don't even hit the downstream tool if we aren't trying to populate
+	//   anything.
+	if len(envVarsNames) == 0 {
+		return nil
+	}
+
 	newBytes, err := envsubst.GetEnvsubstBytes(envVarsNames, *t.Bytes)
 	if err != nil {
 		return err
@@ -41,6 +47,12 @@ func (t *TextSubstitutor) SubstituteTextFromEnv(envVarsNames []string) error {
 }
 
 func (t *TextSubstitutor) SubstituteTextFromMap(variables map[string]string) error {
+	// Don't even hit the downstream tool if we aren't trying to populate
+	//   anything.
+	if len(variables) == 0 {
+		return nil
+	}
+
 	newBytes, err := envsubst.GetEnvsubstBytesArgs(variables, *t.Bytes)
 	if err != nil {
 		return err
