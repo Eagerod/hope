@@ -135,8 +135,20 @@ var deployCmd = &cobra.Command{
 
 			switch resourceType {
 			case ResourceTypeFile:
-				if err := hope.KubectlApplyF(kubectl, resource.File); err != nil {
-					return err
+				if len(resource.Parameters) != 0 {
+					content, err := replaceParametersInFile(resource.File, resource.Parameters)
+					if err != nil {
+						return err
+					}
+
+					if err := hope.KubectlApplyStdIn(kubectl, content); err != nil {
+						return err
+					}
+				} else {
+					log.Trace(resource.Name, " does not have any parameters. Skipping envsubst and applying file directly")
+					if err := hope.KubectlApplyF(kubectl, resource.File); err != nil {
+						return err
+					}
 				}
 			case ResourceTypeInline:
 				inline := resource.Inline
@@ -146,13 +158,10 @@ var deployCmd = &cobra.Command{
 				log.Trace(inline)
 
 				if len(resource.Parameters) != 0 {
-					log.Trace("Populating parameters: ", strings.Join(resource.Parameters, ", "))
-					t := hope.NewTextSubstitutorFromString(inline)
-					err := t.SubstituteTextFromEnv(resource.Parameters)
+					inline, err = replaceParametersInString(inline, resource.Parameters)
 					if err != nil {
 						return err
 					}
-					inline = string(*t.Bytes)
 				} else {
 					log.Trace(resource.Name, " does not have any parameters. Skipping population.")
 				}
