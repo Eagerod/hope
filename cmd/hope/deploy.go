@@ -113,6 +113,11 @@ var deployCmd = &cobra.Command{
 			}
 		}
 
+		if len(resourcesToDeploy) == 0 {
+			log.Warn("No reources matched the provided definitions.")
+			return nil
+		}
+
 		// Wait as long as possible before pulling the temporary kubectl from
 		//   a master node.
 		// TODO: Implement something similar to the hasDockerResource process
