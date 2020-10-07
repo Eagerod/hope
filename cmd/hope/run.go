@@ -37,6 +37,9 @@ var runCmd = &cobra.Command{
 
 		// Combine args given from the command line, and ones not given to let
 		//   the parameter substitution fall back to env when available.
+		// Would probably be faster to just populate from the slice, then from
+		//   any remaining args via env, but this adds some extra validation
+		//   that would otherwise go unchecked.
 		fullArgsList := []string{}
 
 		remainingParams := map[string]bool{}
