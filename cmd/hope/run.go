@@ -55,7 +55,7 @@ var runCmd = &cobra.Command{
 			remainingParams[paramName] = false
 			fullArgsList = append(fullArgsList, param)
 		}
-		
+
 		for param, missed := range remainingParams {
 			if missed {
 				fullArgsList = append(fullArgsList, param)
