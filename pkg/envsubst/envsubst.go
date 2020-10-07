@@ -52,21 +52,3 @@ var GetEnvsubstBytesArgs GetEnvsubstBytesArgsFunc = func(args map[string]string,
 
 	return osCmd.Output()
 }
-
-func GetEnvsubstArgs(args map[string]string, str string) (string, error) {
-	outputBytes, err := GetEnvsubstBytesArgs(args, []byte(str))
-	if err != nil {
-		return "", err
-	}
-
-	return string(outputBytes), nil
-}
-
-func GetEnvsubstArgsFromEnv(args []string, str string) (string, error) {
-	outputBytes, err := GetEnvsubstBytes(args, []byte(str))
-	if err != nil {
-		return "", err
-	}
-
-	return string(outputBytes), nil
-}
