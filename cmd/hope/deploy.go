@@ -14,7 +14,6 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/docker"
-	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
@@ -143,8 +142,20 @@ var deployCmd = &cobra.Command{
 
 			switch resourceType {
 			case ResourceTypeFile:
-				if err := hope.KubectlApplyF(kubectl, resource.File); err != nil {
-					return err
+				if len(resource.Parameters) != 0 {
+					content, err := replaceParametersInFile(resource.File, resource.Parameters)
+					if err != nil {
+						return err
+					}
+
+					if err := hope.KubectlApplyStdIn(kubectl, content); err != nil {
+						return err
+					}
+				} else {
+					log.Trace(resource.Name, " does not have any parameters. Skipping population and applying file directly")
+					if err := hope.KubectlApplyF(kubectl, resource.File); err != nil {
+						return err
+					}
 				}
 			case ResourceTypeInline:
 				inline := resource.Inline
@@ -154,13 +165,12 @@ var deployCmd = &cobra.Command{
 				log.Trace(inline)
 
 				if len(resource.Parameters) != 0 {
-					log.Trace("Populating parameters: ", strings.Join(resource.Parameters, ", "))
-					inline, err = envsubst.GetEnvsubstArgsFromEnv(resource.Parameters, inline)
+					inline, err = replaceParametersInString(inline, resource.Parameters)
 					if err != nil {
 						return err
 					}
 				} else {
-					log.Trace(resource.Name, " does not have any parameters. Skipping envsubst.")
+					log.Trace(resource.Name, " does not have any parameters. Skipping population.")
 				}
 
 				if err := hope.KubectlApplyStdIn(kubectl, inline); err != nil {

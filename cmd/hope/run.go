@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"errors"
 	"fmt"
 	"regexp"
@@ -15,7 +14,6 @@ import (
 )
 
 import (
-	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
@@ -37,33 +35,40 @@ var runCmd = &cobra.Command{
 			return err
 		}
 
+		// Combine args given from the command line, and ones not given to let
+		//   the parameter substitution fall back to env when available.
+		// Would probably be faster to just populate from the slice, then from
+		//   any remaining args via env, but this adds some extra validation
+		//   that would otherwise go unchecked.
+		fullArgsList := []string{}
+
 		remainingParams := map[string]bool{}
 		for _, param := range job.Parameters {
 			remainingParams[param] = true
 		}
 
-		params := map[string]string{}
 		for _, param := range *runCmdParameterSlice {
-			components := strings.Split(param, "=")
-			if len(components) != 2 {
-				return errors.New(fmt.Sprintf("Failed to parse argument: %s", param))
-			}
-
+			components := strings.SplitN(param, "=", 2)
 			paramName := components[0]
-			paramValue := components[1]
 
-			params[paramName] = paramValue
 			if _, ok := remainingParams[paramName]; !ok {
 				return errors.New(fmt.Sprintf("Parameter: %s not recognized", paramName))
 			}
 
 			remainingParams[paramName] = false
+			fullArgsList = append(fullArgsList, param)
 		}
 
 		for param, missed := range remainingParams {
 			if missed {
-				return errors.New(fmt.Sprintf("Failed to find parameter: %s", param))
+				fullArgsList = append(fullArgsList, param)
 			}
+		}
+
+		// TODO: Move to pkg
+		jobText, err := replaceParametersInFile(job.File, fullArgsList)
+		if err != nil {
+			return err
 		}
 
 		// Pull kubeconfig from remote as late as possible to avoid extra
@@ -75,17 +80,6 @@ var runCmd = &cobra.Command{
 		}
 
 		defer kubectl.Destroy()
-
-		// TODO: Move to pkg
-		jobContents, err := ioutil.ReadFile(job.File)
-		if err != nil {
-			return err
-		}
-
-		jobText, err := envsubst.GetEnvsubstArgs(params, string(jobContents))
-		if err != nil {
-			return err
-		}
 
 		output, err := hope.KubectlGetCreateStdIn(kubectl, jobText)
 		if err != nil {
