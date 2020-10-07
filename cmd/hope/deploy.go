@@ -47,16 +47,18 @@ var deployCmd = &cobra.Command{
 					tagMap[tag] = true
 				}
 
+				resourceNames := []string{}
 				for _, resource := range *resources {
 					for _, tag := range resource.Tags {
 						if _, ok := tagMap[tag]; ok {
 							resourcesToDeploy = append(resourcesToDeploy, resource)
+							resourceNames = append(resourceNames, resource.Name)
 							continue
 						}
 					}
 				}
 
-				log.Debug("Deploying these resources: \n\t", strings.Join(args, "\n\t"), "\nFrom provided tags.")
+				log.Debug("Deploying these resources: \n\t", strings.Join(resourceNames, "\n\t"), "\nFrom provided tags.")
 			} else {
 				log.Debug("Received no arguments for deployment. Deploying all resources.")
 				resourcesToDeploy = *resources
@@ -108,6 +110,11 @@ var deployCmd = &cobra.Command{
 					return err
 				}
 			}
+		}
+
+		if len(resourcesToDeploy) == 0 {
+			log.Warn("No reources matched the provided definitions.")
+			return nil
 		}
 
 		// Wait as long as possible before pulling the temporary kubectl from
