@@ -145,7 +145,7 @@ var deployCmd = &cobra.Command{
 						return err
 					}
 				} else {
-					log.Trace(resource.Name, " does not have any parameters. Skipping envsubst and applying file directly")
+					log.Trace(resource.Name, " does not have any parameters. Skipping population and applying file directly")
 					if err := hope.KubectlApplyF(kubectl, resource.File); err != nil {
 						return err
 					}
