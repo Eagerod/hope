@@ -35,33 +35,37 @@ var runCmd = &cobra.Command{
 			return err
 		}
 
+		// Combine args given from the command line, and ones not given to let
+		//   the parameter substitution fall back to env when available.
+		fullArgsList := []string{}
+
 		remainingParams := map[string]bool{}
 		for _, param := range job.Parameters {
 			remainingParams[param] = true
 		}
 
-		params := map[string]string{}
 		for _, param := range *runCmdParameterSlice {
-			components := strings.Split(param, "=")
-			if len(components) != 2 {
-				return errors.New(fmt.Sprintf("Failed to parse argument: %s", param))
-			}
-
+			components := strings.SplitN(param, "=", 2)
 			paramName := components[0]
-			paramValue := components[1]
 
-			params[paramName] = paramValue
 			if _, ok := remainingParams[paramName]; !ok {
 				return errors.New(fmt.Sprintf("Parameter: %s not recognized", paramName))
 			}
 
 			remainingParams[paramName] = false
+			fullArgsList = append(fullArgsList, param)
 		}
-
+		
 		for param, missed := range remainingParams {
 			if missed {
-				return errors.New(fmt.Sprintf("Failed to find parameter: %s", param))
+				fullArgsList = append(fullArgsList, param)
 			}
+		}
+
+		// TODO: Move to pkg
+		jobText, err := replaceParametersInFile(job.File, fullArgsList)
+		if err != nil {
+			return err
 		}
 
 		// Pull kubeconfig from remote as late as possible to avoid extra
@@ -74,17 +78,6 @@ var runCmd = &cobra.Command{
 
 		defer kubectl.Destroy()
 
-		// TODO: Move to pkg
-		t, err := hope.TextSubstitutorFromFilepath(job.File)
-		if err != nil {
-			return err
-		}
-
-		if err := t.SubstituteTextFromMap(params); err != nil {
-			return err
-		}
-
-		jobText := string(*t.Bytes)
 		output, err := hope.KubectlGetCreateStdIn(kubectl, jobText)
 		if err != nil {
 			return err
