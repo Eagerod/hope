@@ -1,3 +1,5 @@
+access_points:
+  - 192.168.2.43
 masters:
   - root@192.168.1.31
 nodes:
