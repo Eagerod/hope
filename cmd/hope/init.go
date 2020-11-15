@@ -51,7 +51,7 @@ var initCmd = &cobra.Command{
 		}
 
 		if isLoadBalancer {
-			return hope.InitLoadBalancer(log.WithFields(log.Fields{}), host)
+			return hope.InitLoadBalancer(log.WithFields(log.Fields{}), host, masters)
 		}
 
 		if isMaster && isWorker {

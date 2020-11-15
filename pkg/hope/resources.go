@@ -39,7 +39,7 @@ stream {
                      '$session_time';
 
     upstream backend {
-        server 192.168.1.31:6443;
+        %s
     }
 
     server {

@@ -98,6 +98,10 @@ func CreateClusterMaster(log *logrus.Entry, masterIp string, podNetworkCidr stri
 		return err
 	}
 
+	// Update the load balancer before even starting the process.
+	// Trying to time it with the init process will be clumsy, so yeet.
+	SetLoadBalancerHosts(log, loadBalancerHost, allMasters)
+
 	// Search through the existing masters to see if this node is being added
 	//   as a master to an existing control plane, or if this will be the
 	//   first master in the pool.
