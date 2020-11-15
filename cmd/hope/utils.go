@@ -14,6 +14,7 @@ import (
 import (
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
+	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
 const (
@@ -153,4 +154,16 @@ func replaceParametersWithSubstitutor(t *hope.TextSubstitutor, parameters []stri
 	}
 
 	return string(*t.Bytes), nil
+}
+
+func nodePresentInConfig(host string) bool {
+	isMaster := sliceutil.StringInSlice(host, viper.GetStringSlice("masters"))
+	isNode := sliceutil.StringInSlice(host, viper.GetStringSlice("nodes"))
+	isLoadBalancer := host == viper.GetString("master_load_balancer")
+
+	return isMaster || isNode || isLoadBalancer
+}
+
+func hostNotFoundError(host string) error {
+	return errors.New(fmt.Sprintf("Host (%s) not found in list of masters, nodes, or load balancer.", host))
 }

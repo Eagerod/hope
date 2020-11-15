@@ -1,19 +1,12 @@
 package cmd
 
 import (
-	"errors"
-	"fmt"
-)
-
-import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 import (
 	"github.com/Eagerod/hope/pkg/hope"
-	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
 var hostnameCmdForce bool
@@ -30,11 +23,8 @@ var hostnameCmd = &cobra.Command{
 		host := args[0]
 		hostname := args[1]
 
-		isMaster := sliceutil.StringInSlice(host, viper.GetStringSlice("masters"))
-		isNode := sliceutil.StringInSlice(host, viper.GetStringSlice("nodes"))
-
-		if !isMaster && !isNode {
-			return errors.New(fmt.Sprintf("Host (%s) not found in list of masters or nodes.", host))
+		if !nodePresentInConfig(host) {
+			return hostNotFoundError(host)
 		}
 
 		log.Info("Setting hostname on node ", host, " to ", hostname)

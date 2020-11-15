@@ -8,12 +8,10 @@ import (
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 import (
 	"github.com/Eagerod/hope/pkg/hope"
-	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
 var sshCmdForce bool
@@ -35,10 +33,7 @@ var sshCmd = &cobra.Command{
 		//   path to the remote.
 		hasKeyArg := len(args) == 2
 
-		isMaster := sliceutil.StringInSlice(host, viper.GetStringSlice("masters"))
-		isNode := sliceutil.StringInSlice(host, viper.GetStringSlice("nodes"))
-
-		if !isMaster && !isNode {
+		if !nodePresentInConfig(host) {
 			if !sshCmdForce {
 				return errors.New(fmt.Sprintf("Host (%s) not found in list of masters or nodes.", host))
 			}

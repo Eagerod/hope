@@ -80,10 +80,8 @@ var initCmd = &cobra.Command{
 			if err := hope.CreateClusterNode(log.WithFields(log.Fields{}), host, aMaster); err != nil {
 				return err
 			}
-		} else {
-			return errors.New(fmt.Sprintf("Failed to find node %s in config", host))
 		}
 
-		return nil
+		return errors.New(fmt.Sprintf("Failed to find node %s in config", host))
 	},
 }
