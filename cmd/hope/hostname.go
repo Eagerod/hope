@@ -24,7 +24,9 @@ var hostnameCmd = &cobra.Command{
 		hostname := args[1]
 
 		if !nodePresentInConfig(host) {
-			return hostNotFoundError(host)
+			if !hostnameCmdForce {
+				return hostNotFoundError(host)
+			}
 		}
 
 		log.Info("Setting hostname on node ", host, " to ", hostname)

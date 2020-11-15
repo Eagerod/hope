@@ -57,7 +57,7 @@ var initCmd = &cobra.Command{
 		if isMaster && isWorker {
 			log.Info("Node ", host, " appears in both master and node configurations. Creating master and removing NoSchedule taint...")
 
-			if err := hope.CreateClusterMaster(log.WithFields(log.Fields{}), host, podNetworkCidr); err != nil {
+			if err := hope.CreateClusterMaster(log.WithFields(log.Fields{}), host, podNetworkCidr, masterLoadBalancer, masters); err != nil {
 				return err
 			}
 
@@ -72,7 +72,7 @@ var initCmd = &cobra.Command{
 				return err
 			}
 		} else if isMaster {
-			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), host, podNetworkCidr)
+			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), host, podNetworkCidr, masterLoadBalancer, masters)
 		} else if isWorker {
 			// Have to send in a master ip for it to grab a join token.
 			aMaster := masters[0]
