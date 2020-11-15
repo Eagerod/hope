@@ -1,3 +1,4 @@
+master_load_balancer: root@192.168.1.82
 masters:
   - root@192.168.1.31
 nodes:

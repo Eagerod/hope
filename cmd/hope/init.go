@@ -36,9 +36,23 @@ var initCmd = &cobra.Command{
 
 		podNetworkCidr := viper.GetString("pod_network_cidr")
 		masters := viper.GetStringSlice("masters")
+		masterLoadBalancer := viper.GetString("master_load_balancer")
 
 		isMaster := sliceutil.StringInSlice(host, masters)
 		isWorker := sliceutil.StringInSlice(host, viper.GetStringSlice("nodes"))
+		isLoadBalancer := masterLoadBalancer == host
+
+		if isMaster && isLoadBalancer {
+			return errors.New(fmt.Sprintf("Host %s cannot be master and load balancer.", host))
+		}
+
+		if isWorker && isLoadBalancer {
+			return errors.New(fmt.Sprintf("Host %s cannot be worker and load balancer.", host))
+		}
+
+		if isLoadBalancer {
+			return hope.InitLoadBalancer(log.WithFields(log.Fields{}), host)
+		}
 
 		if isMaster && isWorker {
 			log.Info("Node ", host, " appears in both master and node configurations. Creating master and removing NoSchedule taint...")
