@@ -25,16 +25,19 @@ func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, host strin
 
 	log.Debug("Searching for node name for host: ", host_url.Host)
 
-	nodeName, err := kubeutil.NodeNameFromHost(kubectl, host_url.Host)
-	if err != nil && !force {
-		return err
-	} else if force {
-		log.Info("Did not find node in the cluster.")
-	} else {
-		log.Info("Draining node ", nodeName, " from the cluster")
-
-		if err := kubeutil.ExecKubectl(kubectl, "drain", nodeName, "--ignore-daemonsets"); err != nil {
+	nodeName := ""
+	if kubectl != nil {
+		nodeName, err := kubeutil.NodeNameFromHost(kubectl, host_url.Host)
+		if err != nil && !force {
 			return err
+		} else if force {
+			log.Info("Did not find node in the cluster.")
+		} else {
+			log.Info("Draining node ", nodeName, " from the cluster")
+
+			if err := kubeutil.ExecKubectl(kubectl, "drain", nodeName, "--ignore-daemonsets"); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -43,7 +46,7 @@ func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, host strin
 		return err
 	}
 
-	if nodeName != "" {
+	if nodeName != "" && kubectl != nil {
 		if err := kubeutil.ExecKubectl(kubectl, "delete", "node", nodeName); err != nil {
 			return err
 		}
