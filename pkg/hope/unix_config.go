@@ -114,7 +114,7 @@ func TryConfigureSSH(log *logrus.Entry, host string) error {
 			}
 
 			// https://unix.stackexchange.com/a/36687/258222
-			return ssh.ExecSSH(host, "sh", "-c", "type restorecon && restorecon -R -v ~/.ssh || echo >&2 \"Failed to run restorecon\"")
+			return ssh.ExecSSH(host, "sh", "-c", "'type restorecon && restorecon -R -v ~/.ssh || echo >&2 \"Failed to run restorecon\"'")
 		}
 	}
 
