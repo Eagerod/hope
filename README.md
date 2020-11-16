@@ -31,7 +31,7 @@ Set up passwordless SSH, so that all the remaining commands are a lot less cumbe
 
     hope ssh <host>
 
-Set its hostname, so when it's added to the cluster:
+Set its hostname, so when it's added to the cluster, it's not just `localhost.localdomain`:
 
     hope hostname <host> <new-hostname>
 
