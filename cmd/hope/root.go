@@ -47,6 +47,7 @@ func Execute() {
 	rootCmd.AddCommand(kubeconfigCmd)
 	rootCmd.AddCommand(resetCmd)
 	rootCmd.AddCommand(runCmd)
+	rootCmd.AddCommand(shellCmd)
 	rootCmd.AddCommand(sshCmd)
 	rootCmd.AddCommand(tokenCmd)
 
@@ -55,6 +56,7 @@ func Execute() {
 	initKubeconfigCmdFlags()
 	initResetCmd()
 	initRunCmdFlags()
+	initShellCmd()
 	initSshCmd()
 	initTokenCmd()
 
