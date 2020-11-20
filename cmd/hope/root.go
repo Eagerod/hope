@@ -56,6 +56,7 @@ func Execute() {
 	initKubeconfigCmdFlags()
 	initResetCmd()
 	initRunCmdFlags()
+	initShellCmd()
 	initSshCmd()
 	initTokenCmd()
 
