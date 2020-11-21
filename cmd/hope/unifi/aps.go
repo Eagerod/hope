@@ -39,19 +39,7 @@ var apsCmd = &cobra.Command{
 			return err
 		}
 
-		informConnectedStr := fmt.Sprintf("Status:\\s*Connected \\(%s\\)", regexp.QuoteMeta(informAddress))
-		informConnectedRegexp, err := regexp.Compile(informConnectedStr)
-		if err != nil {
-			return err
-		}
-
-		match := informConnectedRegexp.MatchString(output)
-		if match {
-			log.Info(fmt.Sprintf("Access point %s already configured correctly to inform at %s", apIp, informAddress))
-			return nil
-		}
-
-		informAddressStr := fmt.Sprintf("Status:\\s*Connected \\(([^\\)]+)\\)")
+		informAddressStr := "Status:\\s*Connected \\(([^\\)]+)\\)"
 		informAddressRegexp, err := regexp.Compile(informAddressStr)
 		if err != nil {
 			return err
@@ -60,6 +48,9 @@ var apsCmd = &cobra.Command{
 		currentInformAddress := informAddressRegexp.FindStringSubmatch(output)
 		if len(currentInformAddress) < 2 {
 			log.Info(fmt.Sprintf("Access point %s is current not connected to a controller.", apIp))
+		} else if currentInformAddress[1] == informAddress {
+			log.Info(fmt.Sprintf("Access point %s already configured correctly to inform at %s", apIp, informAddress))
+			return nil
 		} else {
 			log.Info(fmt.Sprintf("Access point %s is currently connected to %s", apIp, currentInformAddress[1]))
 		}
