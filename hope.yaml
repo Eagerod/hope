@@ -1,5 +1,6 @@
 access_points:
   - 192.168.2.43
+access_point_controller: http://192.168.2.10:8080
 masters:
   - root@192.168.1.31
 nodes:
