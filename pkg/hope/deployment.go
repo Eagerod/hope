@@ -19,3 +19,11 @@ func KubectlCreateStdIn(kubectl *kubeutil.Kubectl, stdin string) error {
 func KubectlGetCreateStdIn(kubectl *kubeutil.Kubectl, stdin string) (string, error) {
 	return kubeutil.GetInKubectl(kubectl, stdin, "create", "-f", "-")
 }
+
+func KubectlDeleteF(kubectl *kubeutil.Kubectl, path string) error {
+	return kubeutil.ExecKubectl(kubectl, "delete", "--ignore-not-found", "-f", path)
+}
+
+func KubectlDeleteStdIn(kubectl *kubeutil.Kubectl, stdin string) error {
+	return kubeutil.InKubectl(kubectl, stdin, "delete", "--ignore-not-found", "-f", "-")
+}
