@@ -37,12 +37,22 @@ var resetCmd = &cobra.Command{
 			return errors.New(fmt.Sprintf("Host (%s) not found in list of masters or nodes.", host))
 		}
 
+		// If force is set, failing to find a kubeconfig shouldn't stop the
+		//   command from brute force reseting the node.
 		kubectl, err := getKubectlFromAnyMaster(log.WithFields(log.Fields{}), masters)
 		if err != nil {
-			return err
+			if !resetCmdForce {
+				return err
+			}
 		}
 
-		defer kubectl.Destroy()
+		// Since failing can still continue in forced cases, have to guard
+		///   this.
+		defer func() {
+			if kubectl != nil {
+				kubectl.Destroy()
+			}
+		}()
 
 		// TODO: may need to add more validation, like that this isn't the
 		//   only master and is being removed, unless force is provided.

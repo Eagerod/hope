@@ -73,7 +73,7 @@ func setupCommonNodeRequirements(log *logrus.Entry, masterIp string) error {
 			"systemctl enable docker",
 			"systemctl enable kubelet",
 			"systemctl start docker",
-			"systemctl enable kubelet",
+			"systemctl start kubelet",
 		},
 		" && ",
 	))

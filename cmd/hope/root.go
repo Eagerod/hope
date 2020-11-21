@@ -47,8 +47,11 @@ func Execute() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(hostnameCmd)
 	rootCmd.AddCommand(kubeconfigCmd)
+	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(removeCmd)
 	rootCmd.AddCommand(resetCmd)
 	rootCmd.AddCommand(runCmd)
+	rootCmd.AddCommand(shellCmd)
 	rootCmd.AddCommand(sshCmd)
 	rootCmd.AddCommand(tokenCmd)
 
@@ -57,8 +60,11 @@ func Execute() {
 	initDeployCmdFlags()
 	initHostnameCmdFlags()
 	initKubeconfigCmdFlags()
+	initListCmdFlags()
+	initRemoveCmdFlags()
 	initResetCmd()
 	initRunCmdFlags()
+	initShellCmd()
 	initSshCmd()
 	initTokenCmd()
 
@@ -126,7 +132,7 @@ func initLogger() {
 			failed = true
 		}
 	}
-	log.SetOutput(os.Stdout)
+	log.SetOutput(os.Stderr)
 
 	if failed {
 		log.Info("Failed to parse loglevel. Defaulting to INFO")
