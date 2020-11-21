@@ -14,6 +14,8 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/unifi"
+
 	"github.com/Eagerod/hope/pkg/docker"
 	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/kubeutil"
@@ -53,6 +55,8 @@ func Execute() {
 	rootCmd.AddCommand(sshCmd)
 	rootCmd.AddCommand(tokenCmd)
 
+	rootCmd.AddCommand(unifi.RootCommand)
+
 	initDeployCmdFlags()
 	initHostnameCmdFlags()
 	initKubeconfigCmdFlags()
@@ -63,6 +67,8 @@ func Execute() {
 	initShellCmd()
 	initSshCmd()
 	initTokenCmd()
+
+	unifi.InitUnifiCommand()
 
 	log.Debug("Executing:", os.Args)
 	if err := rootCmd.Execute(); err != nil {
