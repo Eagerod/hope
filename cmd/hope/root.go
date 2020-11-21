@@ -122,7 +122,7 @@ func initLogger() {
 			failed = true
 		}
 	}
-	log.SetOutput(os.Stdout)
+	log.SetOutput(os.Stderr)
 
 	if failed {
 		log.Info("Failed to parse loglevel. Defaulting to INFO")
