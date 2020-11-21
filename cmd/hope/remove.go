@@ -19,7 +19,7 @@ import (
 var removeCmdTagSlice *[]string
 
 func initRemoveCmdFlags() {
-	removeCmdTagSlice = removeCmd.Flags().StringArrayP("tag", "t", []string{}, "deploy resources with this tag")
+	removeCmdTagSlice = removeCmd.Flags().StringArrayP("tag", "t", []string{}, "remove resources with this tag")
 }
 
 var removeCmd = &cobra.Command{
@@ -31,7 +31,7 @@ var removeCmd = &cobra.Command{
 			return err
 		}
 
-		// TODO: Re-evaluate; maybe just deploy everything in order defined.
+		// TODO: Re-evaluate; maybe just remove everything in order defined.
 		if len(args) != 0 && len(*removeCmdTagSlice) != 0 {
 			return errors.New("Cannot removed tags and named resources together.")
 		}
@@ -71,7 +71,7 @@ var removeCmd = &cobra.Command{
 			for _, resource := range *resources {
 				_, ok := resourcesMap[resource.Name]
 				if ok {
-					return errors.New(fmt.Sprintf("Multiple resources found with name %s. Aborting deploy", resource.Name))
+					return errors.New(fmt.Sprintf("Multiple resources found with name %s. Aborting removal", resource.Name))
 				}
 
 				resourcesMap[resource.Name] = resource
