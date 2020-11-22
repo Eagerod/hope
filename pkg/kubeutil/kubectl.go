@@ -23,10 +23,6 @@ func NewKubectl(kubeconfigPath string) *Kubectl {
 	return &Kubectl{kubeconfigPath}
 }
 
-func (kubectl *Kubectl) Destroy() error {
-	return os.Remove(kubectl.KubeconfigPath)
-}
-
 func NewKubectlFromNode(host string) (*Kubectl, error) {
 	remoteFile := fmt.Sprintf("%s:/etc/kubernetes/admin.conf", host)
 
@@ -63,4 +59,8 @@ func NewKubectlFromAnyNode(hosts []string) (*Kubectl, error) {
 	}
 
 	return nil, errors.New("Failed to find a kubeconfig file on any host:\n" + allErrorsStr)
+}
+
+func (kubectl *Kubectl) Destroy() error {
+	return os.Remove(kubectl.KubeconfigPath)
 }
