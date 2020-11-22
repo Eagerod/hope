@@ -42,9 +42,6 @@ var removeCmd = &cobra.Command{
 
 		// Wait as long as possible before pulling the temporary kubectl from
 		//   a master node.
-		// TODO: Implement something similar to the hasDockerResource process
-		//   above; if there isn't anything that needs to talk to kubernetes,
-		//   don't even bother pulling the kubeconfig.
 		masters := viper.GetStringSlice("masters")
 		kubectl, err := getKubectlFromAnyMaster(log.WithFields(log.Fields{}), masters)
 		if err != nil {
