@@ -78,7 +78,7 @@ coverage: test-cover
 $(AUTOGEN_VERSION_FILENAME):
 	@version="v$$(cat VERSION)" && \
 	build="$$(if [ "$$(git describe)" != "$$version" ]; then echo "-$$(git rev-parse --short HEAD)"; fi)" && \
-	dirty="$$(if [ ! -z "$$(git diff)" ]; then echo "-dirty"; fi)" && \
+	dirty="$$(if [ ! -z "$$(git diff; git diff --cached)" ]; then echo "-dirty"; fi)" && \
 	printf "package cmd\n\nconst VersionBuild = \"%s%s%s\"" $$version $$build $$dirty > $@
 
 .PHONY: pretty-coverage
