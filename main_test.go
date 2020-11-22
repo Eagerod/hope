@@ -11,24 +11,36 @@ import (
 )
 
 var bin string = filepath.Join(".", "build", "hope")
-var commands []string = []string{
-	"deploy",
-	"hostname",
-	"init",
-	"reset",
-	"version",
-}
 
 func TestHelpExecutes(t *testing.T) {
-	cmd := exec.Command(bin, "--help")
+	var tests = []struct {
+		name string
+		args []string
+	}{
+		{"Base Command", []string{}},
+		{"Node Base Command", []string{"node"}},
+		{"Node Hostname", []string{"node", "hostname"}},
+		{"Node Init", []string{"node", "init"}},
+		{"Node Reset", []string{"node", "reset"}},
+		{"Node SSH", []string{"node", "ssh"}},
+		{"Unifi Base Command", []string{"unifi"}},
+		{"Unifi Access Point", []string{"unifi", "ap"}},
+		{"Deploy", []string{"deploy"}},
+		{"Kubeconfig", []string{"kubeconfig"}},
+		{"List", []string{"list"}},
+		{"Remove", []string{"remove"}},
+		{"Run", []string{"run"}},
+		{"Shell", []string{"shell"}},
+		{"Token", []string{"token"}},
+		{"Version", []string{"version"}},
+	}
 
-	_, err := cmd.CombinedOutput()
-	assert.NoError(t, err)
-
-	for _, command := range commands {
-		cmd = exec.Command(bin, command, "--help")
-
-		_, err = cmd.CombinedOutput()
-		assert.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			allArgs := append(tt.args, "--help")
+			cmd := exec.Command(bin, allArgs...)
+			_, err := cmd.CombinedOutput()
+			assert.NoError(t, err)
+		})
 	}
 }

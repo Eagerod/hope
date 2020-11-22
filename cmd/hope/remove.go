@@ -13,6 +13,7 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/hope"
+	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
 var removeCmdTagSlice *[]string
@@ -43,7 +44,7 @@ var removeCmd = &cobra.Command{
 		// Wait as long as possible before pulling the temporary kubectl from
 		//   a master node.
 		masters := viper.GetStringSlice("masters")
-		kubectl, err := getKubectlFromAnyMaster(log.WithFields(log.Fields{}), masters)
+		kubectl, err := kubeutil.NewKubectlFromAnyNode(masters)
 		if err != nil {
 			return err
 		}
