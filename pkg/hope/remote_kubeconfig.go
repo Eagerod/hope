@@ -17,29 +17,6 @@ import (
 	"github.com/Eagerod/hope/pkg/scp"
 )
 
-func GetKubectl(host string) (*kubeutil.Kubectl, error) {
-	remoteFile := fmt.Sprintf("%s:/etc/kubernetes/admin.conf", host)
-
-	// Do not delete.
-	// Leave deletion up to destroying the kubectl instance.
-	tempFile, err := ioutil.TempFile("", "")
-	if err != nil {
-		return nil, err
-	}
-
-	// Close the file immediately, because it will be written by a subprocess.
-	if err := tempFile.Close(); err != nil {
-		return nil, err
-	}
-
-	if err = scp.ExecSCP(remoteFile, tempFile.Name()); err != nil {
-		return nil, err
-	}
-
-	kubectl := kubeutil.NewKubectl(tempFile.Name())
-	return kubectl, nil
-}
-
 func FetchKubeconfig(log *logrus.Entry, host string, merge bool) error {
 	kubeconfigFile, err := kubeutil.GetKubeConfigPath()
 	if err != nil {

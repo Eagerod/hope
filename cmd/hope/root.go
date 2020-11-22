@@ -14,6 +14,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/node"
 	"github.com/Eagerod/hope/cmd/hope/unifi"
 
 	"github.com/Eagerod/hope/pkg/docker"
@@ -41,32 +42,27 @@ Kubernetes resources I run.`,
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(versionCmd)
-	rootCmd.AddCommand(hostnameCmd)
 	rootCmd.AddCommand(kubeconfigCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(removeCmd)
-	rootCmd.AddCommand(resetCmd)
 	rootCmd.AddCommand(runCmd)
 	rootCmd.AddCommand(shellCmd)
-	rootCmd.AddCommand(sshCmd)
 	rootCmd.AddCommand(tokenCmd)
 
+	rootCmd.AddCommand(node.RootCommand)
 	rootCmd.AddCommand(unifi.RootCommand)
 
 	initDeployCmdFlags()
-	initHostnameCmdFlags()
 	initKubeconfigCmdFlags()
 	initListCmdFlags()
 	initRemoveCmdFlags()
-	initResetCmd()
 	initRunCmdFlags()
 	initShellCmd()
-	initSshCmd()
 	initTokenCmd()
 
+	node.InitNodeCommand()
 	unifi.InitUnifiCommand()
 
 	log.Debug("Executing:", os.Args)

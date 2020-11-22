@@ -1,4 +1,4 @@
-package cmd
+package node
 
 import (
 	"errors"
@@ -13,6 +13,7 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/hope"
+	"github.com/Eagerod/hope/pkg/kubeutil"
 	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
@@ -39,7 +40,7 @@ var resetCmd = &cobra.Command{
 
 		// If force is set, failing to find a kubeconfig shouldn't stop the
 		//   command from brute force reseting the node.
-		kubectl, err := getKubectlFromAnyMaster(log.WithFields(log.Fields{}), masters)
+		kubectl, err := kubeutil.NewKubectlFromAnyNode(masters)
 		if err != nil {
 			if !resetCmdForce {
 				return err

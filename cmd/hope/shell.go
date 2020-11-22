@@ -6,7 +6,6 @@ import (
 )
 
 import (
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -31,7 +30,7 @@ var shellCmd = &cobra.Command{
 		}
 
 		masters := viper.GetStringSlice("masters")
-		kubectl, err := getKubectlFromAnyMaster(log.WithFields(log.Fields{}), masters)
+		kubectl, err := kubeutil.NewKubectlFromAnyNode(masters)
 		if err != nil {
 			return err
 		}

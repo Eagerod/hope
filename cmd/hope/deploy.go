@@ -81,7 +81,7 @@ var deployCmd = &cobra.Command{
 		//   above; if there isn't anything that needs to talk to kubernetes,
 		//   don't even bother pulling the kubeconfig.
 		masters := viper.GetStringSlice("masters")
-		kubectl, err := getKubectlFromAnyMaster(log.WithFields(log.Fields{}), masters)
+		kubectl, err := kubeutil.NewKubectlFromAnyNode(masters)
 		if err != nil {
 			return err
 		}
