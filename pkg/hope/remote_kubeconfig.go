@@ -2,7 +2,6 @@ package hope
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 )
@@ -14,7 +13,6 @@ import (
 import (
 	"github.com/Eagerod/hope/pkg/fileutil"
 	"github.com/Eagerod/hope/pkg/kubeutil"
-	"github.com/Eagerod/hope/pkg/scp"
 )
 
 func FetchKubeconfig(log *logrus.Entry, host string, merge bool) error {
@@ -23,7 +21,7 @@ func FetchKubeconfig(log *logrus.Entry, host string, merge bool) error {
 		return err
 	}
 
-	kubectl, err := GetKubectl(host)
+	kubectl, err := kubeutil.NewKubectlFromNode(host)
 	if err != nil {
 		return err
 	}
