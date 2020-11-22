@@ -14,6 +14,7 @@ import (
 import (
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
+	"github.com/Eagerod/hope/pkg/maputil"
 )
 
 const (
@@ -100,6 +101,15 @@ func getKubectlFromAnyMaster(log *logrus.Entry, masters []string) (*kubeutil.Kub
 func getResources() (*[]Resource, error) {
 	var resources []Resource
 	err := viper.UnmarshalKey("resources", &resources)
+
+	nameMap := map[string]bool{}
+	for _, resource := range resources {
+		if _, ok := nameMap[resource.Name]; ok {
+			return nil, errors.New(fmt.Sprintf("Multiple resources found in configuration file named: %s", resource.Name))
+		}
+		nameMap[resource.Name] = true
+	}
+
 	return &resources, err
 }
 
@@ -153,4 +163,47 @@ func replaceParametersWithSubstitutor(t *hope.TextSubstitutor, parameters []stri
 	}
 
 	return string(*t.Bytes), nil
+}
+
+func getIdentifiableResources(names *[]string, tags *[]string) (*[]Resource, error) {
+	returnSlice := []Resource{}
+	nameMap := map[string]bool{}
+	tagMap := map[string]bool{}
+
+	for _, name := range *names {
+		nameMap[name] = true
+	}
+
+	for _, tag := range *tags {
+		tagMap[tag] = true
+	}
+
+	// Loop through all resources, adding them as they appear in the resources
+	//   object in the yaml file.
+	resources, err := getResources()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, resource := range *resources {
+		if _, ok := nameMap[resource.Name]; ok {
+			returnSlice = append(returnSlice, resource)
+			delete(nameMap, resource.Name)
+			continue
+		}
+
+		for _, tag := range resource.Tags {
+			if _, ok := tagMap[tag]; ok {
+				returnSlice = append(returnSlice, resource)
+				break
+			}
+		}
+	}
+
+	// If any name wasn't found, error out.
+	if len(nameMap) != 0 {
+		return nil, errors.New(fmt.Sprintf("Failed to find resources with names: %s", strings.Join(*maputil.MapStringBoolKeys(&nameMap), ",")))
+	}
+
+	return &returnSlice, nil
 }
