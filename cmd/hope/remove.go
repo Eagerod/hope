@@ -108,7 +108,7 @@ var removeCmd = &cobra.Command{
 		defer kubectl.Destroy()
 
 		// TODO: Should be done in hope pkg
-		for i := len(resourcesToRemove)-1; i >= 0; i-- {
+		for i := len(resourcesToRemove) - 1; i >= 0; i-- {
 			resource := resourcesToRemove[i]
 			log.Debug("Starting removal of ", resource.Name)
 			resourceType, err := resource.GetType()

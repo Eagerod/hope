@@ -73,7 +73,7 @@ var listCmd = &cobra.Command{
 				resourcesToList = append(resourcesToList, resource)
 			}
 		}
-		
+
 		if !hasDirectResources && !hasTaggedResources {
 			resourcesToList = *resources
 		}
