@@ -7,7 +7,7 @@ import (
 var RootCommand = &cobra.Command{
 	Use:   "node",
 	Short: "manage nodes on the network",
-	Long: "Manage adding, removing, modifying nodes in the cluster",
+	Long:  "Manage adding, removing, modifying nodes in the cluster",
 }
 
 func InitNodeCommand() {

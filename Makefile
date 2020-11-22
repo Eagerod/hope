@@ -13,8 +13,9 @@ PACKAGE_PATHS := $(CMD_PACKAGE_DIR) $(PKG_PACKAGE_DIR)
 
 AUTOGEN_VERSION_FILENAME=$(CMD_PACKAGE_DIR)/version-temp.go
 
+ALL_GO_DIRS = $(shell find . -iname "*.go" -exec dirname {} \; | sort | uniq)
 SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go") $(AUTOGEN_VERSION_FILENAME)
-PUBLISH := publish/linux-amd64 publish/darwin-amd64
+PUBLISH = publish/linux-amd64 publish/darwin-amd64
 
 .PHONY: all
 all: $(BIN_NAME)
@@ -87,9 +88,7 @@ pretty-coverage: test-cover
 
 .PHONY: fmt
 fmt:
-	@$(GO) fmt .
-	@$(GO) fmt $(CMD_PACKAGE_DIR)
-	@$(GO) fmt $(PKG_PACKAGE_DIR)
+	@$(GO) fmt $(ALL_GO_DIRS)
 
 .PHONY: clean
 clean:
