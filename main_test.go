@@ -16,8 +16,6 @@ var commands []string = []string{
 	"hostname",
 	"init",
 	"reset",
-	"set",
-	"set",
 	"version",
 }
 
