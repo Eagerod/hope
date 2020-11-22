@@ -1,11 +1,11 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 )
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -21,64 +21,26 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List resources that belong to a particular set of tags",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		resources, err := getResources()
-		if err != nil {
-			return err
-		}
+		var resources *[]Resource
 
-		resourcesToList := []Resource{}
-
-		hasTaggedResources := false
-		hasDirectResources := false
-		if len(*listCmdTagSlice) != 0 {
-			hasTaggedResources = true
-			tagMap := map[string]bool{}
-			for _, tag := range *listCmdTagSlice {
-				tagMap[tag] = true
+		if len(args) == 0 && len(*listCmdTagSlice) == 0 {
+			r, err := getResources()
+			if err != nil {
+				return err
 			}
 
-			resourceNames := []string{}
-			for _, resource := range *resources {
-				for _, tag := range resource.Tags {
-					if _, ok := tagMap[tag]; ok {
-						resourcesToList = append(resourcesToList, resource)
-						resourceNames = append(resourceNames, resource.Name)
-						continue
-					}
-				}
-			}
-		}
-
-		if len(args) != 0 {
-			hasDirectResources = true
-			// Map the slice by name so they can be fetched in order.
-			resourcesMap := map[string]Resource{}
-			for _, resource := range *resources {
-				_, ok := resourcesMap[resource.Name]
-				if ok {
-					return errors.New(fmt.Sprintf("Multiple resources found with name %s. Aborting deploy", resource.Name))
-				}
-
-				resourcesMap[resource.Name] = resource
+			resources = r
+			log.Trace("Received no arguments for list. Listing all resources.")
+		} else {
+			r, err := getIdentifiableResources(&args, deployCmdTagSlice)
+			if err != nil {
+				return err
 			}
 
-			// Do an initial pass to ensure that no invalid resources were
-			//   provided
-			for _, expectedResource := range args {
-				resource, ok := resourcesMap[expectedResource]
-				if !ok {
-					return errors.New(fmt.Sprintf("Cannot find resource '%s' in configuration file.", expectedResource))
-				}
-
-				resourcesToList = append(resourcesToList, resource)
-			}
+			resources = r
 		}
 
-		if !hasDirectResources && !hasTaggedResources {
-			resourcesToList = *resources
-		}
-
-		for _, resource := range resourcesToList {
+		for _, resource := range *resources {
 			fmt.Println(resource.Name)
 		}
 
