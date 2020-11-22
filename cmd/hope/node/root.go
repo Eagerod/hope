@@ -6,8 +6,8 @@ import (
 
 var RootCommand = &cobra.Command{
 	Use:   "node",
-	Short: "command line tool for managing nodes on the network",
-	Long: "Manage ESXi vms",
+	Short: "manage nodes on the network",
+	Long: "Manage adding, removing, modifying nodes in the cluster",
 }
 
 func InitNodeCommand() {
