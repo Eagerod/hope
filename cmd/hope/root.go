@@ -16,6 +16,7 @@ import (
 import (
 	"github.com/Eagerod/hope/cmd/hope/node"
 	"github.com/Eagerod/hope/cmd/hope/unifi"
+	"github.com/Eagerod/hope/cmd/hope/vm"
 
 	"github.com/Eagerod/hope/pkg/docker"
 	"github.com/Eagerod/hope/pkg/envsubst"
@@ -53,6 +54,7 @@ func Execute() {
 
 	rootCmd.AddCommand(node.RootCommand)
 	rootCmd.AddCommand(unifi.RootCommand)
+	rootCmd.AddCommand(vm.RootCommand)
 
 	initDeployCmdFlags()
 	initKubeconfigCmdFlags()
@@ -64,6 +66,7 @@ func Execute() {
 
 	node.InitNodeCommand()
 	unifi.InitUnifiCommand()
+	vm.InitVMCommand()
 
 	log.Debug("Executing:", os.Args)
 	if err := rootCmd.Execute(); err != nil {
