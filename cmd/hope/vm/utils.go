@@ -3,20 +3,25 @@ package vm
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 import (
 	"github.com/spf13/viper"
 )
 
+import (
+	"github.com/Eagerod/hope/pkg/hope"
+)
+
 type VMImageSpec struct {
-	Name string
+	Name       string
 	Parameters []string
 }
 
 type VMs struct {
-	Images []VMImageSpec
-	RootDir string  `mapstructure:"root_dir"`
+	Images  []VMImageSpec
+	RootDir string `mapstructure:"root_dir"`
 }
 
 func getVMs() (*VMs, error) {
@@ -32,4 +37,40 @@ func getVMs() (*VMs, error) {
 	}
 
 	return &vms, err
+}
+
+// Copied from parent package.
+// Need to figure out the canonical way of doing this.
+// Import parent package?
+// Define in pkg?
+func replaceParametersInFile(path string, parameters []string) (string, error) {
+	t, err := hope.TextSubstitutorFromFilepath(path)
+	if err != nil {
+		return "", err
+	}
+
+	return replaceParametersWithSubstitutor(t, parameters)
+}
+
+func replaceParametersWithSubstitutor(t *hope.TextSubstitutor, parameters []string) (string, error) {
+	envParams := []string{}
+	directParams := map[string]string{}
+	for _, value := range parameters {
+		parts := strings.SplitN(value, "=", 2)
+		if len(parts) == 1 {
+			envParams = append(envParams, value)
+		} else {
+			directParams[parts[0]] = parts[1]
+		}
+	}
+
+	if err := t.SubstituteTextFromEnv(envParams); err != nil {
+		return "", err
+	}
+
+	if err := t.SubstituteTextFromMap(directParams); err != nil {
+		return "", err
+	}
+
+	return string(*t.Bytes), nil
 }

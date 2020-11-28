@@ -16,4 +16,6 @@ func InitVMCommand() {
 	RootCommand.AddCommand(moveCmd)
 	RootCommand.AddCommand(startCmd)
 	RootCommand.AddCommand(stopCmd)
+
+	initImageCmdFlags()
 }

@@ -31,6 +31,15 @@ func CopyFile(src string, dst string) error {
 	return CopyFileMode(src, dst, 0644)
 }
 
+func WriteFileMode(str string, dst string, fileMode os.FileMode) error {
+	bytes := []byte(str)
+	return ioutil.WriteFile(dst, bytes, fileMode)
+}
+
+func WriteFile(str string, dst string) error {
+	return WriteFileMode(str, dst, 0644)
+}
+
 func MD5Path(path string) ([]byte, error) {
 	file, err := os.Open(path)
 	if err != nil {

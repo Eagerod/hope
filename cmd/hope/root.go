@@ -21,6 +21,7 @@ import (
 	"github.com/Eagerod/hope/pkg/docker"
 	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/kubeutil"
+	"github.com/Eagerod/hope/pkg/packer"
 	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
@@ -220,5 +221,17 @@ func patchInvocations() {
 	ssh.GetErrorSSH = func(args ...string) (string, error) {
 		log.Debug("ssh ", strings.Join(args, " "))
 		return oldGetErrorSsh(args...)
+	}
+
+	oldExecPacker := packer.ExecPacker
+	packer.ExecPacker = func(args ...string) error {
+		log.Debug("packer ", strings.Join(args, " "))
+		return oldExecPacker(args...)
+	}
+
+	oldExecPackerWd := packer.ExecPackerWd
+	packer.ExecPackerWd = func(wd string, args ...string) error {
+		log.Debug("packer ", strings.Join(args, " "))
+		return oldExecPackerWd(wd, args...)
 	}
 }
