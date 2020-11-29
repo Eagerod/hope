@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 import (
@@ -51,15 +52,18 @@ var deployCmd = &cobra.Command{
 			return nil
 		}
 
-		// Do a pass over the resources, and make sure that there's a docker
-		//   build step before potentially asking the user to type in their
-		//   password to elevate
+		// Do a pass over the resources to be deployed, and determine what
+		//   kinds of local operations need to be done before all of these
+		//   things can be deployed.
 		hasDockerResource := false
+		hasKubernetesResource := false
 		for _, resource := range *resources {
 			resourceType, _ := resource.GetType()
-			if resourceType == ResourceTypeDockerBuild {
+			switch resourceType {
+			case ResourceTypeDockerBuild:
 				hasDockerResource = true
-				break
+			case ResourceTypeFile, ResourceTypeInline, ResourceTypeJob, ResourceTypeExec:
+				hasKubernetesResource = true
 			}
 		}
 
@@ -76,16 +80,18 @@ var deployCmd = &cobra.Command{
 
 		// Wait as long as possible before pulling the temporary kubectl from
 		//   a master node.
-		// TODO: Implement something similar to the hasDockerResource process
-		//   above; if there isn't anything that needs to talk to kubernetes,
-		//   don't even bother pulling the kubeconfig.
-		masters := viper.GetStringSlice("masters")
-		kubectl, err := kubeutil.NewKubectlFromAnyNode(masters)
-		if err != nil {
-			return err
-		}
+		var kubectl *kubeutil.Kubectl
+		if hasKubernetesResource {
+			masters := viper.GetStringSlice("masters")
 
-		defer kubectl.Destroy()
+			var err error
+			kubectl, err = kubeutil.NewKubectlFromAnyNode(masters)
+			if err != nil {
+				return err
+			}
+	
+			defer kubectl.Destroy()
+		}
 
 		// TODO: Should be done in hope pkg
 		// TODO: Add validation to ensure each type of deployment can run given
@@ -140,21 +146,33 @@ var deployCmd = &cobra.Command{
 					return errors.New(fmt.Sprintf("Docker build step %s cannot have a path and a source", resource.Name))
 				}
 
-				if resource.Build.Pull {
-					pullImage := ""
+				pullImage := ""
 
-					if isCacheCommand {
-						pullImage = resource.Build.Source
-					} else {
-						pullImage = resource.Build.Tag
+				if isCacheCommand {
+					pullImage = resource.Build.Source
+				} else {
+					pullImage = resource.Build.Tag
+				}
+
+				// Gotta move these to constants somewhere.
+				ifNotPresentShouldPull := false
+				if resource.Build.Pull == "if-not-present" {
+					output, err := docker.GetDocker("images", pullImage)
+					if err != nil {
+						return err
 					}
 
+					if len(strings.Split(output, "\n")) == 1 {
+						log.Info(fmt.Sprintf("Docker image %s not found locally, must pull from upstream.", pullImage))
+						ifNotPresentShouldPull = true
+					} else {
+						log.Debug(fmt.Sprintf("Docker image %s found, skipping upstream pull"))
+					}
+				}
+
+				if ifNotPresentShouldPull || resource.Build.Pull == "always" {
 					if err := docker.ExecDocker("pull", pullImage); err != nil {
-						if isCacheCommand {
-							return errors.New(fmt.Sprintf("Failed to find image named %s", pullImage))
-						} else {
-							log.Warn("Failed to pull existing images for ", pullImage, ". Maybe this image doesn't exist?")
-						}
+						return errors.New(fmt.Sprintf("Failed to find image named %s", pullImage))
 					}
 				}
 

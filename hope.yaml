@@ -66,6 +66,9 @@ resources:
   # Hope will optionally try to pull the image from the registry before
   #   building it in an attempt to save some compute time rebuilding layers 
   #   that haven't changed since the last push.
+  # Pull from source registry can be done in similar ways to Kubernetes'
+  #   Always and IfNotPresent with the "always", if "if-not-present" values.
+  # Like Kubernetes, defaults to "if-not-present".
   # Because docker builds tend to require a bit more state in them, providing a
   #   local path is all that's currently supported.
   # Now that Docker Hub has rolled out rate limits on their APIs, a Docker
@@ -74,13 +77,13 @@ resources:
   - name: build-some-image
     build:
       path: some-dir-with-dockerfile
-      pull: true
+      pull: always
       tag: registry.internal.aleemhaji.com/example-repo:latest
     tags: [app1]
   - name: copy-some-image
     build:
       source: python:3.7
-      pull: false
+      pull: if-not-present
       tag: registry.internal.aleemhaji.com/python:3.7
     tags: [dockercache]
   # When a spec comes with an initialization procedure, a job type can be used.

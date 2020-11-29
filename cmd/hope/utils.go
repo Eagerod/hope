@@ -28,7 +28,7 @@ type BuildSpec struct {
 	Path   string
 	Source string
 	Tag    string
-	Pull   bool
+	Pull   string
 }
 
 type ExecSpec struct {
