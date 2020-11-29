@@ -154,7 +154,6 @@ var deployCmd = &cobra.Command{
 				}
 
 				pullImage := ""
-
 				if isCacheCommand {
 					pullImage = resource.Build.Source
 				} else {
