@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -25,6 +26,14 @@ var imageCmdDebugPackerFlag bool
 func initImageCmdFlags() {
 	imageCmdParameterSlice = imageCmd.Flags().StringArrayP("param", "p", []string{}, "parameters to forward to packer's -var")
 	imageCmd.Flags().BoolVarP(&imageCmdDebugPackerFlag, "debug-packer", "", false, "pass the debug flag to packer")
+}
+
+type PackerBuilder struct {
+	OutputDirectory string `json:"output_directory"`
+}
+
+type PackerSpec struct {
+	Builders []PackerBuilder
 }
 
 var imageCmd = &cobra.Command{
@@ -110,9 +119,20 @@ var imageCmd = &cobra.Command{
 			}
 		}
 
-		// Check caches to see if I event want to build this again
-
+		// Check caches to see if I even want to build this again.
 		tempPackerJsonPath := path.Join(tempDir, "packer.json")
+		bytes, err := ioutil.ReadFile(tempPackerJsonPath)
+		if err != nil {
+			return err
+		}
+
+		var packerSpec PackerSpec
+		if err := json.Unmarshal(bytes, &packerSpec); err != nil {
+			return err
+		}
+
+		fmt.Println(packerSpec.Builders[0].OutputDirectory)
+
 		allArgs := []string{"build"}
 		for _, v := range *imageCmdParameterSlice {
 			allArgs = append(allArgs, "-var", v)
@@ -121,6 +141,10 @@ var imageCmd = &cobra.Command{
 			allArgs = append(allArgs, "-debug")
 		}
 		allArgs = append(allArgs, tempPackerJsonPath)
+
+		if os.Getenv("PACKER_CACHE") == "" {
+			log.Warn("PACKER_CACHE environment variable is not set.")
+		}
 
 		log.Info(fmt.Sprintf("Building VM Image: %s", vm.Name))
 		return packer.ExecPackerWd(tempDir, allArgs...)
