@@ -52,5 +52,12 @@ func SetLoadBalancerHosts(log *logrus.Entry, loadBalancerHost string, masterHost
 		log.Info(err)
 	}
 
-	return ssh.ExecSSH(loadBalancerHost, "docker", "run", "-d", "-v", "/etc/nginx/nginx.conf:/etc/nginx/nginx.conf", "-p", "6443:6443", "nginx:1.19.4")
+	return ssh.ExecSSH(
+		loadBalancerHost,
+		"docker", "run", "-d",
+		"-v", "/etc/nginx/nginx.conf:/etc/nginx/nginx.conf",
+		"-p", "6443:6443",
+		"--restart", "unless-stopped",
+		"nginx:1.19.4",
+	)
 }
