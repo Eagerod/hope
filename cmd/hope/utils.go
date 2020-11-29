@@ -25,8 +25,10 @@ const (
 
 // Should be defined in hope pkg
 type BuildSpec struct {
-	Path string
-	Tag  string
+	Path   string
+	Source string
+	Tag    string
+	Pull   string
 }
 
 type ExecSpec struct {
@@ -62,7 +64,7 @@ func (resource *Resource) GetType() (string, error) {
 	if len(resource.Inline) != 0 {
 		detectedTypes = append(detectedTypes, ResourceTypeInline)
 	}
-	if len(resource.Build.Path) != 0 && len(resource.Build.Tag) != 0 {
+	if (len(resource.Build.Path) != 0 || len(resource.Build.Source) != 0) && len(resource.Build.Tag) != 0 {
 		detectedTypes = append(detectedTypes, ResourceTypeDockerBuild)
 	}
 	if len(resource.Job) != 0 {

@@ -159,6 +159,16 @@ func patchInvocations() {
 		return oldExecDocker(args...)
 	}
 
+	oldGetDocker := docker.GetDocker
+	docker.GetDocker = func(args ...string) (string, error) {
+		if docker.UseSudo {
+			log.Debug("sudo docker ", strings.Join(args, " "))
+		} else {
+			log.Debug("docker ", strings.Join(args, " "))
+		}
+		return oldGetDocker(args...)
+	}
+
 	oldEnvsubstBytes := envsubst.GetEnvsubstBytes
 	envsubst.GetEnvsubstBytes = func(args []string, contents []byte) ([]byte, error) {
 		argsKeys := []string{}
