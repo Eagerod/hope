@@ -78,8 +78,6 @@ var deployCmd = &cobra.Command{
 			}
 		}
 
-		// Wait as long as possible before pulling the temporary kubectl from
-		//   a master node.
 		var kubectl *kubeutil.Kubectl
 		if hasKubernetesResource {
 			masters := viper.GetStringSlice("masters")
@@ -95,7 +93,7 @@ var deployCmd = &cobra.Command{
 
 		// TODO: Should be done in hope pkg
 		// TODO: Add validation to ensure each type of deployment can run given
-		//   the current dev environment -- ensure docker is can connect, etc.
+		//   the current dev environment -- ensure docker can connect, etc.
 		for _, resource := range *resources {
 			log.Debug("Starting deployment of ", resource.Name)
 			resourceType, err := resource.GetType()
