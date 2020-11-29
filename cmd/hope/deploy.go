@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"strings"
 )
 
 import (
@@ -135,30 +134,40 @@ var deployCmd = &cobra.Command{
 					return err
 				}
 			case ResourceTypeDockerBuild:
-				// Strip the actual tag off the repo so that it defaults to the
-				//   latest.
-				tagSeparator := strings.LastIndex(resource.Build.Tag, ":")
-				pullImage := resource.Build.Tag
-				if tagSeparator != -1 {
-					pullImage = pullImage[:tagSeparator]
+				isCacheCommand := len(resource.Build.Source) != 0
+				isBuildCommand := len(resource.Build.Path) != 0
+				if isCacheCommand && isBuildCommand {
+					return errors.New(fmt.Sprintf("Docker build step %s cannot have a path and a source", resource.Name))
 				}
 
-				if err := docker.ExecDocker("pull", pullImage); err != nil {
-					// Maybe the image was pushed with the given tag.
-					// Maybe the tag is something like :stable.
-					// Hopefully we can grab a few layers at least.
-					if err := docker.ExecDocker("pull", resource.Build.Tag); err != nil {
-						log.Warn("Failed to pull existing images for ", pullImage, ". Maybe this image doesn't exist?")
+				if resource.Build.Pull {
+					pullImage := ""
 
-						// Don't return any errors here.
-						// If this is the first time this image is being
-						//   pushed, there will be nothing to pull, and
-						//   this will never succeed.
+					if isCacheCommand {
+						pullImage = resource.Build.Source
+					} else {
+						pullImage = resource.Build.Tag
+					}
+
+					if err := docker.ExecDocker("pull", pullImage); err != nil {
+						if isCacheCommand {
+							return errors.New(fmt.Sprintf("Failed to find image named %s", pullImage))
+						} else {
+							log.Warn("Failed to pull existing images for ", pullImage, ". Maybe this image doesn't exist?")
+						}
 					}
 				}
-				if err := docker.ExecDocker("build", resource.Build.Path, "-t", resource.Build.Tag); err != nil {
-					return err
+
+				if isBuildCommand {
+					if err := docker.ExecDocker("build", resource.Build.Path, "-t", resource.Build.Tag); err != nil {
+						return err
+					}
+				} else {
+					if err := docker.ExecDocker("tag", resource.Build.Source, resource.Build.Tag); err != nil {
+						return err
+					}
 				}
+
 				if err := docker.ExecDocker("push", resource.Build.Tag); err != nil {
 					return err
 				}
