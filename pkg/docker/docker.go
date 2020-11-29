@@ -15,6 +15,7 @@ var UseSudo bool = false
 // is a lot nicer than
 //   docker.ExecDocker("pull", ...)
 type ExecDockerFunc func(args ...string) error
+type GetDockerFunc func(args ...string) (string, error)
 
 var ExecDocker ExecDockerFunc = func(args ...string) error {
 	var osCmd *exec.Cmd
@@ -29,6 +30,21 @@ var ExecDocker ExecDockerFunc = func(args ...string) error {
 	osCmd.Stderr = os.Stderr
 
 	return osCmd.Run()
+}
+
+var GetDocker GetDockerFunc = func(args ...string) (string, error) {
+	var osCmd *exec.Cmd
+	if UseSudo {
+		allArgs := append([]string{"docker"}, args...)
+		osCmd = exec.Command("sudo", allArgs...)
+	} else {
+		osCmd = exec.Command("docker", args...)
+	}
+	osCmd.Stdin = os.Stdin
+	osCmd.Stderr = os.Stderr
+
+	outputBytes, err := osCmd.Output()
+	return string(outputBytes), err
 }
 
 func SetUseSudo() {
