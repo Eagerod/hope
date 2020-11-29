@@ -7,13 +7,13 @@ import (
 )
 
 import (
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
 import (
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
+	"github.com/Eagerod/hope/pkg/maputil"
 	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
@@ -27,8 +27,10 @@ const (
 
 // Should be defined in hope pkg
 type BuildSpec struct {
-	Path string
-	Tag  string
+	Path   string
+	Source string
+	Tag    string
+	Pull   string
 }
 
 type ExecSpec struct {
@@ -64,7 +66,7 @@ func (resource *Resource) GetType() (string, error) {
 	if len(resource.Inline) != 0 {
 		detectedTypes = append(detectedTypes, ResourceTypeInline)
 	}
-	if len(resource.Build.Path) != 0 && len(resource.Build.Tag) != 0 {
+	if (len(resource.Build.Path) != 0 || len(resource.Build.Source) != 0) && len(resource.Build.Tag) != 0 {
 		detectedTypes = append(detectedTypes, ResourceTypeDockerBuild)
 	}
 	if len(resource.Job) != 0 {
@@ -84,23 +86,18 @@ func (resource *Resource) GetType() (string, error) {
 	}
 }
 
-// Loops through the list of hosts in order, and attempts to fetch a
-//   kubeconfig file that will allow access to the cluster.
-func getKubectlFromAnyMaster(log *logrus.Entry, masters []string) (*kubeutil.Kubectl, error) {
-	for _, host := range masters {
-		log.Debug("Trying to fetch kubeconfig from host ", host, " from masters list")
-		kubectl, err := hope.GetKubectl(host)
-		if err == nil {
-			return kubectl, nil
-		}
-	}
-
-	return nil, errors.New("Failed to find a kubeconfig file on any host")
-}
-
 func getResources() (*[]Resource, error) {
 	var resources []Resource
 	err := viper.UnmarshalKey("resources", &resources)
+
+	nameMap := map[string]bool{}
+	for _, resource := range resources {
+		if _, ok := nameMap[resource.Name]; ok {
+			return nil, errors.New(fmt.Sprintf("Multiple resources found in configuration file named: %s", resource.Name))
+		}
+		nameMap[resource.Name] = true
+	}
+
 	return &resources, err
 }
 
@@ -156,6 +153,7 @@ func replaceParametersWithSubstitutor(t *hope.TextSubstitutor, parameters []stri
 	return string(*t.Bytes), nil
 }
 
+<<<<<<< HEAD
 func nodePresentInConfig(host string) bool {
 	isMaster := sliceutil.StringInSlice(host, viper.GetStringSlice("masters"))
 	isNode := sliceutil.StringInSlice(host, viper.GetStringSlice("nodes"))
@@ -166,4 +164,47 @@ func nodePresentInConfig(host string) bool {
 
 func hostNotFoundError(host string) error {
 	return errors.New(fmt.Sprintf("Host (%s) not found in list of masters, nodes, or load balancer.", host))
+=======
+func getIdentifiableResources(names *[]string, tags *[]string) (*[]Resource, error) {
+	returnSlice := []Resource{}
+	nameMap := map[string]bool{}
+	tagMap := map[string]bool{}
+
+	for _, name := range *names {
+		nameMap[name] = true
+	}
+
+	for _, tag := range *tags {
+		tagMap[tag] = true
+	}
+
+	// Loop through all resources, adding them as they appear in the resources
+	//   object in the yaml file.
+	resources, err := getResources()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, resource := range *resources {
+		if _, ok := nameMap[resource.Name]; ok {
+			returnSlice = append(returnSlice, resource)
+			delete(nameMap, resource.Name)
+			continue
+		}
+
+		for _, tag := range resource.Tags {
+			if _, ok := tagMap[tag]; ok {
+				returnSlice = append(returnSlice, resource)
+				break
+			}
+		}
+	}
+
+	// If any name wasn't found, error out.
+	if len(nameMap) != 0 {
+		return nil, errors.New(fmt.Sprintf("Failed to find resources with names: %s", strings.Join(*maputil.MapStringBoolKeys(&nameMap), ",")))
+	}
+
+	return &returnSlice, nil
+>>>>>>> a9eac4dd52053e3ef4e772c0e3400f239b1b66e6
 }

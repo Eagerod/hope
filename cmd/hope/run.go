@@ -15,6 +15,7 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/hope"
+	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
 var runCmdParameterSlice *[]string
@@ -74,7 +75,7 @@ var runCmd = &cobra.Command{
 		// Pull kubeconfig from remote as late as possible to avoid extra
 		//   network time before validation is done.
 		masters := viper.GetStringSlice("masters")
-		kubectl, err := getKubectlFromAnyMaster(log.WithFields(log.Fields{}), masters)
+		kubectl, err := kubeutil.NewKubectlFromAnyNode(masters)
 		if err != nil {
 			return err
 		}

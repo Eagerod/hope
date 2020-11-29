@@ -14,6 +14,9 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/node"
+	"github.com/Eagerod/hope/cmd/hope/unifi"
+
 	"github.com/Eagerod/hope/pkg/docker"
 	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/kubeutil"
@@ -39,24 +42,28 @@ Kubernetes resources I run.`,
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	rootCmd.AddCommand(initCmd)
-	rootCmd.AddCommand(setCmd)
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(versionCmd)
-	rootCmd.AddCommand(hostnameCmd)
 	rootCmd.AddCommand(kubeconfigCmd)
-	rootCmd.AddCommand(resetCmd)
+	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(removeCmd)
 	rootCmd.AddCommand(runCmd)
-	rootCmd.AddCommand(sshCmd)
+	rootCmd.AddCommand(shellCmd)
 	rootCmd.AddCommand(tokenCmd)
 
+	rootCmd.AddCommand(node.RootCommand)
+	rootCmd.AddCommand(unifi.RootCommand)
+
 	initDeployCmdFlags()
-	initHostnameCmdFlags()
 	initKubeconfigCmdFlags()
-	initResetCmd()
+	initListCmdFlags()
+	initRemoveCmdFlags()
 	initRunCmdFlags()
-	initSshCmd()
+	initShellCmd()
 	initTokenCmd()
+
+	node.InitNodeCommand()
+	unifi.InitUnifiCommand()
 
 	log.Debug("Executing:", os.Args)
 	if err := rootCmd.Execute(); err != nil {
@@ -120,7 +127,7 @@ func initLogger() {
 			failed = true
 		}
 	}
-	log.SetOutput(os.Stdout)
+	log.SetOutput(os.Stderr)
 
 	if failed {
 		log.Info("Failed to parse loglevel. Defaulting to INFO")
@@ -146,6 +153,16 @@ func patchInvocations() {
 			log.Debug("docker ", strings.Join(args, " "))
 		}
 		return oldExecDocker(args...)
+	}
+
+	oldGetDocker := docker.GetDocker
+	docker.GetDocker = func(args ...string) (string, error) {
+		if docker.UseSudo {
+			log.Debug("sudo docker ", strings.Join(args, " "))
+		} else {
+			log.Debug("docker ", strings.Join(args, " "))
+		}
+		return oldGetDocker(args...)
 	}
 
 	oldEnvsubstBytes := envsubst.GetEnvsubstBytes

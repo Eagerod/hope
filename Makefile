@@ -13,8 +13,9 @@ PACKAGE_PATHS := $(CMD_PACKAGE_DIR) $(PKG_PACKAGE_DIR)
 
 AUTOGEN_VERSION_FILENAME=$(CMD_PACKAGE_DIR)/version-temp.go
 
+ALL_GO_DIRS = $(shell find . -iname "*.go" -exec dirname {} \; | sort | uniq)
 SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go") $(AUTOGEN_VERSION_FILENAME)
-PUBLISH := publish/linux-amd64 publish/darwin-amd64
+PUBLISH = publish/linux-amd64 publish/darwin-amd64
 
 .PHONY: all
 all: $(BIN_NAME)
@@ -78,7 +79,7 @@ coverage: test-cover
 $(AUTOGEN_VERSION_FILENAME):
 	@version="v$$(cat VERSION)" && \
 	build="$$(if [ "$$(git describe)" != "$$version" ]; then echo "-$$(git rev-parse --short HEAD)"; fi)" && \
-	dirty="$$(if [ ! -z "$$(git diff)" ]; then echo "-dirty"; fi)" && \
+	dirty="$$(if [ ! -z "$$(git diff; git diff --cached)" ]; then echo "-dirty"; fi)" && \
 	printf "package cmd\n\nconst VersionBuild = \"%s%s%s\"" $$version $$build $$dirty > $@
 
 .PHONY: pretty-coverage
@@ -87,9 +88,7 @@ pretty-coverage: test-cover
 
 .PHONY: fmt
 fmt:
-	@$(GO) fmt .
-	@$(GO) fmt $(CMD_PACKAGE_DIR)
-	@$(GO) fmt $(PKG_PACKAGE_DIR)
+	@$(GO) fmt $(ALL_GO_DIRS)
 
 .PHONY: clean
 clean:

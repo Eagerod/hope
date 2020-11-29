@@ -1,4 +1,4 @@
-package cmd
+package node
 
 import (
 	"errors"
@@ -14,6 +14,7 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/hope"
+	"github.com/Eagerod/hope/pkg/kubeutil"
 	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
@@ -61,7 +62,7 @@ var initCmd = &cobra.Command{
 				return err
 			}
 
-			kubectl, err := getKubectlFromAnyMaster(log.WithFields(log.Fields{}), masters)
+			kubectl, err := kubeutil.NewKubectlFromAnyNode(masters)
 			if err != nil {
 				return err
 			}
