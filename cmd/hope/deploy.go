@@ -162,16 +162,40 @@ var deployCmd = &cobra.Command{
 
 				ifNotPresentShouldPull := false
 				if pullConstraintIfNotPresent {
-					output, err := docker.GetDocker("images", pullImage)
+					output, err := docker.GetDocker("images", pullImage, "--format={{.Repository}}:{{.Tag}}")
 					if err != nil {
 						return err
 					}
 
-					if len(strings.Split(output, "\n")) == 1 {
-						log.Info(fmt.Sprintf("Docker image %s not found locally, must pull from upstream.", pullImage))
+					outputLines := strings.Split(output, "\n")
+					if len(outputLines) == 0 {
+						log.Info(fmt.Sprintf("No Docker images like %s not found locally, must pull from upstream.", pullImage))
 						ifNotPresentShouldPull = true
 					} else {
-						log.Debug(fmt.Sprintf("Docker image %s found, skipping upstream pull"))
+						// Figure out if the latest tag needs to be defaulted
+						//   to, or if a specific one was requested.
+						searchTag := pullImage
+						tagIndex := strings.LastIndex(searchTag, ":")
+						if tagIndex == -1 {
+							log.Debug("Provided image isn't tagged; assuming latest")
+							searchTag = fmt.Sprintf("%s:latest", searchTag)
+						}
+
+						log.Trace(fmt.Sprintf("Searching for local copy of tag: %s", searchTag))
+
+						imageFound := false
+						for _, imageTag := range outputLines {
+							if imageTag == searchTag {
+								log.Debug(fmt.Sprintf("Docker image matching %s found, skipping upstream pull", searchTag))
+								imageFound = true
+								break
+							}
+						}
+
+						if !imageFound {
+							log.Info(fmt.Sprintf("Docker image %s not found among candidates, must pull from upstream", searchTag))
+							ifNotPresentShouldPull = true
+						}
 					}
 				}
 
