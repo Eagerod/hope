@@ -140,8 +140,17 @@ var deployCmd = &cobra.Command{
 			case ResourceTypeDockerBuild:
 				isCacheCommand := len(resource.Build.Source) != 0
 				isBuildCommand := len(resource.Build.Path) != 0
+
 				if isCacheCommand && isBuildCommand {
 					return errors.New(fmt.Sprintf("Docker build step %s cannot have a path and a source", resource.Name))
+				}
+
+				// TODO: Move these to constants somewhere
+				pullConstraintAlways := resource.Build.Pull == "always"
+				pullConstraintIfNotPresent := resource.Build.Pull == "if-not-present" || resource.Build.Pull == ""
+				
+				if !pullConstraintAlways && !pullConstraintIfNotPresent {
+					return errors.New(fmt.Sprintf("Unknown Docker image pull constraint: %s", resource.Build.Pull))
 				}
 
 				pullImage := ""
@@ -152,9 +161,8 @@ var deployCmd = &cobra.Command{
 					pullImage = resource.Build.Tag
 				}
 
-				// Gotta move these to constants somewhere.
 				ifNotPresentShouldPull := false
-				if resource.Build.Pull == "if-not-present" {
+				if pullConstraintIfNotPresent {
 					output, err := docker.GetDocker("images", pullImage)
 					if err != nil {
 						return err
@@ -168,7 +176,7 @@ var deployCmd = &cobra.Command{
 					}
 				}
 
-				if ifNotPresentShouldPull || resource.Build.Pull == "always" {
+				if ifNotPresentShouldPull || pullConstraintAlways {
 					if err := docker.ExecDocker("pull", pullImage); err != nil {
 						return errors.New(fmt.Sprintf("Failed to find image named %s", pullImage))
 					}
