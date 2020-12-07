@@ -60,7 +60,8 @@ var imageCmd = &cobra.Command{
 			return errors.New(fmt.Sprintf("No VM named %s found in images definitions.", vmName))
 		}
 
-		vmDir := path.Join(vms.RootDir, vmName)
+		vmDir := path.Join(vms.RootDir, vm.Name)
+		log.Trace(fmt.Sprintf("Looking for VM definition in %s", vmDir))
 
 		stat, err := os.Stat(vmDir)
 		if err != nil && os.IsNotExist(err) {
@@ -142,11 +143,12 @@ var imageCmd = &cobra.Command{
 		}
 		allArgs = append(allArgs, tempPackerJsonPath)
 
-		if os.Getenv("PACKER_CACHE") == "" {
-			log.Warn("PACKER_CACHE environment variable is not set.")
+		if os.Getenv("PACKER_CACHE_DIR") == "" {
+			log.Warn("PACKER_CACHE_DIR environment variable is not set.")
 		}
 
 		log.Info(fmt.Sprintf("Building VM Image: %s", vm.Name))
+
 		return packer.ExecPackerWd(tempDir, allArgs...)
 	},
 }
