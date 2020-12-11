@@ -39,6 +39,22 @@ func getVMs() (*VMs, error) {
 	return &vms, err
 }
 
+func vmSpec(vmName string) (*VMImageSpec, error) {
+	vms, err := getVMs()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, avm := range vms.Images {
+		if avm.Name == vmName {
+			return &avm, nil
+
+		}
+	}
+
+	return nil, errors.New(fmt.Sprintf("No VM named %s found in image definitions.", vmName))
+}
+
 // Copied from parent package.
 // Need to figure out the canonical way of doing this.
 // Import parent package?

@@ -49,17 +49,11 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
-		var vm *VMImageSpec
-		for _, avm := range vms.Images {
-			if avm.Name == vmName {
-				vm = &avm
-				break
-			}
+		vm, err := vmSpec(vmName)
+		if err != nil {
+			return err
 		}
 
-		if vm == nil {
-			return errors.New(fmt.Sprintf("No VM named %s found in images definitions.", vmName))
-		}
 
 		vmDir := path.Join(vms.RootDir, vm.Name)
 		log.Trace(fmt.Sprintf("Looking for VM definition in %s", vmDir))
