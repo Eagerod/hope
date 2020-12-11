@@ -29,6 +29,7 @@ func initImageCmdFlags() {
 }
 
 type PackerBuilder struct {
+	VMName string `json:"vm_name"`
 	OutputDirectory string `json:"output_directory"`
 }
 
@@ -132,7 +133,21 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Println(packerSpec.Builders[0].OutputDirectory)
+		packerOutDir := path.Join(packerSpec.Builders[0].OutputDirectory, packerSpec.Builders[0].VMName)
+		if stat, err := os.Stat(packerOutDir); err == nil {
+			if stat.IsDir() {
+				files, err := ioutil.ReadDir("./")
+				if err != nil {
+					return err
+				}
+
+				if len(files) != 0 {
+					return errors.New(fmt.Sprintf("Directory at path %s already exists and is not empty.", packerOutDir))
+				}
+			} else {
+				log.Debug(fmt.Sprintf("Will create a new directory at %s...", packerOutDir))
+			}
+		}
 
 		allArgs := []string{"build"}
 		for _, v := range *imageCmdParameterSlice {
