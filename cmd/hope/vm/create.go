@@ -101,7 +101,8 @@ var createCmd = &cobra.Command{
 		// Might be worth introducing some kind of a utility to let private
 		//   arguments still get passed without them printing out, or setting
 		//   up ExecSSH to have a version that accepts stdin.
-		remoteOvfPath := path.Join(remoteVmfsPath, packerSpec.Builders[0].VMName + ".ovf")
+		vmOvfName := fmt.Sprintf("%s.ovf", packerSpec.Builders[0].VMName)
+		remoteOvfPath := path.Join(remoteVmfsPath, vmOvfName)
 		return ssh.ExecSSH(hostname,
 			"/vmfs/volumes/Main/bin/ovftool/ovftool",
 			"--diskMode=thin",
