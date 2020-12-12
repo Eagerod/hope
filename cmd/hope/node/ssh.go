@@ -37,10 +37,11 @@ var sshCmd = &cobra.Command{
 
 		isMaster := sliceutil.StringInSlice(host, viper.GetStringSlice("masters"))
 		isNode := sliceutil.StringInSlice(host, viper.GetStringSlice("nodes"))
+		isHypervisor := sliceutil.StringInSlice(host, viper.GetStringSlice("hypervisors"))
 
-		if !isMaster && !isNode {
+		if !isMaster && !isNode && !isHypervisor {
 			if !sshCmdForce {
-				return errors.New(fmt.Sprintf("Host (%s) not found in list of masters or nodes.", host))
+				return errors.New(fmt.Sprintf("Host (%s) not found in list of masters, nodes, or hypervisors.", host))
 			}
 		}
 
