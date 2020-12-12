@@ -87,7 +87,7 @@ var deployCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-	
+
 			defer kubectl.Destroy()
 		}
 
@@ -148,7 +148,7 @@ var deployCmd = &cobra.Command{
 				// TODO: Move these to constants somewhere
 				pullConstraintAlways := resource.Build.Pull == "always"
 				pullConstraintIfNotPresent := resource.Build.Pull == "if-not-present" || resource.Build.Pull == ""
-				
+
 				if !pullConstraintAlways && !pullConstraintIfNotPresent {
 					return errors.New(fmt.Sprintf("Unknown Docker image pull constraint: %s", resource.Build.Pull))
 				}

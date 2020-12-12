@@ -28,7 +28,7 @@ func initImageCmdFlags() {
 }
 
 type PackerBuilder struct {
-	VMName string `json:"vm_name"`
+	VMName          string `json:"vm_name"`
 	OutputDirectory string `json:"output_directory"`
 }
 
@@ -52,7 +52,6 @@ var imageCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-
 
 		vmDir := path.Join(vms.RootDir, vm.Name)
 		log.Trace(fmt.Sprintf("Looking for VM definition in %s", vmDir))
