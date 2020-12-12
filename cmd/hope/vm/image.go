@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 )
 
 import (
@@ -92,25 +91,7 @@ var imageCmd = &cobra.Command{
 		}
 
 		if len(vm.Parameters) != 0 {
-			// Probably move this to a util/pkg; seems pretty universal.
-			err = filepath.Walk(tempDir, func(apath string, info os.FileInfo, err error) error {
-				if err != nil {
-					return err
-				}
-
-				if info.IsDir() {
-					return nil
-				}
-
-				str, err := replaceParametersInFile(apath, vm.Parameters)
-				if err != nil {
-					return err
-				}
-
-				return fileutil.WriteFile(str, apath)
-			})
-
-			if err != nil {
+			if err := replaceParametersInDirectory(tempDir, vm.Parameters); err != nil {
 				return err
 			}
 		}
@@ -127,7 +108,7 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
-		packerOutDir := path.Join(packerSpec.Builders[0].OutputDirectory, packerSpec.Builders[0].VMName)
+		packerOutDir := packerSpec.Builders[0].OutputDirectory
 		if stat, err := os.Stat(packerOutDir); err == nil {
 			if stat.IsDir() {
 				files, err := ioutil.ReadDir("./")
