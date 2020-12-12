@@ -20,6 +20,12 @@ import (
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
+var createCmdVmName string
+
+func initCreateCmdFlags() {
+	createCmd.Flags().StringVarP(&createCmdVmName, "name", "n", "", "what to name the virtual machine. If left blank, defaults to the hope file name.")
+}
+
 var createCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Creates a VM on the specified host.",
@@ -43,6 +49,7 @@ var createCmd = &cobra.Command{
 		//   locally, and bail if it doesn't exist yet.
 		// There may be more validation that can be done, but it's not really
 		//   needed.
+		// And they should all go into pkg.
 		vmDir := path.Join(vms.RootDir, vm.Name)
 		tempDir, err := ioutil.TempDir("", "*")
 		if err != nil {
@@ -88,9 +95,10 @@ var createCmd = &cobra.Command{
 		// TODO: Optimize with something like rsync/just checking hashes
 		//   before copying, depending on how much I want to add more
 		//   dependencies.
+		scpSrcDir := fmt.Sprintf("%s/", packerOutDir)
 		remoteVmfsPath := path.Join("/vmfs/volumes/Main/ovfs", packerSpec.Builders[0].VMName)
-		remoteVMPath := fmt.Sprintf("%s:%s", hostname, remoteVmfsPath)
-		if err := scp.ExecSCP("-r", packerOutDir, remoteVMPath); err != nil {
+		remoteVMPath := fmt.Sprintf("%s:%s/", hostname, remoteVmfsPath)
+		if err := scp.ExecSCP("-r", scpSrcDir, remoteVMPath); err != nil {
 			return err
 		}
 
@@ -103,13 +111,21 @@ var createCmd = &cobra.Command{
 		//   up ExecSSH to have a version that accepts stdin.
 		vmOvfName := fmt.Sprintf("%s.ovf", packerSpec.Builders[0].VMName)
 		remoteOvfPath := path.Join(remoteVmfsPath, vmOvfName)
-		return ssh.ExecSSH(hostname,
+		allArgs := []string{
+			hostname,
 			"/vmfs/volumes/Main/bin/ovftool/ovftool",
 			"--diskMode=thin",
 			"--datastore=Main",
 			"--net:'VM Network=VM Network'",
-			remoteOvfPath,
-			"vi://localhost",
-		)
+		}
+
+		if createCmdVmName != "" {
+			nameArg := fmt.Sprintf("--name=%s", createCmdVmName)
+			allArgs = append(allArgs, nameArg)
+		}
+
+		allArgs = append(allArgs, remoteOvfPath, "vi://root@localhost")
+
+		return ssh.ExecSSH(allArgs...)
 	},
 }
