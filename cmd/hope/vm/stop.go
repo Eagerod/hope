@@ -1,15 +1,21 @@
 package vm
 
 import (
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+)
+
+import (
+	"github.com/Eagerod/hope/pkg/esxi"
 )
 
 var stopCmd = &cobra.Command{
 	Use:   "stop",
-	Short: "Creates a VM on the specified host.",
+	Short: "Stops a VM on the specified host.",
+	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		log.Info("I'm going to stop a VM.")
-		return nil
+		host := args[0]
+		vmName := args[1]
+
+		return esxi.PowerOffVmNamed(host, vmName)
 	},
 }

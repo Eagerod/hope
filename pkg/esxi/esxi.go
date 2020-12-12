@@ -31,6 +31,10 @@ func PowerOnVm(host string, vmId string) error {
 	return ssh.ExecSSH(host, "vim-cmd", "vmsvc/power.on", vmId)
 }
 
+func PowerOffVm(host string, vmId string) error {
+	return ssh.ExecSSH(host, "vim-cmd", "vmsvc/power.off", vmId)
+}
+
 func PowerOnVmNamed(host string, vmName string) error {
 	vmId, err := GetVmId(host, vmName)
 	if err != nil {
@@ -38,4 +42,13 @@ func PowerOnVmNamed(host string, vmName string) error {
 	}
 
 	return PowerOnVm(host, vmId)
+}
+
+func PowerOffVmNamed(host string, vmName string) error {
+	vmId, err := GetVmId(host, vmName)
+	if err != nil {
+		return err
+	}
+
+	return PowerOffVm(host, vmId)
 }
