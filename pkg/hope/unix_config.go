@@ -65,16 +65,16 @@ func EnsureSSHWithoutPassword(log *logrus.Entry, host string) error {
 	out, _ := ssh.GetErrorSSH("-v", "-o", "Batchmode=yes", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", host)
 
 	// Find a line that says "Authentications that can continue" and
-	//   password.
-	// This line existing will mean that password authentication is
-	//   enabled on the host.
+	//   password, or keyboard-interactive.
 	for _, line := range strings.Split(out, "\n") {
-		if strings.Contains(line, "Authentications that can continue") && strings.Contains(line, "password") {
-			log.Debug("Password authentication may be possible on ", host, ". Attempting password session")
-			if err := TryConfigureSSH(log, host); err != nil {
-				return err
-			} else {
-				return nil
+		if strings.HasPrefix(line, "debug1: Authentications that can continue") {
+			if strings.Contains(line, "password") || strings.Contains(line, "keyboard-interactive") {
+				log.Debug("Password authentication may be possible on ", host, ". Attempting password session")
+				if err := TryConfigureSSH(log, host); err != nil {
+					return err
+				} else {
+					return nil
+				}
 			}
 		}
 	}
@@ -109,7 +109,7 @@ func TryConfigureSSH(log *logrus.Entry, host string) error {
 
 			publicKey := fmt.Sprintf("%s.pub", privateKey)
 
-			if err := CopySSHKeyToAuthorizedKeys(log, publicKey, host); err != nil {
+			if err := CopySSHPubKeyToAuthorizedKeys(log, publicKey, host); err != nil {
 				return err
 			}
 
@@ -121,16 +121,13 @@ func TryConfigureSSH(log *logrus.Entry, host string) error {
 	return err
 }
 
-func CopySSHKeyToAuthorizedKeys(log *logrus.Entry, keyPath string, host string) error {
+func CopySSHPubKeyToAuthorizedKeys(log *logrus.Entry, keyPath string, host string) error {
 	if _, err := os.Stat(keyPath); err != nil && os.IsNotExist(err) {
 		return errors.New(fmt.Sprintf("Failed to find public key to set up authorized_keys from %s", keyPath))
 	}
 
 	// TODO: Maybe confirm that this actually is a public key, and if it looks
 	//   like a private key, try to add .pub and see if there's a file there.
-	// TODO: Because this is run as separate ssh sessions, each session
-	//   results in asking the user to password for the destination host.
-	//   Limiting this to a single invocation would be nice.
 	// TODO: Don't even copy the public key to a file on the remote.
 	//   Just write it through stdin from the ssh command.
 	destination := fmt.Sprintf("%s:tmp.pub", host)
@@ -138,15 +135,14 @@ func CopySSHKeyToAuthorizedKeys(log *logrus.Entry, keyPath string, host string) 
 		return err
 	}
 
-	if err := ssh.ExecSSH(host, "sh", "-c", "'mkdir -p $HOME/.ssh && chmod 700 $HOME/.ssh'"); err != nil {
-		return err
-	}
-
 	// TODO: This should check to see if the given key already exists in the
 	//   authorized keys.
-	if err := ssh.ExecSSH(host, "sh", "-c", "'cat tmp.pub >> $HOME/.ssh/authorized_keys && rm tmp.pub && chmod 600 $HOME/.ssh/authorized_keys'"); err != nil {
-		return err
-	}
-
-	return nil
+	sshInitShellScript := `'
+		mkdir -p $HOME/.ssh
+		chmod 700 $HOME/.ssh
+		cat tmp.pub >> $HOME/.ssh/authorized_keys
+		rm tmp.pub
+		chmod 600 $HOME/.ssh/authorized_keys
+	'`
+	return ssh.ExecSSH(host, "sh", "-ec", sshInitShellScript)
 }

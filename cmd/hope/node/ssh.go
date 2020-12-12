@@ -46,7 +46,7 @@ var sshCmd = &cobra.Command{
 
 		if hasKeyArg {
 			localKeyPath := args[1]
-			return hope.CopySSHKeyToAuthorizedKeys(log.WithFields(log.Fields{}), localKeyPath, host)
+			return hope.CopySSHPubKeyToAuthorizedKeys(log.WithFields(log.Fields{}), localKeyPath, host)
 		}
 
 		return hope.EnsureSSHWithoutPassword(log.WithFields(log.Fields{}), host)
