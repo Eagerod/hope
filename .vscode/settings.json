@@ -3,6 +3,7 @@
         "kubeadm",
         "kubeconfig",
         "kubectl",
+        "kubernetes",
         "kubeutil"
     ]
 }

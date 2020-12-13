@@ -9,6 +9,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+import (
+	"github.com/Eagerod/hope/pkg/hope"
+)
+
 var listCmdTagSlice *[]string
 
 func initListCmdFlags() {
@@ -21,7 +25,7 @@ var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List resources that belong to a particular set of tags",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var resources *[]Resource
+		var resources *[]hope.Resource
 
 		if len(args) == 0 && len(*listCmdTagSlice) == 0 {
 			r, err := getResources()

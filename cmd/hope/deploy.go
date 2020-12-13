@@ -28,7 +28,7 @@ var deployCmd = &cobra.Command{
 	Use:   "deploy",
 	Short: "Deploy Kubernetes resources defined in the hope file",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var resources *[]Resource
+		var resources *[]hope.Resource
 
 		if len(args) == 0 && len(*deployCmdTagSlice) == 0 {
 			r, err := getResources()
@@ -60,9 +60,9 @@ var deployCmd = &cobra.Command{
 		for _, resource := range *resources {
 			resourceType, _ := resource.GetType()
 			switch resourceType {
-			case ResourceTypeDockerBuild:
+			case hope.ResourceTypeDockerBuild:
 				hasDockerResource = true
-			case ResourceTypeFile, ResourceTypeInline, ResourceTypeJob, ResourceTypeExec:
+			case hope.ResourceTypeFile, hope.ResourceTypeInline, hope.ResourceTypeJob, hope.ResourceTypeExec:
 				hasKubernetesResource = true
 			}
 		}
@@ -87,7 +87,7 @@ var deployCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-	
+
 			defer kubectl.Destroy()
 		}
 
@@ -102,7 +102,7 @@ var deployCmd = &cobra.Command{
 			}
 
 			switch resourceType {
-			case ResourceTypeFile:
+			case hope.ResourceTypeFile:
 				if len(resource.Parameters) != 0 {
 					content, err := replaceParametersInFile(resource.File, resource.Parameters)
 					if err != nil {
@@ -118,7 +118,7 @@ var deployCmd = &cobra.Command{
 						return err
 					}
 				}
-			case ResourceTypeInline:
+			case hope.ResourceTypeInline:
 				inline := resource.Inline
 
 				// Log out the inline resource before substituting it; secrets
@@ -137,7 +137,7 @@ var deployCmd = &cobra.Command{
 				if err := hope.KubectlApplyStdIn(kubectl, inline); err != nil {
 					return err
 				}
-			case ResourceTypeDockerBuild:
+			case hope.ResourceTypeDockerBuild:
 				isCacheCommand := len(resource.Build.Source) != 0
 				isBuildCommand := len(resource.Build.Path) != 0
 
@@ -148,7 +148,7 @@ var deployCmd = &cobra.Command{
 				// TODO: Move these to constants somewhere
 				pullConstraintAlways := resource.Build.Pull == "always"
 				pullConstraintIfNotPresent := resource.Build.Pull == "if-not-present" || resource.Build.Pull == ""
-				
+
 				if !pullConstraintAlways && !pullConstraintIfNotPresent {
 					return errors.New(fmt.Sprintf("Unknown Docker image pull constraint: %s", resource.Build.Pull))
 				}
@@ -218,11 +218,11 @@ var deployCmd = &cobra.Command{
 				if err := docker.ExecDocker("push", resource.Build.Tag); err != nil {
 					return err
 				}
-			case ResourceTypeJob:
+			case hope.ResourceTypeJob:
 				if err := hope.FollowLogsAndPollUntilJobComplete(log.WithFields(log.Fields{}), kubectl, resource.Job, 10, 60); err != nil {
 					return err
 				}
-			case ResourceTypeExec:
+			case hope.ResourceTypeExec:
 				allArgs := []string{"exec", "-it", resource.Exec.Selector}
 				if len(resource.Exec.Timeout) != 0 {
 					allArgs = append(allArgs, "--pod-running-timeout", resource.Exec.Timeout)

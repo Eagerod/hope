@@ -15,77 +15,8 @@ import (
 	"github.com/Eagerod/hope/pkg/maputil"
 )
 
-const (
-	ResourceTypeFile        string = "file"
-	ResourceTypeInline      string = "inline"
-	ResourceTypeDockerBuild string = "build"
-	ResourceTypeJob         string = "job"
-	ResourceTypeExec        string = "exec"
-)
-
-// Should be defined in hope pkg
-type BuildSpec struct {
-	Path   string
-	Source string
-	Tag    string
-	Pull   string
-}
-
-type ExecSpec struct {
-	Selector string
-	Timeout  string
-	Command  []string
-}
-
-type Resource struct {
-	Name       string
-	File       string
-	Inline     string
-	Parameters []string
-	Build      BuildSpec
-	Job        string
-	Exec       ExecSpec
-	Tags       []string
-}
-
-// TODO: Allow jobs to define max retry parameters, or accept them on the
-//   command line.
-type Job struct {
-	Name       string
-	File       string
-	Parameters []string
-}
-
-func (resource *Resource) GetType() (string, error) {
-	detectedTypes := []string{}
-	if len(resource.File) != 0 {
-		detectedTypes = append(detectedTypes, ResourceTypeFile)
-	}
-	if len(resource.Inline) != 0 {
-		detectedTypes = append(detectedTypes, ResourceTypeInline)
-	}
-	if (len(resource.Build.Path) != 0 || len(resource.Build.Source) != 0) && len(resource.Build.Tag) != 0 {
-		detectedTypes = append(detectedTypes, ResourceTypeDockerBuild)
-	}
-	if len(resource.Job) != 0 {
-		detectedTypes = append(detectedTypes, ResourceTypeJob)
-	}
-	if len(resource.Exec.Selector) != 0 && len(resource.Exec.Command) != 0 {
-		detectedTypes = append(detectedTypes, ResourceTypeExec)
-	}
-
-	switch len(detectedTypes) {
-	case 0:
-		return "", errors.New(fmt.Sprintf("Failed to find type of resource '%s'", resource.Name))
-	case 1:
-		return detectedTypes[0], nil
-	default:
-		return "", errors.New(fmt.Sprintf("Detected multiple types for resource '%s': %s", resource.Name, strings.Join(detectedTypes, ", ")))
-	}
-}
-
-func getResources() (*[]Resource, error) {
-	var resources []Resource
+func getResources() (*[]hope.Resource, error) {
+	var resources []hope.Resource
 	err := viper.UnmarshalKey("resources", &resources)
 
 	nameMap := map[string]bool{}
@@ -99,8 +30,8 @@ func getResources() (*[]Resource, error) {
 	return &resources, err
 }
 
-func getJob(jobName string) (*Job, error) {
-	var jobs []Job
+func getJob(jobName string) (*hope.Job, error) {
+	var jobs []hope.Job
 	err := viper.UnmarshalKey("jobs", &jobs)
 	if err != nil {
 		return nil, err
@@ -151,8 +82,8 @@ func replaceParametersWithSubstitutor(t *hope.TextSubstitutor, parameters []stri
 	return string(*t.Bytes), nil
 }
 
-func getIdentifiableResources(names *[]string, tags *[]string) (*[]Resource, error) {
-	returnSlice := []Resource{}
+func getIdentifiableResources(names *[]string, tags *[]string) (*[]hope.Resource, error) {
+	returnSlice := []hope.Resource{}
 	nameMap := map[string]bool{}
 	tagMap := map[string]bool{}
 

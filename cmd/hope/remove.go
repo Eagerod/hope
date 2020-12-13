@@ -64,7 +64,7 @@ var removeCmd = &cobra.Command{
 			//   templated values, so still do the environment substitution
 			//   process.
 			switch resourceType {
-			case ResourceTypeFile:
+			case hope.ResourceTypeFile:
 				if len(resource.Parameters) != 0 {
 					content, err := replaceParametersInFile(resource.File, resource.Parameters)
 					if err != nil {
@@ -80,7 +80,7 @@ var removeCmd = &cobra.Command{
 						return err
 					}
 				}
-			case ResourceTypeInline:
+			case hope.ResourceTypeInline:
 				inline := resource.Inline
 
 				// Log out the inline resource before substituting it; secrets
@@ -99,11 +99,11 @@ var removeCmd = &cobra.Command{
 				if err := hope.KubectlDeleteStdIn(kubectl, inline); err != nil {
 					return err
 				}
-			case ResourceTypeDockerBuild:
+			case hope.ResourceTypeDockerBuild:
 				log.Debug("Skipping removal of docker image.")
-			case ResourceTypeJob:
+			case hope.ResourceTypeJob:
 				log.Debug("Skipping removal of job resource type.")
-			case ResourceTypeExec:
+			case hope.ResourceTypeExec:
 				log.Debug("Skipping removal of exec resource type.")
 			default:
 				return errors.New(fmt.Sprintf("Resource type (%s) not implemented.", resourceType))
