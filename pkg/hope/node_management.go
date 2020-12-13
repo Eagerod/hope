@@ -156,40 +156,42 @@ func TaintNodeByHost(kubectl *kubeutil.Kubectl, host string, taint string) error
 	return nil
 }
 
-func SetHostname(log *logrus.Entry, host string, hostname string, force bool) error {
-	existingHostname, err := ssh.GetSSH(host, "hostname")
+func SetHostname(log *logrus.Entry, node Node, hostname string, force bool) error {
+	connectionString := node.ConnectionString()
+
+	existingHostname, err := ssh.GetSSH(connectionString, "hostname")
 	if err != nil {
 		return nil
 	}
 	existingHostname = strings.TrimSpace(existingHostname)
 
 	if !force {
-		log.Trace("Testing hostname on ", host, " before committing any changes...")
+		log.Trace("Testing hostname on ", node.Host, " before committing any changes...")
 
 		if hostname == existingHostname {
-			log.Debug("Hostname of ", host, " is already ", hostname, ". Skipping hostname setting.")
+			log.Debug("Hostname of ", node.Host, " is already ", hostname, ". Skipping hostname setting.")
 
 			return nil
 		} else {
-			log.Trace("Hostname of ", host, " is ", existingHostname)
+			log.Trace("Hostname of ", node.Host, " is ", existingHostname)
 		}
 	}
 
 	log.Trace("Setting hostname to ", hostname)
-	if err := ssh.ExecSSH(host, "hostnamectl", "set-hostname", hostname); err != nil {
+	if err := ssh.ExecSSH(connectionString, "hostnamectl", "set-hostname", hostname); err != nil {
 		return err
 	}
 
 	// TODO: _Might_ be worth dropping word boundaries on the sed script?
 	log.Debug("Replacing all instances of ", existingHostname, " in /etc/hosts")
 	sedScript := fmt.Sprintf("'s/%s/%s/g'", existingHostname, hostname)
-	if err := ssh.ExecSSH(host, "sed", "-i", sedScript, "/etc/hosts"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sed", "-i", sedScript, "/etc/hosts"); err != nil {
 		return err
 	}
 
 	// Host _should_ come up before SSH times out.
-	log.Info("Restarting networking on ", host)
-	if err := ssh.ExecSSH(host, "systemctl", "restart", "network"); err != nil {
+	log.Info("Restarting networking on ", node.Host)
+	if err := ssh.ExecSSH(connectionString, "systemctl", "restart", "network"); err != nil {
 	}
 
 	return nil

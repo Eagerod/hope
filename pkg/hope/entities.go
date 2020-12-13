@@ -156,3 +156,8 @@ func (node *Node) IsMaster() bool {
 func (node *Node) IsNode() bool {
 	return node.Role == "node" || node.IsMasterAndNode()
 }
+
+// IsValidRole - Whether or not the node has a role that has been implemented.
+func (node *Node) IsValidRole() bool {
+	return node.IsMaster() || node.IsNode()
+}
