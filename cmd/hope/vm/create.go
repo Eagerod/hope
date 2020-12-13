@@ -16,14 +16,17 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/fileutil"
-	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
 var createCmdVmName string
+var createCmdMemory string
+var createCmdCpu string
 
 func initCreateCmdFlags() {
 	createCmd.Flags().StringVarP(&createCmdVmName, "name", "n", "", "what to name the virtual machine. If left blank, defaults to the hope file name.")
+	createCmd.Flags().StringVarP(&createCmdMemory, "memory", "m", "", "how much memory to given the created VM.")
+	createCmd.Flags().StringVarP(&createCmdCpu, "cpu", "c", "", "how many vCPUs to given the created VM.")
 }
 
 var createCmd = &cobra.Command{
@@ -117,6 +120,16 @@ var createCmd = &cobra.Command{
 			"--diskMode=thin",
 			"--datastore=Main",
 			"--net:'VM Network=VM Network'",
+		}
+
+		if createCmdCpu != "" {
+			cpuArg := fmt.Sprintf("--numberOfCpus:'*'=%s", createCmdCpu)
+			allArgs = append(allArgs, cpuArg)
+		}
+
+		if createCmdMemory != "" {
+			memoryArg := fmt.Sprintf("--memorySize:'*'=%s", createCmdMemory)
+			allArgs = append(allArgs, memoryArg)
 		}
 
 		if createCmdVmName != "" {
