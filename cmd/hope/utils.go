@@ -30,19 +30,64 @@ func getResources() (*[]hope.Resource, error) {
 	return &resources, err
 }
 
-func getJob(jobName string) (*hope.Job, error) {
+func getJobs() (*[]hope.Job, error) {
 	var jobs []hope.Job
 	err := viper.UnmarshalKey("jobs", &jobs)
+
+	nameMap := map[string]bool{}
+	for _, job := range jobs {
+		if _, ok := nameMap[job.Name]; ok {
+			return nil, errors.New(fmt.Sprintf("Multiple jobs found in configuration file named: %s", job.Name))
+		}
+		nameMap[job.Name] = true
+	}
+
+	return &jobs, err
+}
+
+func getJob(jobName string) (*hope.Job, error) {
+	jobs, err := getJobs()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, job := range jobs {
+	for _, job := range *jobs {
 		if job.Name == jobName {
 			return &job, nil
 		}
 	}
+
 	return nil, errors.New(fmt.Sprintf("Failed to find a job named %s", jobName))
+}
+
+func getNodes() (*[]hope.Node, error) {
+	var nodes []hope.Node
+	err := viper.UnmarshalKey("nodes", &nodes)
+
+	nameMap := map[string]bool{}
+	for _, node := range nodes {
+		if _, ok := nameMap[node.Name]; ok {
+			return nil, errors.New(fmt.Sprintf("Multiple nodes found in configuration file named: %s", node.Name))
+		}
+		nameMap[node.Name] = true
+	}
+
+	return &nodes, err
+}
+
+func GetNode(name string) (*hope.Node, error) {
+	nodes, err := getNodes()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, node := range *nodes {
+		if node.Name == name {
+			return &node, nil
+		}
+	}
+
+	return nil, errors.New(fmt.Sprintf("Failed to find a node named %s", name))
 }
 
 func replaceParametersInString(str string, parameters []string) (string, error) {

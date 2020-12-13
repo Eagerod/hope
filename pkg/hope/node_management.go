@@ -18,52 +18,57 @@ import (
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
-func setupCommonNodeRequirements(log *logrus.Entry, masterIp string) error {
-	if err := TestCanSSHWithoutPassword(masterIp); err != nil {
+func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
+	if node.Role != "master" && node.Role != "node" && node.Role != "master+node" {
+		return errors.New(fmt.Sprintf("Node has role %s, should not prepare as Kubernetes node.", node.Role))
+	}
+
+	connectionString := node.ConnectionString()
+	if err := TestCanSSHWithoutPassword(connectionString); err != nil {
 		return err
 	}
 
-	log.Debug("Preparing Kubernetes components at ", masterIp)
+	log.Debug("Preparing Kubernetes components at ", connectionString)
 
 	// Write all the empty files that should exist first.
-	dest := fmt.Sprintf("%s:%s", masterIp, "/etc/sysconfig/docker-storage")
+	dest := fmt.Sprintf("%s:%s", connectionString, "/etc/sysconfig/docker-storage")
 	if err := scp.ExecSCPBytes([]byte(""), dest); err != nil {
 		return err
 	}
 
-	dest = fmt.Sprintf("%s:%s", masterIp, "/etc/sysconfig/docker-storage-setup")
+	dest = fmt.Sprintf("%s:%s", connectionString, "/etc/sysconfig/docker-storage-setup")
 	if err := scp.ExecSCPBytes([]byte(""), dest); err != nil {
 		return err
 	}
 
 	// Write files with contents.
-	dest = fmt.Sprintf("%s:%s", masterIp, "/etc/docker/daemon.json")
+	dest = fmt.Sprintf("%s:%s", connectionString, "/etc/docker/daemon.json")
 	if err := scp.ExecSCPBytes([]byte(DockerDaemonJson), dest); err != nil {
 		return err
 	}
 
-	dest = fmt.Sprintf("%s:%s", masterIp, "/etc/sysctl.d/k8s.conf")
+	dest = fmt.Sprintf("%s:%s", connectionString, "/etc/sysctl.d/k8s.conf")
 	if err := scp.ExecSCPBytes([]byte(K8SConf), dest); err != nil {
 		return err
 	}
 
-	dest = fmt.Sprintf("%s:%s", masterIp, "/proc/sys/net/ipv4/ip_forward")
+	dest = fmt.Sprintf("%s:%s", connectionString, "/proc/sys/net/ipv4/ip_forward")
 	if err := scp.ExecSCPBytes([]byte(IpForward), dest); err != nil {
 		return err
 	}
 
 	// Various other setups.
-	if err := ssh.ExecSSH(masterIp, "sed", "-i", "'/--exec-opt native.cgroupdriver/d'", "/usr/lib/systemd/system/docker.service"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sed", "-i", "'/--exec-opt native.cgroupdriver/d'", "/usr/lib/systemd/system/docker.service"); err != nil {
 		return err
 	}
 
-	ssh.ExecSSH(masterIp, "sed", "-i", "'s/--log-driver=journald//'", "/etc/sysconfig/docker")
+	ssh.ExecSSH(connectionString, "sed", "-i", "'s/--log-driver=journald//'", "/etc/sysconfig/docker")
 
-	if err := ssh.ExecSSH(masterIp, "sysctl", "-p"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sysctl", "-p"); err != nil {
 		return err
 	}
 
-	if err := DisableSwapOnRemote(masterIp); err != nil {
+	if err := DisableSwapOnRemote(connectionString); err != nil {
 		return err
 	}
 
@@ -77,40 +82,50 @@ func setupCommonNodeRequirements(log *logrus.Entry, masterIp string) error {
 		},
 		" && ",
 	))
-	if err := ssh.ExecSSH(masterIp, "bash", "-c", daemonsScript); err != nil {
+	if err := ssh.ExecSSH(connectionString, "bash", "-c", daemonsScript); err != nil {
 		return err
 	}
 
-	if err := DisableSelinuxOnRemote(masterIp); err != nil {
+	if err := DisableSelinuxOnRemote(connectionString); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func CreateClusterMaster(log *logrus.Entry, masterIp string, podNetworkCidr string) error {
-	if err := setupCommonNodeRequirements(log, masterIp); err != nil {
+func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string) error {
+	if node.Role != "master" && node.Role != "master+node" {
+		return errors.New(fmt.Sprintf("Node has role %s and should not be set up as a Kubernetes master", node.Role))
+	}
+
+	if err := setupCommonNodeRequirements(log, node); err != nil {
 		return err
 	}
 
-	if err := forceUserToEnterHostnameToContinue(masterIp); err != nil {
+	connectionString := node.ConnectionString()
+	if err := forceUserToEnterHostnameToContinue(connectionString); err != nil {
 		return err
 	}
 
 	podNetworkCidrArg := fmt.Sprintf("--pod-network-cidr=%s", podNetworkCidr)
-	if err := ssh.ExecSSH(masterIp, "kubeadm", "init", podNetworkCidrArg); err != nil {
+	if err := ssh.ExecSSH(connectionString, "kubeadm", "init", podNetworkCidrArg); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func CreateClusterNode(log *logrus.Entry, nodeIp string, masterIp string) error {
-	if err := setupCommonNodeRequirements(log, nodeIp); err != nil {
+func CreateClusterNode(log *logrus.Entry, node *Node, masterIp string) error {
+	if node.Role != "node" && node.Role != "master+node" {
+		return errors.New(fmt.Sprintf("Node has role %s and should not be set up as a Kubernetes node", node.Role))
+	}
+
+	if err := setupCommonNodeRequirements(log, node); err != nil {
 		return err
 	}
 
-	if err := forceUserToEnterHostnameToContinue(nodeIp); err != nil {
+	connectionString := node.ConnectionString()
+	if err := forceUserToEnterHostnameToContinue(connectionString); err != nil {
 		return err
 	}
 
@@ -120,7 +135,7 @@ func CreateClusterNode(log *logrus.Entry, nodeIp string, masterIp string) error 
 	}
 
 	joinComponents := strings.Split(joinCommand, " ")
-	allArguments := append([]string{nodeIp}, joinComponents...)
+	allArguments := append([]string{connectionString}, joinComponents...)
 	if err := ssh.ExecSSH(allArguments...); err != nil {
 		return err
 	}

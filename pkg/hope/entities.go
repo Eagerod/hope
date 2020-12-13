@@ -72,6 +72,15 @@ type Job struct {
 	Parameters []string
 }
 
+// Node - Defines a networked resource on which operations will typically be
+//   executed.
+type Node struct {
+	Name string
+	Role string
+	Host string
+	User string
+}
+
 func (rt ResourceType) String() string {
 	switch rt {
 	case ResourceTypeFile:
@@ -121,4 +130,29 @@ func (resource *Resource) GetType() (ResourceType, error) {
 		}
 		return ResourceTypeUnknown, fmt.Errorf("Detected multiple types for resource '%s': %s", resource.Name, strings.Join(detectedTypeStrings, ", "))
 	}
+}
+
+// ConnectionString - Get the node's connection string
+func (node *Node) ConnectionString() string {
+	if node.User != "" {
+		return fmt.Sprintf("%s:%s", node.User, node.Host)
+	}
+
+	return node.Host
+}
+
+// IsMasterAndNode - Whether or not this node plays the roles of both control
+//   plane and worker node.
+func (node *Node) IsMasterAndNode() bool {
+	return node.Role == "master+node"
+}
+
+// IsMaster - Whether or not this node is a control plane node.
+func (node *Node) IsMaster() bool {
+	return node.Role == "master" || node.IsMasterAndNode()
+}
+
+// IsNode - Whether or not this node is a worker node.
+func (node *Node) IsNode() bool {
+	return node.Role == "node" || node.IsMasterAndNode()
 }

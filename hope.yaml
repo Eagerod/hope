@@ -1,10 +1,15 @@
 access_points:
   - 192.168.2.43
 access_point_controller: http://192.168.2.10:8080
-masters:
-  - root@192.168.1.31
 nodes:
-  - root@192.168.1.30
+  - name: home-master-01
+    role: master
+    hostname: 192.168.1.31
+    user: root
+  - name: home-node-01
+    role: node
+    hostname: 192.168.1.30
+    user: root
 loglevel: trace
 pod_network_cidr: 10.244.0.0/16
 # Resource list of all things to deploy to the cluster, and the order in which
