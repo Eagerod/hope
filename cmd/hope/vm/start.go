@@ -13,9 +13,14 @@ var startCmd = &cobra.Command{
 	Short: "Starts a VM on the specified host.",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		host := args[0]
+		hypervisorName := args[0]
 		vmName := args[1]
 
-		return esxi.PowerOnVmNamed(host, vmName)
+		hypervisor, err := getHypervisor(hypervisorName)
+		if err != nil {
+			return err
+		}
+
+		return esxi.PowerOnVmNamed(hypervisor.ConnectionString, vmName)
 	},
 }

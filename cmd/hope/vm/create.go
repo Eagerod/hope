@@ -2,7 +2,6 @@ package vm
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -34,8 +33,13 @@ var createCmd = &cobra.Command{
 	Short: "Creates a VM on the specified host.",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		hostname := args[0]
+		hypervisorName := args[0]
 		vmName := args[1]
+
+		hypervisor, err := getHypervisor(hypervisorName)
+		if err != nil {
+			return err
+		}
 
 		vms, err := getVMs()
 		if err != nil {
@@ -83,28 +87,6 @@ var createCmd = &cobra.Command{
 			return err
 		}
 
-		packerOutDir := packerSpec.Builders[0].OutputDirectory
-		if stat, err := os.Stat(packerOutDir); err != nil {
-			if os.IsNotExist(err) {
-				return errors.New(fmt.Sprintf("Failed to find VM output directory at %s", packerOutDir))
-			}
-		} else {
-			if !stat.IsDir() {
-				return errors.New(fmt.Sprintf("VM output is not a directory at %s", packerOutDir))
-			}
-		}
-
-		// Copy to remote.
-		// TODO: Optimize with something like rsync/just checking hashes
-		//   before copying, depending on how much I want to add more
-		//   dependencies.
-		scpSrcDir := fmt.Sprintf("%s/", packerOutDir)
-		remoteVmfsPath := path.Join("/vmfs/volumes/Main/ovfs", packerSpec.Builders[0].VMName)
-		remoteVMPath := fmt.Sprintf("%s:%s/", hostname, remoteVmfsPath)
-		if err := scp.ExecSCP("-r", scpSrcDir, remoteVMPath); err != nil {
-			return err
-		}
-
 		// Exec OVF tool to start VM.
 		// https://www.virtuallyghetto.com/2012/05/how-to-deploy-ovfova-in-esxi-shell.html
 		// Note: Right now, this requires manual intervention, since it
@@ -113,12 +95,14 @@ var createCmd = &cobra.Command{
 		//   arguments still get passed without them printing out, or setting
 		//   up ExecSSH to have a version that accepts stdin.
 		vmOvfName := fmt.Sprintf("%s.ovf", packerSpec.Builders[0].VMName)
-		remoteOvfPath := path.Join(remoteVmfsPath, vmOvfName)
+		remoteOvfPath := path.Join("/", "vmfs", "volumes", hypervisor.Datastore, "ovfs", packerSpec.Builders[0].VMName, vmOvfName)
+		remoteDatastoreName := fmt.Sprintf("--datastore=%s", hypervisor.Datastore)
+		ovfToolPath := path.Join("/", "vmfs", "volumes", hypervisor.Datastore, "bin", "ovftool", "ovftool")
 		allArgs := []string{
-			hostname,
-			"/vmfs/volumes/Main/bin/ovftool/ovftool",
+			hypervisor.ConnectionString,
+			ovfToolPath,
 			"--diskMode=thin",
-			"--datastore=Main",
+			remoteDatastoreName,
 			"--net:'VM Network=VM Network'",
 		}
 

@@ -13,9 +13,14 @@ var stopCmd = &cobra.Command{
 	Short: "Stops a VM on the specified host.",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		host := args[0]
+		hypervisorName := args[0]
 		vmName := args[1]
 
-		return esxi.PowerOffVmNamed(host, vmName)
+		hypervisor, err := getHypervisor(hypervisorName)
+		if err != nil {
+			return err
+		}
+
+		return esxi.PowerOffVmNamed(hypervisor.ConnectionString, vmName)
 	},
 }

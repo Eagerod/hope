@@ -27,6 +27,12 @@ type VMs struct {
 	RootDir string `mapstructure:"root_dir"`
 }
 
+type Hypervisor struct {
+	Name string
+	ConnectionString string `mapstructure:"connection_string"`
+	Datastore string
+}
+
 func getVMs() (*VMs, error) {
 	var vms VMs
 	err := viper.UnmarshalKey("vms", &vms)
@@ -48,14 +54,40 @@ func vmSpec(vmName string) (*VMImageSpec, error) {
 		return nil, err
 	}
 
-	for _, avm := range vms.Images {
-		if avm.Name == vmName {
-			return &avm, nil
+	for _, vm := range vms.Images {
+		if vm.Name == vmName {
+			return &vm, nil
 
 		}
 	}
 
 	return nil, errors.New(fmt.Sprintf("No VM named %s found in image definitions.", vmName))
+}
+
+func getHypervisors() (*[]Hypervisor, error) {
+	var hv []Hypervisor
+	
+	if err := viper.UnmarshalKey("hypervisors", &hv); err != nil {
+		return nil, err
+	} 
+
+	return &hv, nil
+}
+
+func getHypervisor(hvName string) (*Hypervisor, error) {
+	hvs, err := getHypervisors()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, hv := range *hvs {
+		if hv.Name == hvName {
+			return &hv, nil
+
+		}
+	}
+
+	return nil, errors.New(fmt.Sprintf("No hypervisor named %s found in hypervisor definitions.", hvName))
 }
 
 // Copied from parent package.

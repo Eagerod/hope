@@ -17,6 +17,7 @@ import (
 import (
 	"github.com/Eagerod/hope/pkg/fileutil"
 	"github.com/Eagerod/hope/pkg/packer"
+	"github.com/Eagerod/hope/pkg/scp"
 )
 
 var imageCmdParameterSlice *[]string
@@ -138,6 +139,25 @@ var imageCmd = &cobra.Command{
 
 		log.Info(fmt.Sprintf("Building VM Image: %s", vm.Name))
 
-		return packer.ExecPackerWd(tempDir, allArgs...)
+		if err := packer.ExecPackerWd(tempDir, allArgs...); err != nil {
+			return err
+		}
+
+		// Copy to all hypervisors.
+		hypervisors, err := getHypervisors()
+		if err != nil {
+			return err
+		}
+
+		for _, hv := range *hypervisors {
+			scpSrcDir := fmt.Sprintf("%s/", packerOutDir)
+			remoteVmfsPath := path.Join("vmfs", "volumes", hv.Datastore, "ovfs", packerSpec.Builders[0].VMName )
+			remoteVMPath := fmt.Sprintf("%s:%s/", hv.ConnectionString, remoteVmfsPath)
+			if err := scp.ExecSCP("-r", scpSrcDir, remoteVMPath); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	},
 }
