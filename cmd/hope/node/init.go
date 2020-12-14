@@ -47,7 +47,7 @@ var initCmd = &cobra.Command{
 
 			defer kubectl.Destroy()
 
-			if err := hope.TaintNodeByHost(kubectl, node.Host, "node-role.kubernetes.io/master:NoSchedule-"); err != nil {
+			if err := hope.TaintNodeByHost(kubectl, node, "node-role.kubernetes.io/master:NoSchedule-"); err != nil {
 				return err
 			}
 		} else if node.IsMaster() {

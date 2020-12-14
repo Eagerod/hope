@@ -17,33 +17,37 @@ import (
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
-func DisableSwapOnRemote(remote string) error {
+func DisableSwapOnRemote(node *Node) error {
+	connectionString := node.ConnectionString()
+
 	// TODO: Execute in a single SSH session.
-	if err := ssh.ExecSSH(remote, "sed", "-i", "'/ swap / s/^/#/'", "/etc/fstab"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sed", "-i", "'/ swap / s/^/#/'", "/etc/fstab"); err != nil {
 		return err
 	}
 
-	if err := ssh.ExecSSH(remote, "swapoff", "-a"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "swapoff", "-a"); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func DisableSelinuxOnRemote(remote string) error {
+func DisableSelinuxOnRemote(node *Node) error {
+	connectionString := node.ConnectionString()
+
 	// TODO: Execute in a single SSH session.
-	enforcing, err := ssh.GetSSH(remote, "getenforce")
+	enforcing, err := ssh.GetSSH(connectionString, "getenforce")
 	if err != nil {
 		return err
 	}
 
 	if strings.TrimSpace(enforcing) != "Disabled" {
-		if err := ssh.ExecSSH(remote, "setenforce", "0"); err != nil {
+		if err := ssh.ExecSSH(connectionString, "setenforce", "0"); err != nil {
 			return err
 		}
 	}
 
-	if err := ssh.ExecSSH(remote, "sed", "-i", "'s/SELINUX=enforcing/SELINUX=disabled/g'", "/etc/selinux/config"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sed", "-i", "'s/SELINUX=enforcing/SELINUX=disabled/g'", "/etc/selinux/config"); err != nil {
 		return err
 	}
 
@@ -53,8 +57,8 @@ func DisableSelinuxOnRemote(remote string) error {
 func EnsureSSHWithoutPassword(log *logrus.Entry, node *Node) error {
 	connectionString := node.ConnectionString()
 
-	if err := TestCanSSHWithoutPassword(connectionString); err == nil {
-		log.Trace("Passwordless SSH has already been configured on ", connectionString)
+	if err := TestCanSSHWithoutPassword(node); err == nil {
+		log.Trace("Passwordless SSH has already been configured for ", connectionString)
 		return nil
 	}
 
@@ -87,8 +91,8 @@ func EnsureSSHWithoutPassword(log *logrus.Entry, node *Node) error {
 // Attempt to SSH into a machine without allowing password authentication.
 // Also disables strict host checking to prevent the unattended nature of the
 //   execution from causing the script to fail.
-func TestCanSSHWithoutPassword(host string) error {
-	return ssh.ExecSSH("-o", "Batchmode=yes", "-o", "StrictHostKeyChecking=no", "-o", "PasswordAuthentication=no", host, "exit")
+func TestCanSSHWithoutPassword(node *Node) error {
+	return ssh.ExecSSH("-o", "Batchmode=yes", "-o", "StrictHostKeyChecking=no", "-o", "PasswordAuthentication=no", node.ConnectionString(), "exit")
 }
 
 // See what SSH key this host is trying to use, and try copying it over to the

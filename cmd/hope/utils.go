@@ -75,7 +75,7 @@ func getNodes() (*[]hope.Node, error) {
 	return &nodes, err
 }
 
-func GetNode(name string) (*hope.Node, error) {
+func getNode(name string) (*hope.Node, error) {
 	nodes, err := getNodes()
 	if err != nil {
 		return nil, err

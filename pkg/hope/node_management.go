@@ -23,13 +23,13 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 		return errors.New(fmt.Sprintf("Node has role %s, should not prepare as Kubernetes node.", node.Role))
 	}
 
-	connectionString := node.ConnectionString()
-	if err := TestCanSSHWithoutPassword(connectionString); err != nil {
+	if err := TestCanSSHWithoutPassword(node); err != nil {
 		return err
 	}
 
-	log.Debug("Preparing Kubernetes components at ", connectionString)
+	log.Debug("Preparing Kubernetes components at ", node.Host)
 
+	connectionString := node.ConnectionString()
 	// Write all the empty files that should exist first.
 	dest := fmt.Sprintf("%s:%s", connectionString, "/etc/sysconfig/docker-storage")
 	if err := scp.ExecSCPBytes([]byte(""), dest); err != nil {
@@ -68,7 +68,7 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 		return err
 	}
 
-	if err := DisableSwapOnRemote(connectionString); err != nil {
+	if err := DisableSwapOnRemote(node); err != nil {
 		return err
 	}
 
@@ -86,7 +86,7 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 		return err
 	}
 
-	if err := DisableSelinuxOnRemote(connectionString); err != nil {
+	if err := DisableSelinuxOnRemote(node); err != nil {
 		return err
 	}
 
@@ -102,11 +102,11 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string) e
 		return err
 	}
 
-	connectionString := node.ConnectionString()
-	if err := forceUserToEnterHostnameToContinue(connectionString); err != nil {
+	if err := forceUserToEnterHostnameToContinue(node); err != nil {
 		return err
 	}
 
+	connectionString := node.ConnectionString()
 	podNetworkCidrArg := fmt.Sprintf("--pod-network-cidr=%s", podNetworkCidr)
 	if err := ssh.ExecSSH(connectionString, "kubeadm", "init", podNetworkCidrArg); err != nil {
 		return err
@@ -124,8 +124,7 @@ func CreateClusterNode(log *logrus.Entry, node *Node, masterIp string) error {
 		return err
 	}
 
-	connectionString := node.ConnectionString()
-	if err := forceUserToEnterHostnameToContinue(connectionString); err != nil {
+	if err := forceUserToEnterHostnameToContinue(node); err != nil {
 		return err
 	}
 
@@ -134,6 +133,7 @@ func CreateClusterNode(log *logrus.Entry, node *Node, masterIp string) error {
 		return err
 	}
 
+	connectionString := node.ConnectionString()
 	joinComponents := strings.Split(joinCommand, " ")
 	allArguments := append([]string{connectionString}, joinComponents...)
 	if err := ssh.ExecSSH(allArguments...); err != nil {
@@ -143,8 +143,8 @@ func CreateClusterNode(log *logrus.Entry, node *Node, masterIp string) error {
 	return nil
 }
 
-func TaintNodeByHost(kubectl *kubeutil.Kubectl, host string, taint string) error {
-	nodeName, err := kubeutil.NodeNameFromHost(kubectl, host)
+func TaintNodeByHost(kubectl *kubeutil.Kubectl, node *Node, taint string) error {
+	nodeName, err := kubeutil.NodeNameFromHost(kubectl, node.Host)
 	if err != nil {
 		return err
 	}
@@ -197,8 +197,10 @@ func SetHostname(log *logrus.Entry, node *Node, hostname string, force bool) err
 	return nil
 }
 
-func forceUserToEnterHostnameToContinue(host string) error {
-	hostname, err := ssh.GetSSH(host, "hostname")
+func forceUserToEnterHostnameToContinue(node *Node) error {
+	connectionString := node.ConnectionString()
+
+	hostname, err := ssh.GetSSH(connectionString, "hostname")
 	if err != nil {
 		return err
 	}

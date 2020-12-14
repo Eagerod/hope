@@ -58,6 +58,6 @@ var resetCmd = &cobra.Command{
 
 		// TODO: may need to add more validation, like that this isn't the
 		//   only master and is being removed, unless force is provided.
-		return hope.KubeadmResetRemote(log.WithFields(log.Fields{}), kubectl, node.Host, resetCmdForce)
+		return hope.KubeadmResetRemote(log.WithFields(log.Fields{}), kubectl, node, resetCmdForce)
 	},
 }
