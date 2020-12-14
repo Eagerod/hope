@@ -51,7 +51,7 @@ func TestGetResources(t *testing.T) {
 
 	resources, err := getResources()
 	assert.Nil(t, err)
-	assert.Equal(t, 5, len(*resources))
+	assert.Equal(t, 6, len(*resources))
 }
 
 func TestGetIdentifiableResources(t *testing.T) {
