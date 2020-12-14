@@ -19,7 +19,7 @@ import (
 )
 
 func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
-	if node.Role != "master" && node.Role != "node" && node.Role != "master+node" {
+	if !node.IsRoleValid() {
 		return errors.New(fmt.Sprintf("Node has role %s, should not prepare as Kubernetes node.", node.Role))
 	}
 
@@ -94,7 +94,7 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 }
 
 func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string) error {
-	if node.Role != "master" && node.Role != "master+node" {
+	if !node.IsMaster() {
 		return errors.New(fmt.Sprintf("Node has role %s and should not be set up as a Kubernetes master", node.Role))
 	}
 
@@ -116,7 +116,7 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string) e
 }
 
 func CreateClusterNode(log *logrus.Entry, node *Node, masterIp string) error {
-	if node.Role != "node" && node.Role != "master+node" {
+	if !node.IsNode() {
 		return errors.New(fmt.Sprintf("Node has role %s and should not be set up as a Kubernetes node", node.Role))
 	}
 
