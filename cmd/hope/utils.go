@@ -90,6 +90,21 @@ func getNode(name string) (*hope.Node, error) {
 	return nil, errors.New(fmt.Sprintf("Failed to find a node named %s", name))
 }
 
+func getAnyMaster() (*hope.Node, error) {
+	nodes, err := getNodes()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, node := range *nodes {
+		if node.IsMaster() {
+			return &node, nil
+		}
+	}
+
+	return nil, errors.New("Failed to find any master in nodes config")
+}
+
 func replaceParametersInString(str string, parameters []string) (string, error) {
 	t := hope.NewTextSubstitutorFromString(str)
 	return replaceParametersWithSubstitutor(t, parameters)

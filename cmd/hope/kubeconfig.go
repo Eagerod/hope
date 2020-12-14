@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 )
 
 import (
@@ -27,20 +28,12 @@ var kubeconfigCmd = &cobra.Command{
 
 		var master *hope.Node
 		if len(args) == 0 {
-			nodes, err := getNodes()
+			aMaster, err := getAnyMaster()
 			if err != nil {
 				return err
 			}
-	
-			for _, node := range *nodes {
-				if node.IsMaster() {
-					master = &node
-					break
-				}
-			}
-			if master == nil {
-				return errors.New("Failed to find any master in nodes config")
-			}
+
+			master = aMaster
 
 			log.Debug("No host given to kubeconfig command. Using first master from nodes list.")
 		} else {
@@ -50,6 +43,10 @@ var kubeconfigCmd = &cobra.Command{
 			}
 
 			master = aMaster
+		}
+
+		if !master.IsMaster() {
+			return errors.New(fmt.Sprintf("Node: %s is not a master node", master.Host))
 		}
 
 		log.Debug("Fetching admin kubeconfig file from ", master.Host)
