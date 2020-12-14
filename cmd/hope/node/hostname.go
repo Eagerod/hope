@@ -8,12 +8,10 @@ import (
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 import (
 	"github.com/Eagerod/hope/pkg/hope"
-	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
 var hostnameCmdForce bool

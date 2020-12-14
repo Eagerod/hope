@@ -156,7 +156,7 @@ func TaintNodeByHost(kubectl *kubeutil.Kubectl, host string, taint string) error
 	return nil
 }
 
-func SetHostname(log *logrus.Entry, node Node, hostname string, force bool) error {
+func SetHostname(log *logrus.Entry, node *Node, hostname string, force bool) error {
 	connectionString := node.ConnectionString()
 
 	existingHostname, err := ssh.GetSSH(connectionString, "hostname")
