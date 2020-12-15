@@ -14,6 +14,19 @@ import (
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
+func resetViper(t *testing.T) {
+	viper.Reset()
+
+	// Assume config file in the project root.
+	// Probably bad practice, but better test than having nothing at all.
+	viper.AddConfigPath("../../")
+	viper.SetConfigName("hope")
+	viper.AutomaticEnv()
+
+	err := viper.ReadInConfig()
+	assert.Nil(t, err)
+}
+
 func TestReplaceParametersInString(t *testing.T) {
 	os.Setenv("HELLO", "Hello,")
 	os.Setenv("WORLD", "World!")
@@ -44,14 +57,7 @@ func TestReplaceParametersInString(t *testing.T) {
 // Basically a smoke test, don't want to define a ton of yaml blocks to test
 //   this extensively quite yet.
 func TestGetResources(t *testing.T) {
-	// Assume config file in the project root.
-	// Probably bad practice, but better test than having nothing at all.
-	viper.AddConfigPath("../../")
-	viper.SetConfigName("hope")
-	viper.AutomaticEnv()
-
-	err := viper.ReadInConfig()
-	assert.Nil(t, err)
+	resetViper(t)
 
 	resources, err := getResources()
 	assert.Nil(t, err)
@@ -59,14 +65,7 @@ func TestGetResources(t *testing.T) {
 }
 
 func TestGetIdentifiableResources(t *testing.T) {
-	// Assume config file in the project root.
-	// Probably bad practice, but better test than having nothing at all.
-	viper.AddConfigPath("../../")
-	viper.SetConfigName("hope")
-	viper.AutomaticEnv()
-
-	err := viper.ReadInConfig()
-	assert.Nil(t, err)
+	resetViper(t)
 
 	var tests = []struct {
 		name     string
@@ -94,14 +93,7 @@ func TestGetIdentifiableResources(t *testing.T) {
 // Basically a smoke test, don't want to define a ton of yaml blocks to test
 //   this extensively quite yet.
 func TestGetNodes(t *testing.T) {
-	// Assume config file in the project root.
-	// Probably bad practice, but better test than having nothing at all.
-	viper.AddConfigPath("../../../")
-	viper.SetConfigName("hope")
-	viper.AutomaticEnv()
-
-	err := viper.ReadInConfig()
-	assert.Nil(t, err)
+	resetViper(t)
 
 	nodes, err := getNodes()
 	assert.Nil(t, err)
@@ -126,14 +118,7 @@ func TestGetNodes(t *testing.T) {
 }
 
 func TestGetNode(t *testing.T) {
-	// Assume config file in the project root.
-	// Probably bad practice, but better test than having nothing at all.
-	viper.AddConfigPath("../../../")
-	viper.SetConfigName("hope")
-	viper.AutomaticEnv()
-
-	err := viper.ReadInConfig()
-	assert.Nil(t, err)
+	resetViper(t)
 
 	nodes, err := getNodes()
 	assert.Nil(t, err)
