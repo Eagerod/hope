@@ -4,11 +4,11 @@ access_point_controller: http://192.168.2.10:8080
 nodes:
   - name: home-master-01
     role: master
-    hostname: 192.168.1.31
+    host: 192.168.1.31
     user: root
   - name: home-node-01
     role: node
-    hostname: 192.168.1.30
+    host: 192.168.1.30
     user: root
 loglevel: trace
 pod_network_cidr: 10.244.0.0/16
