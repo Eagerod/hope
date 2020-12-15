@@ -133,9 +133,8 @@ func CreateClusterNode(log *logrus.Entry, node *Node, masterIp string) error {
 		return err
 	}
 
-	connectionString := node.ConnectionString()
 	joinComponents := strings.Split(joinCommand, " ")
-	allArguments := append([]string{connectionString}, joinComponents...)
+	allArguments := append([]string{node.ConnectionString()}, joinComponents...)
 	if err := ssh.ExecSSH(allArguments...); err != nil {
 		return err
 	}
