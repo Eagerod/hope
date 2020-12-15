@@ -15,13 +15,14 @@ import (
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
-func FetchKubeconfig(log *logrus.Entry, host string, merge bool) error {
+func FetchKubeconfig(log *logrus.Entry, node *Node, merge bool) error {
 	kubeconfigFile, err := kubeutil.GetKubeConfigPath()
 	if err != nil {
 		return err
 	}
 
-	kubectl, err := kubeutil.NewKubectlFromNode(host)
+	connectionString := node.ConnectionString()
+	kubectl, err := kubeutil.NewKubectlFromNode(connectionString)
 	if err != nil {
 		return err
 	}
@@ -52,7 +53,7 @@ func FetchKubeconfig(log *logrus.Entry, host string, merge bool) error {
 		return err
 	}
 
-	log.Debug("Merging existing KUBECONFIG file with file downloaded from ", host)
+	log.Debug("Merging existing KUBECONFIG file with file downloaded from ", connectionString)
 
 	combinerKubeconfig := kubeutil.NewKubectl(kubeconfigFile + ":" + kubectl.KubeconfigPath)
 	kubeconfigContents, err := kubeutil.GetKubectl(combinerKubeconfig, "config", "view", "--raw")

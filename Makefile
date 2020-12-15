@@ -7,11 +7,11 @@ EXECUTABLE := hope
 BIN_NAME := $(BUILD_DIR)/$(EXECUTABLE)
 INSTALLED_NAME := /usr/local/bin/$(EXECUTABLE)
 
-CMD_PACKAGE_DIR := ./cmd/hope
+CMD_PACKAGE_DIR := ./cmd/hope $(dir $(wildcard ./cmd/hope/*/))
 PKG_PACKAGE_DIR := ./pkg/*
 PACKAGE_PATHS := $(CMD_PACKAGE_DIR) $(PKG_PACKAGE_DIR)
 
-AUTOGEN_VERSION_FILENAME=$(CMD_PACKAGE_DIR)/version-temp.go
+AUTOGEN_VERSION_FILENAME=./cmd/hope/version-temp.go
 
 ALL_GO_DIRS = $(shell find . -iname "*.go" -exec dirname {} \; | sort | uniq)
 SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go") $(AUTOGEN_VERSION_FILENAME)
