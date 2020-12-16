@@ -71,16 +71,16 @@ func EnsureSSHWithoutPassword(log *logrus.Entry, node *Node) error {
 	out, _ := ssh.GetErrorSSH("-v", "-o", "Batchmode=yes", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", connectionString)
 
 	// Find a line that says "Authentications that can continue" and
-	//   password.
-	// This line existing will mean that password authentication is
-	//   enabled on the host.
+	//   password, or keyboard-interactive.
 	for _, line := range strings.Split(out, "\n") {
-		if strings.Contains(line, "Authentications that can continue") && strings.Contains(line, "password") {
-			log.Debug("Password authentication may be possible on ", connectionString, ". Attempting password session")
-			if err := TryConfigureSSH(log, node); err != nil {
-				return err
-			} else {
-				return nil
+		if strings.HasPrefix(line, "debug1: Authentications that can continue") {
+			if strings.Contains(line, "password") || strings.Contains(line, "keyboard-interactive") {
+				log.Debug("Password authentication may be possible on ", connectionString, ". Attempting password session")
+				if err := TryConfigureSSH(log, node); err != nil {
+					return err
+				} else {
+					return nil
+				}
 			}
 		}
 	}
