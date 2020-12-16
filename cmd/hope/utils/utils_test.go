@@ -10,16 +10,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-import (
-	"github.com/Eagerod/hope/pkg/hope"
-)
-
 func resetViper(t *testing.T) {
 	viper.Reset()
 
 	// Assume config file in the project root.
 	// Probably bad practice, but better test than having nothing at all.
-	viper.AddConfigPath("../../")
+	viper.AddConfigPath("../../../")
 	viper.SetConfigName("hope")
 	viper.AutomaticEnv()
 
@@ -44,7 +40,7 @@ func TestReplaceParametersInString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s, err := replaceParametersInString(tt.in, tt.parameters)
+			s, err := ReplaceParametersInString(tt.in, tt.parameters)
 			assert.Nil(t, err)
 			assert.Equal(t, tt.out, s)
 		})

@@ -18,7 +18,7 @@ import (
 func TestGetNodes(t *testing.T) {
 	resetViper(t)
 
-	nodes, err := getNodes()
+	nodes, err := GetNodes()
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(*nodes))
 
@@ -43,10 +43,6 @@ func TestGetNodes(t *testing.T) {
 func TestGetNode(t *testing.T) {
 	resetViper(t)
 
-	nodes, err := getNodes()
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(*nodes))
-
 	var tests = []struct {
 		name     string
 		nodeName string
@@ -57,7 +53,7 @@ func TestGetNode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			node, err := getNode(tt.nodeName)
+			node, err := GetNode(tt.nodeName)
 			assert.Nil(t, err)
 			assert.Equal(t, tt.node, *node)
 		})

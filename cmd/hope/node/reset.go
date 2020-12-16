@@ -12,6 +12,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
@@ -30,7 +31,7 @@ var resetCmd = &cobra.Command{
 		nodeName := args[0]
 		masters := viper.GetStringSlice("masters")
 
-		node, err := getNode(nodeName)
+		node, err := utils.GetNode(nodeName)
 		if err != nil {
 			return err
 		}

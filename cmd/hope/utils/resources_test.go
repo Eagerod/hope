@@ -8,10 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-import (
-	"github.com/Eagerod/hope/pkg/hope"
-)
-
 // Basically a smoke test, don't want to define a ton of yaml blocks to test
 //   this extensively quite yet.
 func TestGetResources(t *testing.T) {
