@@ -137,9 +137,6 @@ func CopySSHKeyToAuthorizedKeys(log *logrus.Entry, keyPath string, node *Node) e
 
 	// TODO: Maybe confirm that this actually is a public key, and if it looks
 	//   like a private key, try to add .pub and see if there's a file there.
-	// TODO: Because this is run as separate ssh sessions, each session
-	//   results in asking the user to password for the destination host.
-	//   Limiting this to a single invocation would be nice.
 	// TODO: Don't even copy the public key to a file on the remote.
 	//   Just write it through stdin from the ssh command.
 	destination := fmt.Sprintf("%s:tmp.pub", connectionString)
