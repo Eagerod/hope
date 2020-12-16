@@ -6,6 +6,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
@@ -16,7 +17,7 @@ var sshCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		nodeName := args[0]
 
-		node, err := getNode(nodeName)
+		node, err := utils.GetNode(nodeName)
 		if err != nil {
 			return err
 		}

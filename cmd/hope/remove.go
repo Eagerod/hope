@@ -12,6 +12,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
@@ -31,7 +32,7 @@ var removeCmd = &cobra.Command{
 			return errors.New("Cannot remove all resources at once.")
 		}
 
-		resources, err := getIdentifiableResources(&args, removeCmdTagSlice)
+		resources, err := utils.GetIdentifiableResources(&args, removeCmdTagSlice)
 		if err != nil {
 			return err
 		}
@@ -66,7 +67,7 @@ var removeCmd = &cobra.Command{
 			switch resourceType {
 			case hope.ResourceTypeFile:
 				if len(resource.Parameters) != 0 {
-					content, err := replaceParametersInFile(resource.File, resource.Parameters)
+					content, err := utils.ReplaceParametersInFile(resource.File, resource.Parameters)
 					if err != nil {
 						return err
 					}
@@ -88,7 +89,7 @@ var removeCmd = &cobra.Command{
 				log.Trace(inline)
 
 				if len(resource.Parameters) != 0 {
-					inline, err = replaceParametersInString(inline, resource.Parameters)
+					inline, err = utils.ReplaceParametersInString(inline, resource.Parameters)
 					if err != nil {
 						return err
 					}

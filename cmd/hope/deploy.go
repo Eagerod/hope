@@ -13,6 +13,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/docker"
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
@@ -31,7 +32,7 @@ var deployCmd = &cobra.Command{
 		var resources *[]hope.Resource
 
 		if len(args) == 0 && len(*deployCmdTagSlice) == 0 {
-			r, err := getResources()
+			r, err := utils.GetResources()
 			if err != nil {
 				return err
 			}
@@ -39,7 +40,7 @@ var deployCmd = &cobra.Command{
 			resources = r
 			log.Trace("Received no arguments for deployment. Deploying all resources.")
 		} else {
-			r, err := getIdentifiableResources(&args, deployCmdTagSlice)
+			r, err := utils.GetIdentifiableResources(&args, deployCmdTagSlice)
 			if err != nil {
 				return err
 			}
@@ -104,7 +105,7 @@ var deployCmd = &cobra.Command{
 			switch resourceType {
 			case hope.ResourceTypeFile:
 				if len(resource.Parameters) != 0 {
-					content, err := replaceParametersInFile(resource.File, resource.Parameters)
+					content, err := utils.ReplaceParametersInFile(resource.File, resource.Parameters)
 					if err != nil {
 						return err
 					}
@@ -126,7 +127,7 @@ var deployCmd = &cobra.Command{
 				log.Trace(inline)
 
 				if len(resource.Parameters) != 0 {
-					inline, err = replaceParametersInString(inline, resource.Parameters)
+					inline, err = utils.ReplaceParametersInString(inline, resource.Parameters)
 					if err != nil {
 						return err
 					}

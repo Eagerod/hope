@@ -11,6 +11,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
@@ -28,7 +29,7 @@ var kubeconfigCmd = &cobra.Command{
 
 		var master *hope.Node
 		if len(args) == 0 {
-			aMaster, err := getAnyMaster()
+			aMaster, err := utils.GetAnyMaster()
 			if err != nil {
 				return err
 			}
@@ -37,7 +38,7 @@ var kubeconfigCmd = &cobra.Command{
 
 			log.Debug("No host given to kubeconfig command. Using first master from nodes list.")
 		} else {
-			aMaster, err := getNode(args[0])
+			aMaster, err := utils.GetNode(args[0])
 			if err != nil {
 				return err
 			}
