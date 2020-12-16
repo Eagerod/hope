@@ -11,6 +11,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
@@ -28,7 +29,7 @@ var hostnameCmd = &cobra.Command{
 		nodeName := args[0]
 		hostname := args[1]
 
-		node, err := getNode(nodeName)
+		node, err := utils.GetNode(nodeName)
 		if err != nil {
 			return err
 		}
