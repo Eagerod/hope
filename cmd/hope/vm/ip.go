@@ -9,6 +9,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/esxi"
 )
 
@@ -20,12 +21,16 @@ var ipCmd = &cobra.Command{
 		hypervisorName := args[0]
 		vmName := args[1]
 
-		hypervisor, err := getHypervisor(hypervisorName)
+		hypervisor, err := utils.GetNode(hypervisorName)
 		if err != nil {
 			return err
 		}
 
-		ip, err := esxi.GetIpAddressOfVmNamed(hypervisor.ConnectionString, vmName)
+		if !hypervisor.IsHypervisor() {
+			return fmt.Errorf("Node %s is not a hypervisor; cannot find a node's IP from it", hypervisor.Name)
+		}
+
+		ip, err := esxi.GetIpAddressOfVmNamed(hypervisor.ConnectionString(), vmName)
 		if err != nil {
 			return err
 		}

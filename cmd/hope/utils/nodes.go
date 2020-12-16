@@ -57,3 +57,19 @@ func GetAnyMaster() (*hope.Node, error) {
 
 	return nil, errors.New("Failed to find any master in nodes config")
 }
+
+func GetHypervisors() (*[]hope.Node, error) {
+	retVal := []hope.Node{}
+	nodes, err := GetNodes()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, node := range *nodes {
+		if node.IsHypervisor() {
+			retVal = append(retVal, node)
+		}
+	}
+
+	return &retVal, nil
+}

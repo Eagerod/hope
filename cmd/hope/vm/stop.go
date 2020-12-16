@@ -1,10 +1,15 @@
 package vm
 
 import (
+	"fmt"
+)
+
+import (
 	"github.com/spf13/cobra"
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/esxi"
 )
 
@@ -16,11 +21,15 @@ var stopCmd = &cobra.Command{
 		hypervisorName := args[0]
 		vmName := args[1]
 
-		hypervisor, err := getHypervisor(hypervisorName)
+		hypervisor, err := utils.GetNode(hypervisorName)
 		if err != nil {
 			return err
 		}
 
-		return esxi.PowerOffVmNamed(hypervisor.ConnectionString, vmName)
+		if !hypervisor.IsHypervisor() {
+			return fmt.Errorf("Node %s is not a hypervisor; cannot start a VM on it", hypervisor.Name)
+		}
+
+		return esxi.PowerOffVmNamed(hypervisor.ConnectionString(), vmName)
 	},
 }

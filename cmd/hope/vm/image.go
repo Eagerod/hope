@@ -2,7 +2,6 @@ package vm
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -15,6 +14,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/fileutil"
 	"github.com/Eagerod/hope/pkg/packer"
 	"github.com/Eagerod/hope/pkg/scp"
@@ -44,33 +44,33 @@ var imageCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		vmName := args[0]
 
-		vms, err := getVMs()
+		vms, err := utils.GetVMs()
 		if err != nil {
 			return err
 		}
 
-		vm, err := vmSpec(vmName)
+		vm, err := utils.VMSpec(vmName)
 		if err != nil {
 			return err
 		}
 
-		vmDir := path.Join(vms.RootDir, vm.Name)
+		vmDir := path.Join(vms.Root, vm.Name)
 		log.Trace(fmt.Sprintf("Looking for VM definition in %s", vmDir))
 
 		stat, err := os.Stat(vmDir)
 		if err != nil && os.IsNotExist(err) {
-			return errors.New(fmt.Sprintf("VM spec directory (%s) not found", vmDir))
+			return fmt.Errorf("VM spec directory (%s) not found", vmDir)
 		} else if err != nil {
 			return err
 		}
 
 		if !stat.IsDir() {
-			return errors.New(fmt.Sprintf("VM spec directory (%s) is just a file", vmDir))
+			return fmt.Errorf("VM spec directory (%s) is just a file", vmDir)
 		}
 
 		packerJsonPath := path.Join(vmDir, "packer.json")
 		if _, err := os.Stat(packerJsonPath); err != nil && os.IsNotExist(err) {
-			return errors.New(fmt.Sprintf("VM packer file not found", packerJsonPath))
+			return fmt.Errorf("VM packer file not found", packerJsonPath)
 		} else if err != nil {
 			return err
 		}
@@ -91,7 +91,7 @@ var imageCmd = &cobra.Command{
 		}
 
 		if len(vm.Parameters) != 0 {
-			if err := replaceParametersInDirectory(tempDir, vm.Parameters); err != nil {
+			if err := utils.ReplaceParametersInDirectory(tempDir, vm.Parameters); err != nil {
 				return err
 			}
 		}
@@ -117,7 +117,7 @@ var imageCmd = &cobra.Command{
 				}
 
 				if len(files) != 0 {
-					return errors.New(fmt.Sprintf("Directory at path %s already exists and is not empty.", packerOutDir))
+					return fmt.Errorf("Directory at path %s already exists and is not empty.", packerOutDir)
 				}
 			} else {
 				log.Debug(fmt.Sprintf("Will create a new directory at %s...", packerOutDir))
@@ -144,15 +144,15 @@ var imageCmd = &cobra.Command{
 		}
 
 		// Copy to all hypervisors.
-		hypervisors, err := getHypervisors()
+		hypervisors, err := utils.GetHypervisors()
 		if err != nil {
 			return err
 		}
 
 		for _, hv := range *hypervisors {
 			scpSrcDir := fmt.Sprintf("%s/", packerOutDir)
-			remoteVmfsPath := path.Join("vmfs", "volumes", hv.Datastore, "ovfs", packerSpec.Builders[0].VMName )
-			remoteVMPath := fmt.Sprintf("%s:%s/", hv.ConnectionString, remoteVmfsPath)
+			remoteVmfsPath := path.Join("vmfs", "volumes", hv.Datastore, "ovfs", packerSpec.Builders[0].VMName)
+			remoteVMPath := fmt.Sprintf("%s:%s/", hv.ConnectionString(), remoteVmfsPath)
 			if err := scp.ExecSCP("-r", scpSrcDir, remoteVMPath); err != nil {
 				return err
 			}

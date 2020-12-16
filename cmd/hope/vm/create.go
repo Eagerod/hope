@@ -14,6 +14,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/fileutil"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
@@ -36,17 +37,21 @@ var createCmd = &cobra.Command{
 		hypervisorName := args[0]
 		vmName := args[1]
 
-		hypervisor, err := getHypervisor(hypervisorName)
+		hypervisor, err := utils.GetNode(hypervisorName)
 		if err != nil {
 			return err
 		}
 
-		vms, err := getVMs()
+		if !hypervisor.IsHypervisor() {
+			return fmt.Errorf("Node %s is not a hypervisor node; cannot create a VM on it")
+		}
+
+		vms, err := utils.GetVMs()
 		if err != nil {
 			return err
 		}
 
-		vm, err := vmSpec(vmName)
+		vm, err := utils.VMSpec(vmName)
 		if err != nil {
 			return err
 		}
@@ -57,7 +62,7 @@ var createCmd = &cobra.Command{
 		// There may be more validation that can be done, but it's not really
 		//   needed.
 		// And they should all go into pkg.
-		vmDir := path.Join(vms.RootDir, vm.Name)
+		vmDir := path.Join(vms.Root, vm.Name)
 		tempDir, err := ioutil.TempDir("", "*")
 		if err != nil {
 			return err
@@ -71,7 +76,7 @@ var createCmd = &cobra.Command{
 		}
 
 		if len(vm.Parameters) != 0 {
-			if err := replaceParametersInDirectory(tempDir, vm.Parameters); err != nil {
+			if err := utils.ReplaceParametersInDirectory(tempDir, vm.Parameters); err != nil {
 				return err
 			}
 		}
@@ -99,7 +104,7 @@ var createCmd = &cobra.Command{
 		remoteDatastoreName := fmt.Sprintf("--datastore=%s", hypervisor.Datastore)
 		ovfToolPath := path.Join("/", "vmfs", "volumes", hypervisor.Datastore, "bin", "ovftool", "ovftool")
 		allArgs := []string{
-			hypervisor.ConnectionString,
+			hypervisor.ConnectionString(),
 			ovfToolPath,
 			"--diskMode=thin",
 			remoteDatastoreName,

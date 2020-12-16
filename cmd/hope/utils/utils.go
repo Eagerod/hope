@@ -8,10 +8,13 @@
 package utils
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 )
 
 import (
+	"github.com/Eagerod/hope/pkg/fileutil"
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
@@ -50,4 +53,24 @@ func ReplaceParametersWithSubstitutor(t *hope.TextSubstitutor, parameters []stri
 	}
 
 	return string(*t.Bytes), nil
+}
+
+func ReplaceParametersInDirectory(dir string, parameters []string) error {
+	// Probably move this to a util/pkg; seems pretty universal.
+	return filepath.Walk(dir, func(apath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		str, err := ReplaceParametersInFile(apath, parameters)
+		if err != nil {
+			return err
+		}
+
+		return fileutil.WriteFile(str, apath)
+	})
 }

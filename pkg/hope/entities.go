@@ -74,11 +74,27 @@ type Job struct {
 
 // Node - Defines a networked resource on which operations will typically be
 //   executed.
+// Datastore is really only used for Hypervisors, but whatever; it's not
+//   incredibly intuitive how to have non-homogenous types in viper lists.
 type Node struct {
-	Name string
-	Role string
-	Host string
-	User string
+	Name      string
+	Role      string
+	Host      string
+	User      string
+	Datastore string
+}
+
+// VMImageSpec - Defines the structure needed to populate a Packer job to
+//   build a VM Image.
+type VMImageSpec struct {
+	Name       string
+	Parameters []string
+}
+
+// VMs - Object defining path information for building any VMs.
+type VMs struct {
+	Images []VMImageSpec
+	Root   string
 }
 
 func (rt ResourceType) String() string {
@@ -157,7 +173,12 @@ func (node *Node) IsNode() bool {
 	return node.Role == "node" || node.IsMasterAndNode()
 }
 
+// IsHypervisor - Whether or not this node is a hypervisor node.
+func (node *Node) IsHypervisor() bool {
+	return node.Role == "hypervisor"
+}
+
 // IsRoleValid - Whether or not the node has a role that has been implemented.
 func (node *Node) IsRoleValid() bool {
-	return node.IsMaster() || node.IsNode()
+	return node.IsMaster() || node.IsNode() || node.IsHypervisor()
 }
