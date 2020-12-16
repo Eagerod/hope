@@ -10,6 +10,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
@@ -28,7 +29,7 @@ var listCmd = &cobra.Command{
 		var resources *[]hope.Resource
 
 		if len(args) == 0 && len(*listCmdTagSlice) == 0 {
-			r, err := getResources()
+			r, err := utils.GetResources()
 			if err != nil {
 				return err
 			}
@@ -36,7 +37,7 @@ var listCmd = &cobra.Command{
 			resources = r
 			log.Trace("Received no arguments for list. Listing all resources.")
 		} else {
-			r, err := getIdentifiableResources(&args, deployCmdTagSlice)
+			r, err := utils.GetIdentifiableResources(&args, deployCmdTagSlice)
 			if err != nil {
 				return err
 			}

@@ -14,6 +14,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
@@ -31,7 +32,7 @@ var runCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		jobName := args[0]
 
-		job, err := getJob(jobName)
+		job, err := utils.GetJob(jobName)
 		if err != nil {
 			return err
 		}
@@ -67,7 +68,7 @@ var runCmd = &cobra.Command{
 		}
 
 		// TODO: Move to pkg
-		jobText, err := replaceParametersInFile(job.File, fullArgsList)
+		jobText, err := utils.ReplaceParametersInFile(job.File, fullArgsList)
 		if err != nil {
 			return err
 		}
