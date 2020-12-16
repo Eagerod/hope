@@ -18,5 +18,4 @@ func InitNodeCommand() {
 
 	initHostnameCmdFlags()
 	initResetCmd()
-	initSshCmd()
 }

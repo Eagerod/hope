@@ -3,7 +3,6 @@ package node
 import (
 	"errors"
 	"fmt"
-	"net/url"
 )
 
 import (
@@ -15,7 +14,6 @@ import (
 import (
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
-	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
 var initCmd = &cobra.Command{
@@ -23,12 +21,9 @@ var initCmd = &cobra.Command{
 	Short: "Bootstrap a node within the cluster",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		host := args[0]
+		nodeName := args[0]
 
-		// URL parsing is a bit better at identifying parameters if there's a
-		//   protocol on the string passed in, so fake in ssh as the protocol to
-		//   help it parse a little more reliably.
-		host_url, err := url.Parse(fmt.Sprintf("ssh://%s", host))
+		node, err := getNode(nodeName)
 		if err != nil {
 			return err
 		}
@@ -38,13 +33,10 @@ var initCmd = &cobra.Command{
 		podNetworkCidr := viper.GetString("pod_network_cidr")
 		masters := viper.GetStringSlice("masters")
 
-		isMaster := sliceutil.StringInSlice(host, masters)
-		isWorker := sliceutil.StringInSlice(host, viper.GetStringSlice("nodes"))
+		if node.IsMasterAndNode() {
+			log.Info("Node ", node.Host, " appears to be both master and node. Creating master and removing NoSchedule taint...")
 
-		if isMaster && isWorker {
-			log.Info("Node ", host, " appears in both master and node configurations. Creating master and removing NoSchedule taint...")
-
-			if err := hope.CreateClusterMaster(log.WithFields(log.Fields{}), host, podNetworkCidr); err != nil {
+			if err := hope.CreateClusterMaster(log.WithFields(log.Fields{}), node, podNetworkCidr); err != nil {
 				return err
 			}
 
@@ -55,20 +47,20 @@ var initCmd = &cobra.Command{
 
 			defer kubectl.Destroy()
 
-			if err := hope.TaintNodeByHost(kubectl, host_url.Host, "node-role.kubernetes.io/master:NoSchedule-"); err != nil {
+			if err := hope.TaintNodeByHost(kubectl, node, "node-role.kubernetes.io/master:NoSchedule-"); err != nil {
 				return err
 			}
-		} else if isMaster {
-			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), host, podNetworkCidr)
-		} else if isWorker {
+		} else if node.IsMaster() {
+			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), node, podNetworkCidr)
+		} else if node.IsNode() {
 			// Have to send in a master ip for it to grab a join token.
 			aMaster := masters[0]
 
-			if err := hope.CreateClusterNode(log.WithFields(log.Fields{}), host, aMaster); err != nil {
+			if err := hope.CreateClusterNode(log.WithFields(log.Fields{}), node, aMaster); err != nil {
 				return err
 			}
 		} else {
-			return errors.New(fmt.Sprintf("Failed to find node %s in config", host))
+			return errors.New(fmt.Sprintf("Failed to find node %s in config", nodeName))
 		}
 
 		return nil

@@ -8,12 +8,10 @@ import (
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 import (
 	"github.com/Eagerod/hope/pkg/hope"
-	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
 var hostnameCmdForce bool
@@ -27,18 +25,20 @@ var hostnameCmd = &cobra.Command{
 	Short: "Set the hostname on a node",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		host := args[0]
+		nodeName := args[0]
 		hostname := args[1]
 
-		isMaster := sliceutil.StringInSlice(host, viper.GetStringSlice("masters"))
-		isNode := sliceutil.StringInSlice(host, viper.GetStringSlice("nodes"))
-
-		if !isMaster && !isNode {
-			return errors.New(fmt.Sprintf("Host (%s) not found in list of masters or nodes.", host))
+		node, err := getNode(nodeName)
+		if err != nil {
+			return err
 		}
 
-		log.Info("Setting hostname on node ", host, " to ", hostname)
+		if !node.IsRoleValid() {
+			return errors.New(fmt.Sprintf("Node %s has invalid role %s.", node.Name, node.Role))
+		}
 
-		return hope.SetHostname(log.WithFields(log.Fields{}), host, hostname, hostnameCmdForce)
+		log.Info("Setting hostname on node ", node.Name, "(", node.Host, ")", " to ", hostname)
+
+		return hope.SetHostname(log.WithFields(log.Fields{}), node, hostname, hostnameCmdForce)
 	},
 }

@@ -14,7 +14,6 @@ import (
 import (
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
-	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
 var resetCmdForce bool
@@ -28,14 +27,16 @@ var resetCmd = &cobra.Command{
 	Short: "Attempts to gracefully run kubeadm reset on the specified host",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		host := args[0]
+		nodeName := args[0]
 		masters := viper.GetStringSlice("masters")
 
-		isMaster := sliceutil.StringInSlice(host, masters)
-		isNode := sliceutil.StringInSlice(host, viper.GetStringSlice("nodes"))
+		node, err := getNode(nodeName)
+		if err != nil {
+			return err
+		}
 
-		if !isMaster && !isNode {
-			return errors.New(fmt.Sprintf("Host (%s) not found in list of masters or nodes.", host))
+		if !node.IsRoleValid() {
+			return errors.New(fmt.Sprintf("Host (%s) not found in list of masters or nodes.", node.Host))
 		}
 
 		// If force is set, failing to find a kubeconfig shouldn't stop the
@@ -57,6 +58,6 @@ var resetCmd = &cobra.Command{
 
 		// TODO: may need to add more validation, like that this isn't the
 		//   only master and is being removed, unless force is provided.
-		return hope.KubeadmResetRemote(log.WithFields(log.Fields{}), kubectl, host, resetCmdForce)
+		return hope.KubeadmResetRemote(log.WithFields(log.Fields{}), kubectl, node, resetCmdForce)
 	},
 }

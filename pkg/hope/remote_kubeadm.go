@@ -1,11 +1,6 @@
 package hope
 
 import (
-	"fmt"
-	"net/url"
-)
-
-import (
 	"github.com/sirupsen/logrus"
 )
 
@@ -14,20 +9,12 @@ import (
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
-func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, host string, force bool) error {
-	// URL parsing is a bit better at identifying parameters if there's a
-	//   protocol on the string passed in, so fake in ssh as the protocol to
-	//   help it parse a little more reliably.
-	host_url, err := url.Parse(fmt.Sprintf("ssh://%s", host))
-	if err != nil {
-		return err
-	}
-
-	log.Debug("Searching for node name for host: ", host_url.Host)
+func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, node *Node, force bool) error {
+	log.Debug("Searching for node name for host: ", node.Host)
 
 	nodeName := ""
 	if kubectl != nil {
-		nodeName, err := kubeutil.NodeNameFromHost(kubectl, host_url.Host)
+		nodeName, err := kubeutil.NodeNameFromHost(kubectl, node.Host)
 		if err != nil && !force {
 			return err
 		} else if force {
@@ -41,8 +28,7 @@ func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, host strin
 		}
 	}
 
-	err = ssh.ExecSSH(host, "kubeadm", "reset")
-	if err != nil {
+	if err := ssh.ExecSSH(node.ConnectionString(), "kubeadm", "reset"); err != nil {
 		return err
 	}
 

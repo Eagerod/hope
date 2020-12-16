@@ -1,33 +1,25 @@
 package node
 
 import (
-	"errors"
-	"fmt"
-)
-
-import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 import (
 	"github.com/Eagerod/hope/pkg/hope"
-	"github.com/Eagerod/hope/pkg/sliceutil"
 )
-
-var sshCmdForce bool
-
-func initSshCmd() {
-	sshCmd.Flags().BoolVarP(&sshCmdForce, "force", "", false, "set up SSH even if the node isn't a part of the cluster")
-}
 
 var sshCmd = &cobra.Command{
 	Use:   "ssh",
 	Short: "Initializes SSH for the given host",
 	Args:  cobra.RangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		host := args[0]
+		nodeName := args[0]
+
+		node, err := getNode(nodeName)
+		if err != nil {
+			return err
+		}
 
 		// If a second argument is given, instead of trying to verify
 		//   that the current host can SSH in without password, assume
@@ -35,21 +27,11 @@ var sshCmd = &cobra.Command{
 		//   path to the remote.
 		hasKeyArg := len(args) == 2
 
-		isMaster := sliceutil.StringInSlice(host, viper.GetStringSlice("masters"))
-		isNode := sliceutil.StringInSlice(host, viper.GetStringSlice("nodes"))
-		isHypervisor := sliceutil.StringInSlice(host, viper.GetStringSlice("hypervisors"))
-
-		if !isMaster && !isNode && !isHypervisor {
-			if !sshCmdForce {
-				return errors.New(fmt.Sprintf("Host (%s) not found in list of masters, nodes, or hypervisors.", host))
-			}
-		}
-
 		if hasKeyArg {
 			localKeyPath := args[1]
-			return hope.CopySSHPubKeyToAuthorizedKeys(log.WithFields(log.Fields{}), localKeyPath, host)
+			return hope.CopySSHKeyToAuthorizedKeys(log.WithFields(log.Fields{}), localKeyPath, node)
 		}
 
-		return hope.EnsureSSHWithoutPassword(log.WithFields(log.Fields{}), host)
+		return hope.EnsureSSHWithoutPassword(log.WithFields(log.Fields{}), node)
 	},
 }
