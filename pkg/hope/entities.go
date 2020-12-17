@@ -151,7 +151,7 @@ func (resource *Resource) GetType() (ResourceType, error) {
 // ConnectionString - Get the node's connection string
 func (node *Node) ConnectionString() string {
 	if node.User != "" {
-		return fmt.Sprintf("%s:%s", node.User, node.Host)
+		return fmt.Sprintf("%s@%s", node.User, node.Host)
 	}
 
 	return node.Host
