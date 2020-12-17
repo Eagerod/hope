@@ -2,7 +2,7 @@
     "builders": [
         {
             "type": "vmware-iso",
-            "vm_name": "load-balancer",
+            "vm_name": "some-image",
 
             "output_directory": "${OUTPUT_DIR}",
 

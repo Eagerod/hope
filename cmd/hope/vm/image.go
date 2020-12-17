@@ -21,11 +21,9 @@ import (
 )
 
 var imageCmdParameterSlice *[]string
-var imageCmdDebugPackerFlag bool
 
 func initImageCmdFlags() {
 	imageCmdParameterSlice = imageCmd.Flags().StringArrayP("param", "p", []string{}, "parameters to forward to packer's -var")
-	imageCmd.Flags().BoolVarP(&imageCmdDebugPackerFlag, "debug-packer", "", false, "pass the debug flag to packer")
 }
 
 type PackerBuilder struct {
@@ -128,13 +126,18 @@ var imageCmd = &cobra.Command{
 		for _, v := range *imageCmdParameterSlice {
 			allArgs = append(allArgs, "-var", v)
 		}
-		if imageCmdDebugPackerFlag {
-			allArgs = append(allArgs, "-debug")
-		}
 		allArgs = append(allArgs, tempPackerJsonPath)
 
 		if os.Getenv("PACKER_CACHE_DIR") == "" {
 			log.Warn("PACKER_CACHE_DIR environment variable is not set.")
+		}
+
+		if os.Getenv("PACKER_LOG") == "" {
+			log.Warn("PACKER_LOG not set.")
+		}
+
+		if os.Getenv("PACKER_ESXI_VNC_PROBE_TIMEOUT") == "" {
+			log.Warn("PACKER_ESXI_VNC_PROBE_TIMEOUT not set.")
 		}
 
 		log.Info(fmt.Sprintf("Building VM Image: %s", vm.Name))
