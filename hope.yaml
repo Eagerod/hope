@@ -31,7 +31,7 @@ vms:
       parameters:
         - ESXI_HOST=192.168.10.40
         - ESXI_ROOT_PASSWORD
-        - OUTPUT_DIR=/mnt/out/some-image
+        - OUTPUT_DIR=./some-image
 loglevel: trace
 pod_network_cidr: 10.244.0.0/16
 # Resource list of all things to deploy to the cluster, and the order in which

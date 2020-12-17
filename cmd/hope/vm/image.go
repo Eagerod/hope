@@ -115,11 +115,19 @@ var imageCmd = &cobra.Command{
 				}
 
 				if len(files) != 0 {
-					return fmt.Errorf("Directory at path %s already exists and is not empty.", packerOutDir)
+					return fmt.Errorf("Directory at path %s already exists and is not empty", packerOutDir)
 				}
 			} else {
 				log.Debug(fmt.Sprintf("Will create a new directory at %s...", packerOutDir))
 			}
+		}
+
+		// Try to create a file in the same directory as the output will be.
+		// Prevents going through the whole process when the output directory
+		//   isn't writable.
+		// Seems like a no brainer for packer to do that check.
+		if err := os.MkdirAll(packerOutDir, 0755); err != nil {
+			return fmt.Errorf("Directory at path %s is not writable", packerOutDir)
 		}
 
 		allArgs := []string{"build"}
