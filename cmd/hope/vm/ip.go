@@ -35,6 +35,10 @@ var ipCmd = &cobra.Command{
 			return err
 		}
 
+		if ip == "0.0.0.0" {
+			return fmt.Errorf("VM %s has started, but has yet to be reachable", vmName)
+		}
+
 		fmt.Println(ip)
 
 		return nil
