@@ -9,7 +9,7 @@ var moveCmd = &cobra.Command{
 	Use:   "move",
 	Short: "Moves a VM to the specified host.",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		log.Info("I'm going to move a VM.")
+		log.Info("I'm going to move a VM between hypervisors.")
 		return nil
 	},
 }
