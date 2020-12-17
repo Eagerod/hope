@@ -69,7 +69,7 @@ var imageCmd = &cobra.Command{
 
 		packerJsonPath := path.Join(vmDir, "packer.json")
 		if _, err := os.Stat(packerJsonPath); err != nil && os.IsNotExist(err) {
-			return fmt.Errorf("VM packer file not found", packerJsonPath)
+			return fmt.Errorf("VM packer file not found at path: %s", packerJsonPath)
 		} else if err != nil {
 			return err
 		}

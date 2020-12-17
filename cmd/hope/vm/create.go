@@ -43,7 +43,7 @@ var createCmd = &cobra.Command{
 		}
 
 		if !hypervisor.IsHypervisor() {
-			return fmt.Errorf("Node %s is not a hypervisor node; cannot create a VM on it")
+			return fmt.Errorf("Node %s is not a hypervisor node; cannot create a VM on it", hypervisorName)
 		}
 
 		vms, err := utils.GetVMs()
