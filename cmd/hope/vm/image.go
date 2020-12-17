@@ -18,6 +18,7 @@ import (
 	"github.com/Eagerod/hope/pkg/fileutil"
 	"github.com/Eagerod/hope/pkg/packer"
 	"github.com/Eagerod/hope/pkg/scp"
+	"github.com/Eagerod/hope/pkg/ssh"
 )
 
 var imageCmdParameterSlice *[]string
@@ -106,15 +107,26 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
+		// Packer runs out of temp dir, so output directory has to be
+		//   absolute.
 		packerOutDir := packerSpec.Builders[0].OutputDirectory
+		if !path.IsAbs(packerOutDir) {
+			return fmt.Errorf("Directory %s must be absolute;", packerOutDir)
+		}
+
 		if stat, err := os.Stat(packerOutDir); err == nil {
 			if stat.IsDir() {
-				files, err := ioutil.ReadDir("./")
+				files, err := ioutil.ReadDir(packerOutDir)
 				if err != nil {
 					return err
 				}
 
 				if len(files) != 0 {
+					filenames := []string{}
+					for _, f := range files {
+						filenames = append(filenames, f.Name())
+					}
+					log.Info(fmt.Sprintf("Files found: %s", filenames))
 					return fmt.Errorf("Directory at path %s already exists and is not empty", packerOutDir)
 				}
 			} else {
@@ -160,11 +172,20 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
+		// Remove the destination file from the Hypervisor before copying,
+		//   because SCP is bad at nesting directories, or I'm bad at figuring
+		//   out the right arguments.
 		for _, hv := range *hypervisors {
-			scpSrcDir := fmt.Sprintf("%s/", packerOutDir)
-			remoteVmfsPath := path.Join("vmfs", "volumes", hv.Datastore, "ovfs", packerSpec.Builders[0].VMName)
-			remoteVMPath := fmt.Sprintf("%s:%s/", hv.ConnectionString(), remoteVmfsPath)
-			if err := scp.ExecSCP("-r", scpSrcDir, remoteVMPath); err != nil {
+			connectionString := hv.ConnectionString()
+			scpSrcDir := fmt.Sprintf("%s", packerOutDir)
+			remoteVmfsPath := path.Join("/", "vmfs", "volumes", hv.Datastore, "ovfs", packerSpec.Builders[0].VMName)
+			remoteVMPath := fmt.Sprintf("%s:%s", hv.ConnectionString(), remoteVmfsPath)
+
+			if err := ssh.ExecSSH(connectionString, "rm", "-rf", remoteVmfsPath); err != nil {
+				return err
+			}
+
+			if err := scp.ExecSCP("-pr", scpSrcDir, remoteVMPath); err != nil {
 				return err
 			}
 		}
