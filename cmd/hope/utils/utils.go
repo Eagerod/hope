@@ -77,8 +77,8 @@ func ReplaceParametersInDirectory(dir string, parameters []string) error {
 
 // ReplaceParametersInDirectoryCopy - Copy the provided directory, and replace
 //   parameters in the files.
-// Returns the temp path to the copied directory, and the caller must clean ip
-//   that directory itself.
+// Returns the temp path to the copied directory, and the caller must clean up
+//   that directory itself, unless an error occurs.
 func ReplaceParametersInDirectoryCopy(dir string, parameters []string) (string, error) {
 	tempDir, err := ioutil.TempDir("", "*")
 	if err != nil {
