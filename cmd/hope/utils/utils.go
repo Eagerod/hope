@@ -8,6 +8,7 @@
 package utils
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -73,4 +74,29 @@ func ReplaceParametersInDirectory(dir string, parameters []string) error {
 
 		return fileutil.WriteFile(str, apath)
 	})
+}
+
+// ReplaceParametersInDirectoryCopy - Copy the provided directory, and replace
+//   parameters in the files.
+// Returns the temp path to the copied directory, and the caller must clean ip
+//   that directory itself.
+func ReplaceParametersInDirectoryCopy(dir string, parameters []string) (string, error) {
+	tempDir, err := ioutil.TempDir("", "*")
+	if err != nil {
+		return "", err
+	}
+
+	if err := fileutil.CopyDirectory(dir, tempDir); err != nil {
+		os.RemoveAll(tempDir)
+		return "", err
+	}
+
+	if len(parameters) != 0 {
+		if err := ReplaceParametersInDirectory(tempDir, parameters); err != nil {
+			os.RemoveAll(tempDir)
+			return "", err
+		}
+	}
+
+	return tempDir, nil
 }

@@ -15,7 +15,6 @@ import (
 
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
-	"github.com/Eagerod/hope/pkg/fileutil"
 	"github.com/Eagerod/hope/pkg/packer"
 	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
@@ -74,26 +73,12 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
-		// Copy the directory out to a temporary directory, and iterate
-		//   through all the files, running text substitution against them
-		//   with the list of given parameters.
-		tempDir, err := ioutil.TempDir("", "*")
+		log.Debug(fmt.Sprintf("Copying contents of %s for parameter replacement.", vmDir))
+		tempDir, err := utils.ReplaceParametersInDirectoryCopy(vmDir, vm.Parameters)
 		if err != nil {
 			return err
 		}
-
 		defer os.RemoveAll(tempDir)
-
-		log.Debug(fmt.Sprintf("Copying contents of %s to %s for contents replacement.", vmDir, tempDir))
-		if err := fileutil.CopyDirectory(vmDir, tempDir); err != nil {
-			return err
-		}
-
-		if len(vm.Parameters) != 0 {
-			if err := utils.ReplaceParametersInDirectory(tempDir, vm.Parameters); err != nil {
-				return err
-			}
-		}
 
 		// Check caches to see if I even want to build this again.
 		tempPackerJsonPath := path.Join(tempDir, "packer.json")

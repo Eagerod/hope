@@ -15,7 +15,6 @@ import (
 
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
-	"github.com/Eagerod/hope/pkg/fileutil"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
@@ -56,30 +55,14 @@ var createCmd = &cobra.Command{
 			return err
 		}
 
-		// These next ~30 lines were basically copy-pasted from image.go
-		// Find the output path the vm image should have been written to
-		//   locally, and bail if it doesn't exist yet.
-		// There may be more validation that can be done, but it's not really
-		//   needed.
-		// And they should all go into pkg.
 		vmDir := path.Join(vms.Root, vm.Name)
-		tempDir, err := ioutil.TempDir("", "*")
+
+		log.Debug(fmt.Sprintf("Copying contents of %s for parameter replacement.", vmDir))
+		tempDir, err := utils.ReplaceParametersInDirectoryCopy(vmDir, vm.Parameters)
 		if err != nil {
 			return err
 		}
-
 		defer os.RemoveAll(tempDir)
-
-		log.Debug(fmt.Sprintf("Copying contents of %s to %s for contents replacement.", vmDir, tempDir))
-		if err := fileutil.CopyDirectory(vmDir, tempDir); err != nil {
-			return err
-		}
-
-		if len(vm.Parameters) != 0 {
-			if err := utils.ReplaceParametersInDirectory(tempDir, vm.Parameters); err != nil {
-				return err
-			}
-		}
 
 		tempPackerJsonPath := path.Join(tempDir, "packer.json")
 		bytes, err := ioutil.ReadFile(tempPackerJsonPath)
