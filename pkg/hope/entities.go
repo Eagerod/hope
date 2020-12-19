@@ -178,7 +178,13 @@ func (node *Node) IsHypervisor() bool {
 	return node.Role == "hypervisor"
 }
 
+// IsKubernetesNode - Whether or not this node has one of the Kubernetes
+//   roles.
+func (node *Node) IsKubernetesNode() bool {
+	return node.IsMaster() || node.IsNode()
+}
+
 // IsRoleValid - Whether or not the node has a role that has been implemented.
 func (node *Node) IsRoleValid() bool {
-	return node.IsMaster() || node.IsNode() || node.IsHypervisor()
+	return node.IsKubernetesNode() || node.IsHypervisor()
 }
