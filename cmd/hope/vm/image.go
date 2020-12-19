@@ -84,11 +84,6 @@ var imageCmd = &cobra.Command{
 				}
 
 				if len(files) != 0 {
-					filenames := []string{}
-					for _, f := range files {
-						filenames = append(filenames, f.Name())
-					}
-					log.Info(fmt.Sprintf("Files found: %s", filenames))
 					return fmt.Errorf("Directory at path %s already exists and is not empty", packerOutDir)
 				}
 			} else {
