@@ -45,17 +45,6 @@ var imageCmd = &cobra.Command{
 		vmDir := path.Join(vms.Root, vm.Name)
 		log.Trace(fmt.Sprintf("Looking for VM definition in %s", vmDir))
 
-		stat, err := os.Stat(vmDir)
-		if err != nil && os.IsNotExist(err) {
-			return fmt.Errorf("VM spec directory (%s) not found", vmDir)
-		} else if err != nil {
-			return err
-		}
-
-		if !stat.IsDir() {
-			return fmt.Errorf("VM spec directory (%s) is just a file", vmDir)
-		}
-
 		// This is done in advance so that the error can show the user the
 		//   real path the file that's expected to load, rather than a path in
 		//   the temp directory everything gets copied into.
