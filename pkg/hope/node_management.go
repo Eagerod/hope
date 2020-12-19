@@ -2,7 +2,6 @@ package hope
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
