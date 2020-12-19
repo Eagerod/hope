@@ -96,7 +96,7 @@ var imageCmd = &cobra.Command{
 		//   isn't writable.
 		// Seems like a no brainer for packer to do that check.
 		if err := os.MkdirAll(packerOutDir, 0755); err != nil {
-			return fmt.Errorf("Directory at path %s is not writable", packerOutDir)
+			return fmt.Errorf("Directory at path %s is not writable; %w", packerOutDir, err)
 		}
 
 		allArgs := []string{"build"}
