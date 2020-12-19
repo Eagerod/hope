@@ -20,4 +20,5 @@ func InitVMCommand() {
 
 	initCreateCmdFlags()
 	initImageCmdFlags()
+	initIpCmdFlags()
 }
