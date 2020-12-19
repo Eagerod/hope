@@ -1,9 +1,7 @@
 package vm
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 )
@@ -15,6 +13,7 @@ import (
 
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
+	"github.com/Eagerod/hope/pkg/packer"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
@@ -65,13 +64,8 @@ var createCmd = &cobra.Command{
 		defer os.RemoveAll(tempDir)
 
 		tempPackerJsonPath := path.Join(tempDir, "packer.json")
-		bytes, err := ioutil.ReadFile(tempPackerJsonPath)
+		packerSpec, err := packer.SpecFromPath(tempPackerJsonPath)
 		if err != nil {
-			return err
-		}
-
-		var packerSpec PackerSpec
-		if err := json.Unmarshal(bytes, &packerSpec); err != nil {
 			return err
 		}
 

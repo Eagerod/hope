@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -24,15 +23,6 @@ var imageCmdParameterSlice *[]string
 
 func initImageCmdFlags() {
 	imageCmdParameterSlice = imageCmd.Flags().StringArrayP("param", "p", []string{}, "parameters to forward to packer's -var")
-}
-
-type PackerBuilder struct {
-	VMName          string `json:"vm_name"`
-	OutputDirectory string `json:"output_directory"`
-}
-
-type PackerSpec struct {
-	Builders []PackerBuilder
 }
 
 var imageCmd = &cobra.Command{
@@ -66,6 +56,9 @@ var imageCmd = &cobra.Command{
 			return fmt.Errorf("VM spec directory (%s) is just a file", vmDir)
 		}
 
+		// This is done in advance so that the error can show the user the
+		//   real path the file that's expected to load, rather than a path in
+		//   the temp directory everything gets copied into.
 		packerJsonPath := path.Join(vmDir, "packer.json")
 		if _, err := os.Stat(packerJsonPath); err != nil && os.IsNotExist(err) {
 			return fmt.Errorf("VM packer file not found at path: %s", packerJsonPath)
@@ -82,13 +75,8 @@ var imageCmd = &cobra.Command{
 
 		// Check caches to see if I even want to build this again.
 		tempPackerJsonPath := path.Join(tempDir, "packer.json")
-		bytes, err := ioutil.ReadFile(tempPackerJsonPath)
+		packerSpec, err := packer.SpecFromPath(tempPackerJsonPath)
 		if err != nil {
-			return err
-		}
-
-		var packerSpec PackerSpec
-		if err := json.Unmarshal(bytes, &packerSpec); err != nil {
 			return err
 		}
 
