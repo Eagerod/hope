@@ -1,7 +1,6 @@
 package esxi
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -24,7 +23,7 @@ func idFromName(host string, vmName string) (string, error) {
 		}
 	}
 
-	return "", errors.New(fmt.Sprintf("Failed to vm named %s on %s", vmName, host))
+	return "", fmt.Errorf("Failed to vm named %s on %s", vmName, host)
 }
 
 func worldIdFromName(host string, vmName string) (string, error) {
@@ -42,5 +41,5 @@ func worldIdFromName(host string, vmName string) (string, error) {
 		}
 	}
 
-	return "", errors.New(fmt.Sprintf("Failed to find a VM named %s on %s", vmName, host))
+	return "", fmt.Errorf("Failed to find a VM named %s on %s", vmName, host)
 }

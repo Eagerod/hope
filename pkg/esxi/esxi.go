@@ -1,7 +1,6 @@
 package esxi
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -51,7 +50,7 @@ func GetIpAddressOfVmNamed(host string, vmName string) (string, error) {
 
 	// "Couldn't find VM with given world ID"
 	if len(lines) == 1 {
-		return "", errors.New(fmt.Sprintf("Failed to find IP Address of VM %s on %s", vmName, host))
+		return "", fmt.Errorf("Failed to find IP Address of VM %s on %s", vmName, host)
 	}
 
 	ip := strings.TrimSpace(strings.Split(lines[1], ",")[0])
