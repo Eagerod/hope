@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -34,6 +35,10 @@ var createCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		hypervisorName := args[0]
 		vmName := args[1]
+
+		if createCmdVmName == "" {
+			return errors.New("Must provide a VM name")
+		}
 
 		hypervisor, err := utils.GetNode(hypervisorName)
 		if err != nil {
@@ -76,15 +81,17 @@ var createCmd = &cobra.Command{
 		// Might be worth introducing some kind of a utility to let private
 		//   arguments still get passed without them printing out, or setting
 		//   up ExecSSH to have a version that accepts stdin.
+		datastoreRoot := path.Join("/", "vmfs", "volumes", hypervisor.Datastore)
 		vmOvfName := fmt.Sprintf("%s.ovf", packerSpec.Builders[0].VMName)
-		remoteOvfPath := path.Join("/", "vmfs", "volumes", hypervisor.Datastore, "ovfs", packerSpec.Builders[0].VMName, vmOvfName)
-		remoteDatastoreName := fmt.Sprintf("--datastore=%s", hypervisor.Datastore)
-		ovfToolPath := path.Join("/", "vmfs", "volumes", hypervisor.Datastore, "bin", "ovftool", "ovftool")
+		remoteOvfPath := path.Join(datastoreRoot, "ovfs", packerSpec.Builders[0].VMName, vmOvfName)
+		remoteDatastoreNameArg := fmt.Sprintf("--datastore=%s", hypervisor.Datastore)
+		nameArg := fmt.Sprintf("--name=%s", createCmdVmName)
+		ovfToolPath := path.Join(datastoreRoot, "bin", "ovftool", "ovftool")
 		allArgs := []string{
 			hypervisor.ConnectionString(),
 			ovfToolPath,
 			"--diskMode=thin",
-			remoteDatastoreName,
+			remoteDatastoreNameArg,
 			"--net:'VM Network=VM Network'",
 		}
 
@@ -98,12 +105,7 @@ var createCmd = &cobra.Command{
 			allArgs = append(allArgs, memoryArg)
 		}
 
-		if createCmdVmName != "" {
-			nameArg := fmt.Sprintf("--name=%s", createCmdVmName)
-			allArgs = append(allArgs, nameArg)
-		}
-
-		allArgs = append(allArgs, remoteOvfPath, "vi://root@localhost")
+		allArgs = append(allArgs, nameArg, remoteOvfPath, "vi://root@localhost")
 
 		return ssh.ExecSSH(allArgs...)
 	},
