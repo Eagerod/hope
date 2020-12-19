@@ -94,6 +94,7 @@ type VMImageSpec struct {
 // VMs - Object defining path information for building any VMs.
 type VMs struct {
 	Images []VMImageSpec
+	Cache  string
 	Root   string
 }
 

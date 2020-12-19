@@ -69,11 +69,14 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
-		// Packer runs out of temp dir, so output directory has to be
-		//   absolute.
+		// Packer runs out of temp dir, so directories have to be absolute.
 		packerOutDir := packerSpec.Builders[0].OutputDirectory
 		if !path.IsAbs(packerOutDir) {
-			return fmt.Errorf("Directory %s must be absolute;", packerOutDir)
+			return fmt.Errorf("Packer output directory %s must be absolute", packerOutDir)
+		}
+
+		if !path.IsAbs(vms.Cache) {
+			return fmt.Errorf("Packer cache directory %s must be absolute", vms.Cache)
 		}
 
 		if stat, err := os.Stat(packerOutDir); err == nil {
@@ -105,21 +108,21 @@ var imageCmd = &cobra.Command{
 		}
 		allArgs = append(allArgs, tempPackerJsonPath)
 
-		if os.Getenv("PACKER_CACHE_DIR") == "" {
-			log.Warn("PACKER_CACHE_DIR environment variable is not set.")
+		packerEsxiVncProbeTimeout := os.Getenv("PACKER_ESXI_VNC_PROBE_TIMEOUT")
+		if packerEsxiVncProbeTimeout == "" {
+			log.Info("PACKER_ESXI_VNC_PROBE_TIMEOUT not set, defaulting to 2s")
+			packerEsxiVncProbeTimeout = "2s"
 		}
 
-		if os.Getenv("PACKER_LOG") == "" {
-			log.Warn("PACKER_LOG not set.")
-		}
-
-		if os.Getenv("PACKER_ESXI_VNC_PROBE_TIMEOUT") == "" {
-			log.Warn("PACKER_ESXI_VNC_PROBE_TIMEOUT not set.")
+		packerEnvs := map[string]string {
+			"PACKER_CACHE_DIR": vms.Cache,
+			"PACKER_LOG": "1",
+			"PACKER_ESXI_VNC_PROBE_TIMEOUT": packerEsxiVncProbeTimeout,
 		}
 
 		log.Info(fmt.Sprintf("Building VM Image: %s", vm.Name))
 
-		if err := packer.ExecPackerWd(tempDir, allArgs...); err != nil {
+		if err := packer.ExecPackerWdEnv(tempDir, &packerEnvs, allArgs...); err != nil {
 			return err
 		}
 

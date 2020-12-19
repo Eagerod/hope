@@ -2,6 +2,7 @@ package packer
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -9,6 +10,7 @@ import (
 
 type ExecPackerFunc func(args ...string) error
 type ExecPackerWdFunc func(workDir string, args ...string) error
+type ExecPackerWdEnvFunc func(workDir string, env *map[string]string, args ...string) error
 
 // JsonBuilder - A few pieces of the Packer JSON builders list.
 type JsonBuilder struct {
@@ -36,6 +38,21 @@ var ExecPackerWd ExecPackerWdFunc = func(workDir string, args ...string) error {
 	osCmd.Stdin = os.Stdin
 	osCmd.Stdout = os.Stdout
 	osCmd.Stderr = os.Stderr
+
+	return osCmd.Run()
+}
+
+var ExecPackerWdEnv ExecPackerWdEnvFunc = func(workDir string, env *map[string]string, args ...string) error {
+	osCmd := exec.Command("packer", args...)
+	osCmd.Dir = workDir
+	osCmd.Stdin = os.Stdin
+	osCmd.Stdout = os.Stdout
+	osCmd.Stderr = os.Stderr
+
+	osCmd.Env = os.Environ()
+	for key, value := range *env {
+		osCmd.Env = append(osCmd.Env, fmt.Sprintf("%s=%s", key, value))
+	}
 
 	return osCmd.Run()
 }

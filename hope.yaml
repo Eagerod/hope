@@ -26,12 +26,13 @@ nodes:
     user: root
 vms:
   root: vms
+  cache: /var/lib/packer/cache
   images:
     - name: some-image
       parameters:
         - ESXI_HOST=192.168.10.40
         - ESXI_ROOT_PASSWORD
-        - OUTPUT_DIR=/var/packer/some-image
+        - OUTPUT_DIR=/var/lib/packer/images/some-image
 loglevel: trace
 pod_network_cidr: 10.244.0.0/16
 # Resource list of all things to deploy to the cluster, and the order in which
