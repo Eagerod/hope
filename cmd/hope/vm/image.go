@@ -134,7 +134,7 @@ var imageCmd = &cobra.Command{
 		//   out the right arguments.
 		for _, hv := range *hypervisors {
 			connectionString := hv.ConnectionString()
-			scpSrcDir := fmt.Sprintf("%s", packerOutDir)
+			scpSrcDir := packerOutDir
 			remoteVmfsPath := path.Join("/", "vmfs", "volumes", hv.Datastore, "ovfs", packerSpec.Builders[0].VMName)
 			remoteVMPath := fmt.Sprintf("%s:%s", hv.ConnectionString(), remoteVmfsPath)
 
