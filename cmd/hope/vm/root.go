@@ -14,7 +14,6 @@ func InitVMCommand() {
 	RootCommand.AddCommand(createCmd)
 	RootCommand.AddCommand(imageCmd)
 	RootCommand.AddCommand(ipCmd)
-	RootCommand.AddCommand(moveCmd)
 	RootCommand.AddCommand(startCmd)
 	RootCommand.AddCommand(stopCmd)
 
