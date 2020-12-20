@@ -76,11 +76,6 @@ var createCmd = &cobra.Command{
 
 		// Exec OVF tool to start VM.
 		// https://www.virtuallyghetto.com/2012/05/how-to-deploy-ovfova-in-esxi-shell.html
-		// Note: Right now, this requires manual intervention, since it
-		//   doesn't provide a username and password to the invocation.
-		// Might be worth introducing some kind of a utility to let private
-		//   arguments still get passed without them printing out, or setting
-		//   up ExecSSH to have a version that accepts stdin.
 		sourceNetworkName, ok := packerSpec.Builders[0].VMXData["ethernet0.networkName"]
 		if !ok {
 			return fmt.Errorf("Failed to find network definition in VM spec: %s", vmName)
