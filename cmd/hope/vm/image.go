@@ -142,9 +142,9 @@ var imageCmd = &cobra.Command{
 			packerEsxiVncProbeTimeout = "2s"
 		}
 
-		packerEnvs := map[string]string {
-			"PACKER_CACHE_DIR": vms.Cache,
-			"PACKER_LOG": "1",
+		packerEnvs := map[string]string{
+			"PACKER_CACHE_DIR":              vms.Cache,
+			"PACKER_LOG":                    "1",
 			"PACKER_ESXI_VNC_PROBE_TIMEOUT": packerEsxiVncProbeTimeout,
 		}
 
