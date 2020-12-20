@@ -244,4 +244,10 @@ func patchInvocations() {
 		log.Debug("packer ", strings.Join(args, " "))
 		return oldExecPackerWd(wd, args...)
 	}
+
+	oldExecPackerWdEnv := packer.ExecPackerWdEnv
+	packer.ExecPackerWdEnv = func(workDir string, env *map[string]string, args ...string) error {
+		log.Debug("packer ", strings.Join(args, " "))
+		return oldExecPackerWdEnv(workDir, env, args...)
+	}
 }
