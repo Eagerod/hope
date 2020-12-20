@@ -23,9 +23,9 @@ var createCmdMemory string
 var createCmdCpu string
 
 func initCreateCmdFlags() {
-	createCmd.Flags().StringVarP(&createCmdVmName, "name", "n", "", "what to name the virtual machine. If left blank, defaults to the hope file name.")
-	createCmd.Flags().StringVarP(&createCmdMemory, "memory", "m", "", "how much memory to given the created VM.")
-	createCmd.Flags().StringVarP(&createCmdCpu, "cpu", "c", "", "how many vCPUs to given the created VM.")
+	createCmd.Flags().StringVarP(&createCmdVmName, "name", "n", "", "name given to the created VM.")
+	createCmd.Flags().StringVarP(&createCmdMemory, "memory", "m", "", "memory given to the created VM.")
+	createCmd.Flags().StringVarP(&createCmdCpu, "cpu", "c", "", "vCPUs given to the created VM.")
 }
 
 var createCmd = &cobra.Command{
