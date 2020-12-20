@@ -81,18 +81,21 @@ var createCmd = &cobra.Command{
 		// Might be worth introducing some kind of a utility to let private
 		//   arguments still get passed without them printing out, or setting
 		//   up ExecSSH to have a version that accepts stdin.
+		sourceNetworkName, ok := packerSpec.Builders[0].VMXData["ethernet0.networkName"]
+		if !ok {
+			return fmt.Errorf("Failed to find network definition in VM spec: %s", vmName)
+		}
+
 		datastoreRoot := path.Join("/", "vmfs", "volumes", hypervisor.Datastore)
 		vmOvfName := fmt.Sprintf("%s.ovf", packerSpec.Builders[0].VMName)
 		remoteOvfPath := path.Join(datastoreRoot, "ovfs", packerSpec.Builders[0].VMName, vmOvfName)
-		remoteDatastoreNameArg := fmt.Sprintf("--datastore=%s", hypervisor.Datastore)
-		nameArg := fmt.Sprintf("--name=%s", createCmdVmName)
-		ovfToolPath := path.Join(datastoreRoot, "bin", "ovftool", "ovftool")
 		allArgs := []string{
 			hypervisor.ConnectionString(),
-			ovfToolPath,
+			path.Join(datastoreRoot, "bin", "ovftool", "ovftool"),
 			"--diskMode=thin",
-			remoteDatastoreNameArg,
-			"--net:'VM Network=VM Network'",
+			fmt.Sprintf("--datastore=%s", hypervisor.Datastore),
+			fmt.Sprintf("--name=%s", createCmdVmName),
+			fmt.Sprintf("--net:'%s=%s'", sourceNetworkName, hypervisor.Network),
 		}
 
 		if createCmdCpu != "" {
@@ -105,7 +108,7 @@ var createCmd = &cobra.Command{
 			allArgs = append(allArgs, memoryArg)
 		}
 
-		allArgs = append(allArgs, nameArg, remoteOvfPath, "vi://root@localhost")
+		allArgs = append(allArgs, remoteOvfPath, "vi://root@localhost")
 
 		return ssh.ExecSSH(allArgs...)
 	},

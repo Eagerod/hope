@@ -16,6 +16,7 @@ type ExecPackerWdEnvFunc func(workDir string, env *map[string]string, args ...st
 type JsonBuilder struct {
 	VMName          string `json:"vm_name"`
 	OutputDirectory string `json:"output_directory"`
+	VMXData			map[string]string `json:"vmx_data"`
 }
 
 // JsonSpec - Wrapper for the builders list.

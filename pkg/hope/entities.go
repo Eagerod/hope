@@ -82,6 +82,7 @@ type Node struct {
 	Host      string
 	User      string
 	Datastore string
+	Network   string
 }
 
 // VMImageSpec - Defines the structure needed to populate a Packer job to

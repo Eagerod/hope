@@ -9,6 +9,7 @@ nodes:
     host: 192.168.10.40
     user: root
     datastore: Main
+    network: VM Network
   # Masters
   # There should be three of these.
   - name: home-master-01
@@ -32,6 +33,7 @@ vms:
     - name: some-image
       parameters:
         - ESXI_ROOT_PASSWORD
+        - ESXI_NETWORK=VM Network
 loglevel: trace
 pod_network_cidr: 10.244.0.0/16
 # Resource list of all things to deploy to the cluster, and the order in which

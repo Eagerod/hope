@@ -38,9 +38,9 @@
                 "ethernet0.present": "TRUE",
                 "ethernet0.startConnected": "TRUE",
                 "ethernet0.addressType": "generated",
-                "ethernet0.networkName": "VM Network",
+                "ethernet0.networkName": "${ESXI_NETWORK}",
 
-                "disk.EnableUUID": true
+                "disk.EnableUUID": "TRUE"
             }
         }
     ]
