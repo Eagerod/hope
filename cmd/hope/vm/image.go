@@ -28,9 +28,10 @@ func initImageCmdFlags() {
 var imageCmd = &cobra.Command{
 	Use:   "image",
 	Short: "Creates a VM image from the defined packer spec.",
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		vmName := args[0]
+		hypervisorName := args[0]
+		vmName := args[1]
 
 		vms, err := utils.GetVMs()
 		if err != nil {
@@ -42,7 +43,13 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
+		hypervisor, err := utils.GetHypervisor(hypervisorName)
+		if err != nil {
+			return err
+		}
+
 		vmDir := path.Join(vms.Root, vm.Name)
+		outputDir := path.Join(vms.Output, vm.Name)
 		log.Trace(fmt.Sprintf("Looking for VM definition in %s", vmDir))
 
 		// This is done in advance so that the error can show the user the
@@ -55,8 +62,16 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
+		// Create full parameter set.
+		allParameters := append(vm.Parameters,
+			fmt.Sprintf("ESXI_HOST=%s", hypervisor.Host),
+			fmt.Sprintf("ESXI_USERNAME=%s", hypervisor.User),
+			fmt.Sprintf("ESXI_DATASTORE=%s", hypervisor.Datastore),
+			fmt.Sprintf("OUTPUT_DIR=%s", outputDir),
+		)
+
 		log.Debug(fmt.Sprintf("Copying contents of %s for parameter replacement.", vmDir))
-		tempDir, err := utils.ReplaceParametersInDirectoryCopy(vmDir, vm.Parameters)
+		tempDir, err := utils.ReplaceParametersInDirectoryCopy(vmDir, allParameters)
 		if err != nil {
 			return err
 		}

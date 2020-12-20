@@ -30,9 +30,9 @@
 
             "remote_type": "esx5",
             "remote_host": "${ESXI_HOST}",
-            "remote_username": "root",
+            "remote_username": "${ESXI_USERNAME}",
             "remote_password": "${ESXI_ROOT_PASSWORD}",
-            "remote_datastore": "Main",
+            "remote_datastore": "${ESXI_DATASTORE}",
 
             "vmx_data": {
                 "ethernet0.present": "TRUE",

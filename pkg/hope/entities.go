@@ -95,6 +95,7 @@ type VMImageSpec struct {
 type VMs struct {
 	Images []VMImageSpec
 	Cache  string
+	Output string
 	Root   string
 }
 

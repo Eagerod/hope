@@ -73,3 +73,24 @@ func GetHypervisors() (*[]hope.Node, error) {
 
 	return &retVal, nil
 }
+
+func GetHypervisor(name string) (*hope.Node, error) {
+	// Any nice way to generalize this?
+	// Copied from GetNode
+	nodes, err := GetNodes()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, node := range *nodes {
+		if node.Name == name {
+			if node.IsHypervisor() {
+				return &node, nil
+			}
+
+			return nil, fmt.Errorf("Node named %s is not a hypervisor", name)
+		}
+	}
+
+	return nil, fmt.Errorf("Failed to find a hypervisor named %s", name)
+}
