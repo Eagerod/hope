@@ -56,7 +56,7 @@ func ReplaceParametersWithSubstitutor(t *hope.TextSubstitutor, parameters []stri
 	return string(*t.Bytes), nil
 }
 
-func ReplaceParametersInDirectory(dir string, parameters []string) error {
+func replaceParametersInDirectory(dir string, parameters []string) error {
 	return filepath.Walk(dir, func(apath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -91,7 +91,7 @@ func ReplaceParametersInDirectoryCopy(dir string, parameters []string) (string, 
 	}
 
 	if len(parameters) != 0 {
-		if err := ReplaceParametersInDirectory(tempDir, parameters); err != nil {
+		if err := replaceParametersInDirectory(tempDir, parameters); err != nil {
 			os.RemoveAll(tempDir)
 			return "", err
 		}
