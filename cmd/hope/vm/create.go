@@ -110,6 +110,16 @@ var createCmd = &cobra.Command{
 
 		allArgs = append(allArgs, remoteOvfPath, "vi://root@localhost")
 
-		return ssh.ExecSSH(allArgs...)
+		// Check to see if the ESXI_ROOT_PASSWORD environment if set.
+		// If so, pass it on to the ssh invocation to help limit user
+		//   interaction.
+		esxiRootPassword := os.Getenv("ESXI_ROOT_PASSWORD")
+		if esxiRootPassword == "" {
+			log.Warn("ESXI_ROOT_PASSWORD not provided. A password prompt will need to be filled.")
+			return ssh.ExecSSH(allArgs...)
+		} else {
+			stdin := fmt.Sprintf("%s\n", esxiRootPassword)
+			return ssh.ExecSSHStdin(stdin, allArgs...)
+		}
 	},
 }

@@ -221,6 +221,12 @@ func patchInvocations() {
 		return oldExecSsh(args...)
 	}
 
+	oldExecSshStdin := ssh.ExecSSHStdin
+	ssh.ExecSSHStdin = func(stdin string, args ...string) error {
+		log.Debug("echo **(", len(stdin), " chars)** | ssh ", strings.Join(args, " "))
+		return oldExecSshStdin(stdin, args...)
+	}
+
 	oldGetSsh := ssh.GetSSH
 	ssh.GetSSH = func(args ...string) (string, error) {
 		log.Debug("ssh ", strings.Join(args, " "))
