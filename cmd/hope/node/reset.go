@@ -1,7 +1,6 @@
 package node
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -36,8 +35,8 @@ var resetCmd = &cobra.Command{
 			return err
 		}
 
-		if !node.IsRoleValid() {
-			return errors.New(fmt.Sprintf("Host (%s) not found in list of masters or nodes.", node.Host))
+		if !node.IsKubernetesNode() {
+			return fmt.Errorf("Host (%s) not found in list of Kubernetes nodes.", node.Host)
 		}
 
 		// If force is set, failing to find a kubeconfig shouldn't stop the

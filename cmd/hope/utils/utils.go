@@ -8,10 +8,14 @@
 package utils
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
 import (
+	"github.com/Eagerod/hope/pkg/fileutil"
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
@@ -50,4 +54,48 @@ func ReplaceParametersWithSubstitutor(t *hope.TextSubstitutor, parameters []stri
 	}
 
 	return string(*t.Bytes), nil
+}
+
+func replaceParametersInDirectory(dir string, parameters []string) error {
+	return filepath.Walk(dir, func(apath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		str, err := ReplaceParametersInFile(apath, parameters)
+		if err != nil {
+			return err
+		}
+
+		return fileutil.WriteFile(str, apath)
+	})
+}
+
+// ReplaceParametersInDirectoryCopy - Copy the provided directory, and replace
+//   parameters in the files.
+// Returns the temp path to the copied directory, and the caller must clean up
+//   that directory itself, unless an error occurs.
+func ReplaceParametersInDirectoryCopy(dir string, parameters []string) (string, error) {
+	tempDir, err := ioutil.TempDir("", "*")
+	if err != nil {
+		return "", err
+	}
+
+	if err := fileutil.CopyDirectory(dir, tempDir); err != nil {
+		os.RemoveAll(tempDir)
+		return "", err
+	}
+
+	if len(parameters) != 0 {
+		if err := replaceParametersInDirectory(tempDir, parameters); err != nil {
+			os.RemoveAll(tempDir)
+			return "", err
+		}
+	}
+
+	return tempDir, nil
 }

@@ -16,10 +16,12 @@ import (
 import (
 	"github.com/Eagerod/hope/cmd/hope/node"
 	"github.com/Eagerod/hope/cmd/hope/unifi"
+	"github.com/Eagerod/hope/cmd/hope/vm"
 
 	"github.com/Eagerod/hope/pkg/docker"
 	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/kubeutil"
+	"github.com/Eagerod/hope/pkg/packer"
 	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
@@ -53,6 +55,7 @@ func Execute() {
 
 	rootCmd.AddCommand(node.RootCommand)
 	rootCmd.AddCommand(unifi.RootCommand)
+	rootCmd.AddCommand(vm.RootCommand)
 
 	initDeployCmdFlags()
 	initKubeconfigCmdFlags()
@@ -64,6 +67,7 @@ func Execute() {
 
 	node.InitNodeCommand()
 	unifi.InitUnifiCommand()
+	vm.InitVMCommand()
 
 	log.Debug("Executing:", os.Args)
 	if err := rootCmd.Execute(); err != nil {
@@ -217,6 +221,12 @@ func patchInvocations() {
 		return oldExecSsh(args...)
 	}
 
+	oldExecSshStdin := ssh.ExecSSHStdin
+	ssh.ExecSSHStdin = func(stdin string, args ...string) error {
+		log.Debug("echo **(", len(stdin), " chars)** | ssh ", strings.Join(args, " "))
+		return oldExecSshStdin(stdin, args...)
+	}
+
 	oldGetSsh := ssh.GetSSH
 	ssh.GetSSH = func(args ...string) (string, error) {
 		log.Debug("ssh ", strings.Join(args, " "))
@@ -227,5 +237,23 @@ func patchInvocations() {
 	ssh.GetErrorSSH = func(args ...string) (string, error) {
 		log.Debug("ssh ", strings.Join(args, " "))
 		return oldGetErrorSsh(args...)
+	}
+
+	oldExecPacker := packer.ExecPacker
+	packer.ExecPacker = func(args ...string) error {
+		log.Debug("packer ", strings.Join(args, " "))
+		return oldExecPacker(args...)
+	}
+
+	oldExecPackerWd := packer.ExecPackerWd
+	packer.ExecPackerWd = func(wd string, args ...string) error {
+		log.Debug("packer ", strings.Join(args, " "))
+		return oldExecPackerWd(wd, args...)
+	}
+
+	oldExecPackerWdEnv := packer.ExecPackerWdEnv
+	packer.ExecPackerWdEnv = func(workDir string, env *map[string]string, args ...string) error {
+		log.Debug("packer ", strings.Join(args, " "))
+		return oldExecPackerWdEnv(workDir, env, args...)
 	}
 }

@@ -2,7 +2,6 @@ package hope
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -19,8 +18,8 @@ import (
 )
 
 func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
-	if !node.IsRoleValid() {
-		return errors.New(fmt.Sprintf("Node has role %s, should not prepare as Kubernetes node.", node.Role))
+	if !node.IsKubernetesNode() {
+		return fmt.Errorf("Node has role %s, should not prepare as Kubernetes node", node.Role)
 	}
 
 	if err := TestCanSSHWithoutPassword(node); err != nil {
@@ -95,7 +94,7 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 
 func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string) error {
 	if !node.IsMaster() {
-		return errors.New(fmt.Sprintf("Node has role %s and should not be set up as a Kubernetes master", node.Role))
+		return fmt.Errorf("Node has role %s and should not be set up as a Kubernetes master", node.Role)
 	}
 
 	if err := setupCommonNodeRequirements(log, node); err != nil {
@@ -117,7 +116,7 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string) e
 
 func CreateClusterNode(log *logrus.Entry, node *Node, masterIp string) error {
 	if !node.IsNode() {
-		return errors.New(fmt.Sprintf("Node has role %s and should not be set up as a Kubernetes node", node.Role))
+		return fmt.Errorf("Node has role %s and should not be set up as a Kubernetes node", node.Role)
 	}
 
 	if err := setupCommonNodeRequirements(log, node); err != nil {
@@ -213,7 +212,7 @@ func forceUserToEnterHostnameToContinue(node *Node) error {
 	trimmedInput := strings.TrimSpace(inputHostname)
 
 	if trimmedHostname != trimmedInput {
-		return errors.New(fmt.Sprintf("Node init aborted. Hostname not confirmed (%s != %s).", trimmedHostname, trimmedInput))
+		return fmt.Errorf("Node init aborted. Hostname not confirmed (%s != %s)", trimmedHostname, trimmedInput)
 	}
 
 	return nil
