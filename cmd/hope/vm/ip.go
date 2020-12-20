@@ -20,7 +20,7 @@ import (
 var ipCmdNumRetries int
 
 func initIpCmdFlags() {
-	ipCmd.Flags().IntVarP(&ipCmdNumRetries, "retries", "r", 10, "how many reties before failing the IP command (default 10).")
+	ipCmd.Flags().IntVarP(&ipCmdNumRetries, "retries", "r", 10, "how many reties before failing the IP command.")
 }
 
 func minDuration(a, b time.Duration) time.Duration {
