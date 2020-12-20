@@ -20,8 +20,11 @@ import (
 )
 
 var imageCmdParameterSlice *[]string
+var imageCmdForceFlag bool
 
 func initImageCmdFlags() {
+	imageCmd.Flags().BoolVarP(&imageCmdForceFlag, "force", "", false, "remove existing image if one already exists")
+
 	imageCmdParameterSlice = imageCmd.Flags().StringArrayP("param", "p", []string{}, "parameters to forward to packer's -var")
 }
 
@@ -50,7 +53,7 @@ var imageCmd = &cobra.Command{
 
 		vmDir := path.Join(vms.Root, vm.Name)
 		outputDir := path.Join(vms.Output, vm.Name)
-		log.Trace(fmt.Sprintf("Looking for VM definition in %s", vmDir))
+		log.Tracef("Looking for VM definition in %s", vmDir)
 
 		// This is done in advance so that the error can show the user the
 		//   real path the file that's expected to load, rather than a path in
@@ -70,7 +73,7 @@ var imageCmd = &cobra.Command{
 			fmt.Sprintf("OUTPUT_DIR=%s", outputDir),
 		)
 
-		log.Debug(fmt.Sprintf("Copying contents of %s for parameter replacement.", vmDir))
+		log.Debugf("Copying contents of %s for parameter replacement.", vmDir)
 		tempDir, err := utils.ReplaceParametersInDirectoryCopy(vmDir, allParameters)
 		if err != nil {
 			return err
@@ -94,8 +97,19 @@ var imageCmd = &cobra.Command{
 			return fmt.Errorf("Packer cache directory %s must be absolute", vms.Cache)
 		}
 
-		if stat, err := os.Stat(packerOutDir); err == nil {
-			if stat.IsDir() {
+		if imageCmdForceFlag {
+			os.RemoveAll(packerOutDir)
+		} else {
+			stat, err := os.Stat(packerOutDir)
+			if err != nil && os.IsNotExist(err) {
+				log.Debugf("Will create a new directory at %s...", packerOutDir)
+			} else if err != nil {
+				return err
+			} else {
+				if !stat.IsDir() {
+					return fmt.Errorf("File exists at path %s", packerOutDir)
+				}
+
 				files, err := ioutil.ReadDir(packerOutDir)
 				if err != nil {
 					return err
@@ -104,8 +118,6 @@ var imageCmd = &cobra.Command{
 				if len(files) != 0 {
 					return fmt.Errorf("Directory at path %s already exists and is not empty", packerOutDir)
 				}
-			} else {
-				log.Debug(fmt.Sprintf("Will create a new directory at %s...", packerOutDir))
 			}
 		}
 
@@ -135,7 +147,7 @@ var imageCmd = &cobra.Command{
 			"PACKER_ESXI_VNC_PROBE_TIMEOUT": packerEsxiVncProbeTimeout,
 		}
 
-		log.Info(fmt.Sprintf("Building VM Image: %s", vm.Name))
+		log.Infof("Building VM Image: %s", vm.Name)
 
 		if err := packer.ExecPackerWdEnv(tempDir, &packerEnvs, allArgs...); err != nil {
 			return err
