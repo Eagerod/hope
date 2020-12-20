@@ -12,6 +12,8 @@ nodes:
     network: VM Network
   # Masters
   # There should be three of these.
+  # Any Kubernetes-Role nodes can either have a direct host, or name a
+  #   hypervisor from which their IP Address can be fetched.
   - name: home-master-01
     role: master
     host: 192.168.1.31
@@ -23,7 +25,7 @@ nodes:
   #   hardware is available at the time.
   - name: home-node-01
     role: node
-    host: 192.168.1.30
+    hypervisor: beast1
     user: root
 vms:
   root: vms

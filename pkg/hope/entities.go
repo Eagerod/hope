@@ -77,12 +77,13 @@ type Job struct {
 // Datastore is really only used for Hypervisors, but whatever; it's not
 //   incredibly intuitive how to have non-homogenous types in viper lists.
 type Node struct {
-	Name      string
-	Role      string
-	Host      string
-	User      string
-	Datastore string
-	Network   string
+	Name       string
+	Role       string
+	Host       string
+	Hypervisor string
+	User       string
+	Datastore  string
+	Network    string
 }
 
 // VMImageSpec - Defines the structure needed to populate a Packer job to

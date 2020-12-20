@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 import (
@@ -10,10 +11,11 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/pkg/esxi"
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
-func GetNodes() (*[]hope.Node, error) {
+func getNodes() (*[]hope.Node, error) {
 	var nodes []hope.Node
 	err := viper.UnmarshalKey("nodes", &nodes)
 
@@ -29,14 +31,14 @@ func GetNodes() (*[]hope.Node, error) {
 }
 
 func GetNode(name string) (*hope.Node, error) {
-	nodes, err := GetNodes()
+	nodes, err := getNodes()
 	if err != nil {
 		return nil, err
 	}
 
 	for _, node := range *nodes {
 		if node.Name == name {
-			return &node, nil
+			return expandHypervisor(&node)
 		}
 	}
 
@@ -44,14 +46,14 @@ func GetNode(name string) (*hope.Node, error) {
 }
 
 func GetAnyMaster() (*hope.Node, error) {
-	nodes, err := GetNodes()
+	nodes, err := getNodes()
 	if err != nil {
 		return nil, err
 	}
 
 	for _, node := range *nodes {
 		if node.IsMaster() {
-			return &node, nil
+			return expandHypervisor(&node)
 		}
 	}
 
@@ -60,7 +62,7 @@ func GetAnyMaster() (*hope.Node, error) {
 
 func GetHypervisors() (*[]hope.Node, error) {
 	retVal := []hope.Node{}
-	nodes, err := GetNodes()
+	nodes, err := getNodes()
 	if err != nil {
 		return nil, err
 	}
@@ -74,10 +76,36 @@ func GetHypervisors() (*[]hope.Node, error) {
 	return &retVal, nil
 }
 
+func expandHypervisor(node *hope.Node) (*hope.Node, error) {
+	if node.Hypervisor == "" {
+		return node, nil
+	}
+
+	hypervisor, err := GetHypervisor(node.Hypervisor)
+	if err != nil {
+		return nil, err
+	}
+
+	ip, err := esxi.GetIpAddressOfVmNamed(hypervisor.ConnectionString(), node.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	ip = strings.TrimSpace(ip)
+	if ip == "0.0.0.0" {
+		return nil, fmt.Errorf("Failed to find IP for vm %s on %s", node.Name, hypervisor.Name)
+	}
+
+	newNode := *node
+	newNode.Hypervisor = ""
+	newNode.Host = ip
+	return &newNode, nil
+}
+
 func GetHypervisor(name string) (*hope.Node, error) {
 	// Any nice way to generalize this?
 	// Copied from GetNode
-	nodes, err := GetNodes()
+	nodes, err := getNodes()
 	if err != nil {
 		return nil, err
 	}
