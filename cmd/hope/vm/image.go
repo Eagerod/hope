@@ -98,6 +98,7 @@ var imageCmd = &cobra.Command{
 		}
 
 		if imageCmdForceFlag {
+			log.Infof("Deleting %s", packerOutDir)
 			os.RemoveAll(packerOutDir)
 		} else {
 			stat, err := os.Stat(packerOutDir)
