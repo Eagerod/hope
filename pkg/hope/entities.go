@@ -76,6 +76,8 @@ type Job struct {
 //   executed.
 // Datastore is really only used for Hypervisors, but whatever; it's not
 //   incredibly intuitive how to have non-homogenous types in viper lists.
+// If a more concrete type is eventually used, the Role property should become
+//   an enum/bitfield.
 type Node struct {
 	Name       string
 	Role       string
@@ -182,6 +184,11 @@ func (node *Node) IsHypervisor() bool {
 	return node.Role == "hypervisor"
 }
 
+// IsLoadBalancer - Whether or not this node is a load-balancer node.
+func (node *Node) IsLoadBalancer() bool {
+	return node.Role == "load-balancer"
+}
+
 // IsKubernetesNode - Whether or not this node has one of the Kubernetes
 //   roles.
 func (node *Node) IsKubernetesNode() bool {
@@ -190,5 +197,5 @@ func (node *Node) IsKubernetesNode() bool {
 
 // IsRoleValid - Whether or not the node has a role that has been implemented.
 func (node *Node) IsRoleValid() bool {
-	return node.IsKubernetesNode() || node.IsHypervisor()
+	return node.IsKubernetesNode() || node.IsHypervisor() || node.IsLoadBalancer()
 }
