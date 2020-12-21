@@ -56,3 +56,21 @@ func GetIpAddressOfVmNamed(host string, vmName string) (string, error) {
 	ip := strings.TrimSpace(strings.Split(lines[1], ",")[0])
 	return ip, nil
 }
+
+func ListVms(host string) (*[]string, error) {
+	retVal := []string{}
+
+	output, err := ssh.GetSSH(host, "vim-cmd", "vmsvc/getallvms")
+	if err != nil {
+		return nil, err
+	}
+
+	// Line 0 is headers, so skip that.
+	for _, line := range strings.Split(strings.TrimSpace(output), "\n")[1:] {
+		// Vmid Name File Guest_OS Version Annotation
+		fields := strings.Fields(line)
+		retVal = append(retVal, fields[1])
+	}
+	
+	return &retVal, nil
+}
