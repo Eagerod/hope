@@ -14,9 +14,14 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/node"
+	"github.com/Eagerod/hope/cmd/hope/unifi"
+	"github.com/Eagerod/hope/cmd/hope/vm"
+
 	"github.com/Eagerod/hope/pkg/docker"
 	"github.com/Eagerod/hope/pkg/envsubst"
 	"github.com/Eagerod/hope/pkg/kubeutil"
+	"github.com/Eagerod/hope/pkg/packer"
 	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
@@ -39,24 +44,30 @@ Kubernetes resources I run.`,
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	rootCmd.AddCommand(initCmd)
-	rootCmd.AddCommand(setCmd)
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(versionCmd)
-	rootCmd.AddCommand(hostnameCmd)
 	rootCmd.AddCommand(kubeconfigCmd)
-	rootCmd.AddCommand(resetCmd)
+	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(removeCmd)
 	rootCmd.AddCommand(runCmd)
-	rootCmd.AddCommand(sshCmd)
+	rootCmd.AddCommand(shellCmd)
 	rootCmd.AddCommand(tokenCmd)
 
+	rootCmd.AddCommand(node.RootCommand)
+	rootCmd.AddCommand(unifi.RootCommand)
+	rootCmd.AddCommand(vm.RootCommand)
+
 	initDeployCmdFlags()
-	initHostnameCmdFlags()
 	initKubeconfigCmdFlags()
-	initResetCmd()
+	initListCmdFlags()
+	initRemoveCmdFlags()
 	initRunCmdFlags()
-	initSshCmd()
+	initShellCmd()
 	initTokenCmd()
+
+	node.InitNodeCommand()
+	unifi.InitUnifiCommand()
+	vm.InitVMCommand()
 
 	log.Debug("Executing:", os.Args)
 	if err := rootCmd.Execute(); err != nil {
@@ -120,7 +131,7 @@ func initLogger() {
 			failed = true
 		}
 	}
-	log.SetOutput(os.Stdout)
+	log.SetOutput(os.Stderr)
 
 	if failed {
 		log.Info("Failed to parse loglevel. Defaulting to INFO")
@@ -146,6 +157,16 @@ func patchInvocations() {
 			log.Debug("docker ", strings.Join(args, " "))
 		}
 		return oldExecDocker(args...)
+	}
+
+	oldGetDocker := docker.GetDocker
+	docker.GetDocker = func(args ...string) (string, error) {
+		if docker.UseSudo {
+			log.Debug("sudo docker ", strings.Join(args, " "))
+		} else {
+			log.Debug("docker ", strings.Join(args, " "))
+		}
+		return oldGetDocker(args...)
 	}
 
 	oldEnvsubstBytes := envsubst.GetEnvsubstBytes
@@ -200,6 +221,12 @@ func patchInvocations() {
 		return oldExecSsh(args...)
 	}
 
+	oldExecSshStdin := ssh.ExecSSHStdin
+	ssh.ExecSSHStdin = func(stdin string, args ...string) error {
+		log.Debug("echo **(", len(stdin), " chars)** | ssh ", strings.Join(args, " "))
+		return oldExecSshStdin(stdin, args...)
+	}
+
 	oldGetSsh := ssh.GetSSH
 	ssh.GetSSH = func(args ...string) (string, error) {
 		log.Debug("ssh ", strings.Join(args, " "))
@@ -210,5 +237,23 @@ func patchInvocations() {
 	ssh.GetErrorSSH = func(args ...string) (string, error) {
 		log.Debug("ssh ", strings.Join(args, " "))
 		return oldGetErrorSsh(args...)
+	}
+
+	oldExecPacker := packer.ExecPacker
+	packer.ExecPacker = func(args ...string) error {
+		log.Debug("packer ", strings.Join(args, " "))
+		return oldExecPacker(args...)
+	}
+
+	oldExecPackerWd := packer.ExecPackerWd
+	packer.ExecPackerWd = func(wd string, args ...string) error {
+		log.Debug("packer ", strings.Join(args, " "))
+		return oldExecPackerWd(wd, args...)
+	}
+
+	oldExecPackerWdEnv := packer.ExecPackerWdEnv
+	packer.ExecPackerWdEnv = func(workDir string, env *map[string]string, args ...string) error {
+		log.Debug("packer ", strings.Join(args, " "))
+		return oldExecPackerWdEnv(workDir, env, args...)
 	}
 }

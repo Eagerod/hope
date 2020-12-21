@@ -1,4 +1,8 @@
-package cmd
+package node
+
+import (
+	"fmt"
+)
 
 import (
 	log "github.com/sirupsen/logrus"
@@ -6,6 +10,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
@@ -20,17 +25,20 @@ var hostnameCmd = &cobra.Command{
 	Short: "Set the hostname on a node",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		host := args[0]
+		nodeName := args[0]
 		hostname := args[1]
 
-		if !nodePresentInConfig(host) {
-			if !hostnameCmdForce {
-				return hostNotFoundError(host)
-			}
+		node, err := utils.GetNode(nodeName)
+		if err != nil {
+			return err
 		}
 
-		log.Info("Setting hostname on node ", host, " to ", hostname)
+		if !node.IsRoleValid() {
+			return fmt.Errorf("Node %s has invalid role %s", node.Name, node.Role)
+		}
 
-		return hope.SetHostname(log.WithFields(log.Fields{}), host, hostname, hostnameCmdForce)
+		log.Info("Setting hostname on node ", node.Name, "(", node.Host, ")", " to ", hostname)
+
+		return hope.SetHostname(log.WithFields(log.Fields{}), node, hostname, hostnameCmdForce)
 	},
 }

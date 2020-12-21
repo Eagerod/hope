@@ -1,8 +1,42 @@
 master_load_balancer: root@192.168.1.82
-masters:
-  - root@192.168.1.31
+access_points:
+  - 192.168.2.43
+access_point_controller: http://192.168.2.10:8080
 nodes:
-  - root@192.168.1.30
+  # Hypervisors
+  # This is the list of hypervisors that host each of the VMs described below.
+  - name: beast1
+    role: hypervisor
+    host: 192.168.10.40
+    user: root
+    datastore: Main
+    network: VM Network
+  # Masters
+  # There should be three of these.
+  # Any Kubernetes-Role nodes can either have a direct host, or name a
+  #   hypervisor from which their IP Address can be fetched.
+  - name: home-master-01
+    role: master
+    host: 192.168.1.31
+    user: root
+  # Nodes
+  # There should be any number of these, primarily dependent on the amount of
+  #   RAM needed to run everything.
+  # Each node should have 8 gigs of memory, but that may change based on what
+  #   hardware is available at the time.
+  - name: home-node-01
+    role: node
+    hypervisor: beast1
+    user: root
+vms:
+  root: vms
+  cache: /var/lib/packer/cache
+  output: /var/lib/packer/images
+  images:
+    - name: some-image
+      parameters:
+        - ESXI_ROOT_PASSWORD
+        - ESXI_NETWORK=VM Network
 loglevel: trace
 pod_network_cidr: 10.244.0.0/16
 # Resource list of all things to deploy to the cluster, and the order in which
@@ -61,16 +95,29 @@ resources:
   # Build and push a docker image to the registry.
   # Doesn't include a kubectl command at all, so that can be done in a step
   #   after a step like this appears.
-  # Hope will pull the latest image available from the registry before building
-  #   it in an attempt to save some compute time rebuilding layers that haven't
-  #   changed since the last deployment.
+  # Hope will optionally try to pull the image from the registry before
+  #   building it in an attempt to save some compute time rebuilding layers 
+  #   that haven't changed since the last push.
+  # Pull from source registry can be done in similar ways to Kubernetes'
+  #   Always and IfNotPresent with the "always", if "if-not-present" values.
+  # Like Kubernetes, defaults to "if-not-present".
   # Because docker builds tend to require a bit more state in them, providing a
   #   local path is all that's currently supported.
+  # Now that Docker Hub has rolled out rate limits on their APIs, a Docker
+  #   build step also has the option to just copy an existing source tag, and
+  #   push it to the local registry.
   - name: build-some-image
     build:
       path: some-dir-with-dockerfile
+      pull: always
       tag: registry.internal.aleemhaji.com/example-repo:latest
     tags: [app1]
+  - name: copy-some-image
+    build:
+      source: python:3.7
+      pull: if-not-present
+      tag: registry.internal.aleemhaji.com/python:3.7
+    tags: [dockercache]
   # When a spec comes with an initialization procedure, a job type can be used.
   # These will wait until the job with the specified name is completed.
   # If the job fails, the deployment stops so that other resources that may

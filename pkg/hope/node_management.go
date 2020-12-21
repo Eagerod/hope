@@ -2,7 +2,6 @@ package hope
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -19,52 +18,57 @@ import (
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
-func setupCommonNodeRequirements(log *logrus.Entry, masterIp string) error {
-	if err := TestCanSSHWithoutPassword(masterIp); err != nil {
+func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
+	if !node.IsKubernetesNode() {
+		return fmt.Errorf("Node has role %s, should not prepare as Kubernetes node", node.Role)
+	}
+
+	if err := TestCanSSHWithoutPassword(node); err != nil {
 		return err
 	}
 
-	log.Debug("Preparing Kubernetes components at ", masterIp)
+	log.Debug("Preparing Kubernetes components at ", node.Host)
 
+	connectionString := node.ConnectionString()
 	// Write all the empty files that should exist first.
-	dest := fmt.Sprintf("%s:%s", masterIp, "/etc/sysconfig/docker-storage")
+	dest := fmt.Sprintf("%s:%s", connectionString, "/etc/sysconfig/docker-storage")
 	if err := scp.ExecSCPBytes([]byte(""), dest); err != nil {
 		return err
 	}
 
-	dest = fmt.Sprintf("%s:%s", masterIp, "/etc/sysconfig/docker-storage-setup")
+	dest = fmt.Sprintf("%s:%s", connectionString, "/etc/sysconfig/docker-storage-setup")
 	if err := scp.ExecSCPBytes([]byte(""), dest); err != nil {
 		return err
 	}
 
 	// Write files with contents.
-	dest = fmt.Sprintf("%s:%s", masterIp, "/etc/docker/daemon.json")
+	dest = fmt.Sprintf("%s:%s", connectionString, "/etc/docker/daemon.json")
 	if err := scp.ExecSCPBytes([]byte(DockerDaemonJson), dest); err != nil {
 		return err
 	}
 
-	dest = fmt.Sprintf("%s:%s", masterIp, "/etc/sysctl.d/k8s.conf")
+	dest = fmt.Sprintf("%s:%s", connectionString, "/etc/sysctl.d/k8s.conf")
 	if err := scp.ExecSCPBytes([]byte(K8SConf), dest); err != nil {
 		return err
 	}
 
-	dest = fmt.Sprintf("%s:%s", masterIp, "/proc/sys/net/ipv4/ip_forward")
+	dest = fmt.Sprintf("%s:%s", connectionString, "/proc/sys/net/ipv4/ip_forward")
 	if err := scp.ExecSCPBytes([]byte(IpForward), dest); err != nil {
 		return err
 	}
 
 	// Various other setups.
-	if err := ssh.ExecSSH(masterIp, "sed", "-i", "'/--exec-opt native.cgroupdriver/d'", "/usr/lib/systemd/system/docker.service"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sed", "-i", "'/--exec-opt native.cgroupdriver/d'", "/usr/lib/systemd/system/docker.service"); err != nil {
 		return err
 	}
 
-	ssh.ExecSSH(masterIp, "sed", "-i", "'s/--log-driver=journald//'", "/etc/sysconfig/docker")
+	ssh.ExecSSH(connectionString, "sed", "-i", "'s/--log-driver=journald//'", "/etc/sysconfig/docker")
 
-	if err := ssh.ExecSSH(masterIp, "sysctl", "-p"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sysctl", "-p"); err != nil {
 		return err
 	}
 
-	if err := DisableSwapOnRemote(masterIp); err != nil {
+	if err := DisableSwapOnRemote(node); err != nil {
 		return err
 	}
 
@@ -78,23 +82,27 @@ func setupCommonNodeRequirements(log *logrus.Entry, masterIp string) error {
 		},
 		" && ",
 	))
-	if err := ssh.ExecSSH(masterIp, "bash", "-c", daemonsScript); err != nil {
+	if err := ssh.ExecSSH(connectionString, "bash", "-c", daemonsScript); err != nil {
 		return err
 	}
 
-	if err := DisableSelinuxOnRemote(masterIp); err != nil {
+	if err := DisableSelinuxOnRemote(node); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func CreateClusterMaster(log *logrus.Entry, masterIp string, podNetworkCidr string, loadBalancerHost string, allMasters []string) error {
-	if err := setupCommonNodeRequirements(log, masterIp); err != nil {
+	func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, loadBalancerHost string, allMasters []string) error {
+	if !node.IsMaster() {
+		return fmt.Errorf("Node has role %s and should not be set up as a Kubernetes master", node.Role)
+	}
+
+	if err := setupCommonNodeRequirements(log, node); err != nil {
 		return err
 	}
 
-	if err := forceUserToEnterHostnameToContinue(masterIp); err != nil {
+	if err := forceUserToEnterHostnameToContinue(node); err != nil {
 		return err
 	}
 
@@ -106,7 +114,7 @@ func CreateClusterMaster(log *logrus.Entry, masterIp string, podNetworkCidr stri
 	//   as a master to an existing control plane, or if this will be the
 	//   first master in the pool.
 	for _, aMaster := range allMasters {
-		if aMaster == masterIp {
+		if aMaster == node.ConnectionString() {
 			continue
 		}
 
@@ -140,7 +148,7 @@ func CreateClusterMaster(log *logrus.Entry, masterIp string, podNetworkCidr stri
 		}
 
 		if certKey == "" {
-			return errors.New(fmt.Sprintf("Failed to find cert key from selected master node: %s", aMaster))
+			return fmt.Errorf("Failed to find cert key from selected master node: %s", aMaster)
 		}
 
 		joinCommand, err := ssh.GetSSH(aMaster, "kubeadm", "token", "create", "--print-join-command")
@@ -149,7 +157,7 @@ func CreateClusterMaster(log *logrus.Entry, masterIp string, podNetworkCidr stri
 		}
 
 		joinComponents := strings.Split(strings.TrimSpace(joinCommand), " ")
-		allArguments := append([]string{masterIp}, joinComponents...)
+		allArguments := append([]string{node.ConnectionString()}, joinComponents...)
 		allArguments = append(allArguments, "--control-plane", "--certificate-key", certKey)
 
 		if err := ssh.ExecSSH(allArguments...); err != nil {
@@ -165,7 +173,7 @@ func CreateClusterMaster(log *logrus.Entry, masterIp string, podNetworkCidr stri
 	//   include the master host.
 	// Maybe wait 20 seconds before updating the lb.
 	podNetworkCidrArg := fmt.Sprintf("--pod-network-cidr=%s", podNetworkCidr)
-	allArgs := []string{masterIp, "kubeadm", "init", podNetworkCidrArg}
+	allArgs := []string{node.ConnectionString(), "kubeadm", "init", podNetworkCidrArg}
 	if loadBalancerHost != "" {
 		loadBalancerEndpoint := fmt.Sprintf("%s:%s", loadBalancerHost, "6443")
 		allArgs = append(allArgs, "--control-plane-endpoint", loadBalancerEndpoint, "--upload-certs")
@@ -178,12 +186,16 @@ func CreateClusterMaster(log *logrus.Entry, masterIp string, podNetworkCidr stri
 	return nil
 }
 
-func CreateClusterNode(log *logrus.Entry, nodeIp string, masterIp string) error {
-	if err := setupCommonNodeRequirements(log, nodeIp); err != nil {
+func CreateClusterNode(log *logrus.Entry, node *Node, masterIp string) error {
+	if !node.IsNode() {
+		return fmt.Errorf("Node has role %s and should not be set up as a Kubernetes node", node.Role)
+	}
+
+	if err := setupCommonNodeRequirements(log, node); err != nil {
 		return err
 	}
 
-	if err := forceUserToEnterHostnameToContinue(nodeIp); err != nil {
+	if err := forceUserToEnterHostnameToContinue(node); err != nil {
 		return err
 	}
 
@@ -193,7 +205,7 @@ func CreateClusterNode(log *logrus.Entry, nodeIp string, masterIp string) error 
 	}
 
 	joinComponents := strings.Split(joinCommand, " ")
-	allArguments := append([]string{nodeIp}, joinComponents...)
+	allArguments := append([]string{node.ConnectionString()}, joinComponents...)
 	if err := ssh.ExecSSH(allArguments...); err != nil {
 		return err
 	}
@@ -201,8 +213,8 @@ func CreateClusterNode(log *logrus.Entry, nodeIp string, masterIp string) error 
 	return nil
 }
 
-func TaintNodeByHost(kubectl *kubeutil.Kubectl, host string, taint string) error {
-	nodeName, err := kubeutil.NodeNameFromHost(kubectl, host)
+func TaintNodeByHost(kubectl *kubeutil.Kubectl, node *Node, taint string) error {
+	nodeName, err := kubeutil.NodeNameFromHost(kubectl, node.Host)
 	if err != nil {
 		return err
 	}
@@ -214,47 +226,51 @@ func TaintNodeByHost(kubectl *kubeutil.Kubectl, host string, taint string) error
 	return nil
 }
 
-func SetHostname(log *logrus.Entry, host string, hostname string, force bool) error {
-	existingHostname, err := ssh.GetSSH(host, "hostname")
+func SetHostname(log *logrus.Entry, node *Node, hostname string, force bool) error {
+	connectionString := node.ConnectionString()
+
+	existingHostname, err := ssh.GetSSH(connectionString, "hostname")
 	if err != nil {
 		return nil
 	}
 	existingHostname = strings.TrimSpace(existingHostname)
 
 	if !force {
-		log.Trace("Testing hostname on ", host, " before committing any changes...")
+		log.Trace("Testing hostname on ", node.Host, " before committing any changes...")
 
 		if hostname == existingHostname {
-			log.Debug("Hostname of ", host, " is already ", hostname, ". Skipping hostname setting.")
+			log.Debug("Hostname of ", node.Host, " is already ", hostname, ". Skipping hostname setting.")
 
 			return nil
 		} else {
-			log.Trace("Hostname of ", host, " is ", existingHostname)
+			log.Trace("Hostname of ", node.Host, " is ", existingHostname)
 		}
 	}
 
 	log.Trace("Setting hostname to ", hostname)
-	if err := ssh.ExecSSH(host, "hostnamectl", "set-hostname", hostname); err != nil {
+	if err := ssh.ExecSSH(connectionString, "hostnamectl", "set-hostname", hostname); err != nil {
 		return err
 	}
 
 	// TODO: _Might_ be worth dropping word boundaries on the sed script?
 	log.Debug("Replacing all instances of ", existingHostname, " in /etc/hosts")
 	sedScript := fmt.Sprintf("'s/%s/%s/g'", existingHostname, hostname)
-	if err := ssh.ExecSSH(host, "sed", "-i", sedScript, "/etc/hosts"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sed", "-i", sedScript, "/etc/hosts"); err != nil {
 		return err
 	}
 
 	// Host _should_ come up before SSH times out.
-	log.Info("Restarting networking on ", host)
-	if err := ssh.ExecSSH(host, "systemctl", "restart", "network"); err != nil {
+	log.Info("Restarting networking on ", node.Host)
+	if err := ssh.ExecSSH(connectionString, "systemctl", "restart", "network"); err != nil {
 	}
 
 	return nil
 }
 
-func forceUserToEnterHostnameToContinue(host string) error {
-	hostname, err := ssh.GetSSH(host, "hostname")
+func forceUserToEnterHostnameToContinue(node *Node) error {
+	connectionString := node.ConnectionString()
+
+	hostname, err := ssh.GetSSH(connectionString, "hostname")
 	if err != nil {
 		return err
 	}
@@ -268,7 +284,7 @@ func forceUserToEnterHostnameToContinue(host string) error {
 	trimmedInput := strings.TrimSpace(inputHostname)
 
 	if trimmedHostname != trimmedInput {
-		return errors.New(fmt.Sprintf("Node init aborted. Hostname not confirmed (%s != %s).", trimmedHostname, trimmedInput))
+		return fmt.Errorf("Node init aborted. Hostname not confirmed (%s != %s)", trimmedHostname, trimmedInput)
 	}
 
 	return nil

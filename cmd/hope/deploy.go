@@ -13,6 +13,7 @@ import (
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/docker"
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
@@ -28,76 +29,42 @@ var deployCmd = &cobra.Command{
 	Use:   "deploy",
 	Short: "Deploy Kubernetes resources defined in the hope file",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		resources, err := getResources()
-		if err != nil {
-			return err
-		}
+		var resources *[]hope.Resource
 
-		// TODO: Re-evaluate; maybe just deploy everything in order defined.
-		if len(args) != 0 && len(*deployCmdTagSlice) != 0 {
-			return errors.New("Cannot deploy tags and named resources together.")
-		}
-
-		resourcesToDeploy := []Resource{}
-
-		if len(args) == 0 {
-			if len(*deployCmdTagSlice) != 0 {
-				tagMap := map[string]bool{}
-				for _, tag := range *deployCmdTagSlice {
-					tagMap[tag] = true
-				}
-
-				resourceNames := []string{}
-				for _, resource := range *resources {
-					for _, tag := range resource.Tags {
-						if _, ok := tagMap[tag]; ok {
-							resourcesToDeploy = append(resourcesToDeploy, resource)
-							resourceNames = append(resourceNames, resource.Name)
-							continue
-						}
-					}
-				}
-
-				log.Debug("Deploying these resources: \n\t", strings.Join(resourceNames, "\n\t"), "\nFrom provided tags.")
-			} else {
-				log.Debug("Received no arguments for deployment. Deploying all resources.")
-				resourcesToDeploy = *resources
+		if len(args) == 0 && len(*deployCmdTagSlice) == 0 {
+			r, err := utils.GetResources()
+			if err != nil {
+				return err
 			}
+
+			resources = r
+			log.Trace("Received no arguments for deployment. Deploying all resources.")
 		} else {
-			log.Debug("Deploying these resources: \n\t", strings.Join(args, "\n\t"), "\nIn the order given.")
-
-			// Map the slice by name so they can be fetched in order.
-			resourcesMap := map[string]Resource{}
-			for _, resource := range *resources {
-				_, ok := resourcesMap[resource.Name]
-				if ok {
-					return errors.New(fmt.Sprintf("Multiple resources found with name %s. Aborting deploy", resource.Name))
-				}
-
-				resourcesMap[resource.Name] = resource
+			r, err := utils.GetIdentifiableResources(&args, deployCmdTagSlice)
+			if err != nil {
+				return err
 			}
 
-			// Do an initial pass to ensure that no invalid resources were
-			//   provided
-			for _, expectedResource := range args {
-				resource, ok := resourcesMap[expectedResource]
-				if !ok {
-					return errors.New(fmt.Sprintf("Cannot find resource '%s' in configuration file.", expectedResource))
-				}
-
-				resourcesToDeploy = append(resourcesToDeploy, resource)
-			}
+			resources = r
 		}
 
-		// Do a pass over the resources, and make sure that there's a docker
-		//   build step before potentially asking the user to type in their
-		//   password to elevate
+		if len(*resources) == 0 {
+			log.Warn("No resources matched the provided definitions.")
+			return nil
+		}
+
+		// Do a pass over the resources to be deployed, and determine what
+		//   kinds of local operations need to be done before all of these
+		//   things can be deployed.
 		hasDockerResource := false
-		for _, resource := range resourcesToDeploy {
+		hasKubernetesResource := false
+		for _, resource := range *resources {
 			resourceType, _ := resource.GetType()
-			if resourceType == ResourceTypeDockerBuild {
+			switch resourceType {
+			case hope.ResourceTypeDockerBuild:
 				hasDockerResource = true
-				break
+			case hope.ResourceTypeFile, hope.ResourceTypeInline, hope.ResourceTypeJob, hope.ResourceTypeExec:
+				hasKubernetesResource = true
 			}
 		}
 
@@ -112,28 +79,23 @@ var deployCmd = &cobra.Command{
 			}
 		}
 
-		if len(resourcesToDeploy) == 0 {
-			log.Warn("No reources matched the provided definitions.")
-			return nil
-		}
+		var kubectl *kubeutil.Kubectl
+		if hasKubernetesResource {
+			masters := viper.GetStringSlice("masters")
 
-		// Wait as long as possible before pulling the temporary kubectl from
-		//   a master node.
-		// TODO: Implement something similar to the hasDockerResource process
-		//   above; if there isn't anything that needs to talk to kubernetes,
-		//   don't even bother pulling the kubeconfig.
-		masters := viper.GetStringSlice("masters")
-		kubectl, err := getKubectlFromAnyMaster(log.WithFields(log.Fields{}), masters)
-		if err != nil {
-			return err
-		}
+			var err error
+			kubectl, err = kubeutil.NewKubectlFromAnyNode(masters)
+			if err != nil {
+				return err
+			}
 
-		defer kubectl.Destroy()
+			defer kubectl.Destroy()
+		}
 
 		// TODO: Should be done in hope pkg
 		// TODO: Add validation to ensure each type of deployment can run given
-		//   the current dev environment -- ensure docker is can connect, etc.
-		for _, resource := range resourcesToDeploy {
+		//   the current dev environment -- ensure docker can connect, etc.
+		for _, resource := range *resources {
 			log.Debug("Starting deployment of ", resource.Name)
 			resourceType, err := resource.GetType()
 			if err != nil {
@@ -141,9 +103,9 @@ var deployCmd = &cobra.Command{
 			}
 
 			switch resourceType {
-			case ResourceTypeFile:
+			case hope.ResourceTypeFile:
 				if len(resource.Parameters) != 0 {
-					content, err := replaceParametersInFile(resource.File, resource.Parameters)
+					content, err := utils.ReplaceParametersInFile(resource.File, resource.Parameters)
 					if err != nil {
 						return err
 					}
@@ -157,7 +119,7 @@ var deployCmd = &cobra.Command{
 						return err
 					}
 				}
-			case ResourceTypeInline:
+			case hope.ResourceTypeInline:
 				inline := resource.Inline
 
 				// Log out the inline resource before substituting it; secrets
@@ -165,7 +127,7 @@ var deployCmd = &cobra.Command{
 				log.Trace(inline)
 
 				if len(resource.Parameters) != 0 {
-					inline, err = replaceParametersInString(inline, resource.Parameters)
+					inline, err = utils.ReplaceParametersInString(inline, resource.Parameters)
 					if err != nil {
 						return err
 					}
@@ -176,39 +138,92 @@ var deployCmd = &cobra.Command{
 				if err := hope.KubectlApplyStdIn(kubectl, inline); err != nil {
 					return err
 				}
-			case ResourceTypeDockerBuild:
-				// Strip the actual tag off the repo so that it defaults to the
-				//   latest.
-				tagSeparator := strings.LastIndex(resource.Build.Tag, ":")
-				pullImage := resource.Build.Tag
-				if tagSeparator != -1 {
-					pullImage = pullImage[:tagSeparator]
+			case hope.ResourceTypeDockerBuild:
+				isCacheCommand := len(resource.Build.Source) != 0
+				isBuildCommand := len(resource.Build.Path) != 0
+
+				if isCacheCommand && isBuildCommand {
+					return errors.New(fmt.Sprintf("Docker build step %s cannot have a path and a source", resource.Name))
 				}
 
-				if err := docker.ExecDocker("pull", pullImage); err != nil {
-					// Maybe the image was pushed with the given tag.
-					// Maybe the tag is something like :stable.
-					// Hopefully we can grab a few layers at least.
-					if err := docker.ExecDocker("pull", resource.Build.Tag); err != nil {
-						log.Warn("Failed to pull existing images for ", pullImage, ". Maybe this image doesn't exist?")
+				// TODO: Move these to constants somewhere
+				pullConstraintAlways := resource.Build.Pull == "always"
+				pullConstraintIfNotPresent := resource.Build.Pull == "if-not-present" || resource.Build.Pull == ""
 
-						// Don't return any errors here.
-						// If this is the first time this image is being
-						//   pushed, there will be nothing to pull, and
-						//   this will never succeed.
+				if !pullConstraintAlways && !pullConstraintIfNotPresent {
+					return errors.New(fmt.Sprintf("Unknown Docker image pull constraint: %s", resource.Build.Pull))
+				}
+
+				pullImage := ""
+				if isCacheCommand {
+					pullImage = resource.Build.Source
+				} else {
+					pullImage = resource.Build.Tag
+				}
+
+				ifNotPresentShouldPull := false
+				if pullConstraintIfNotPresent {
+					output, err := docker.GetDocker("images", pullImage, "--format={{.Repository}}:{{.Tag}}")
+					if err != nil {
+						return err
+					}
+
+					outputLines := strings.Split(output, "\n")
+					if len(outputLines) == 0 {
+						log.Info(fmt.Sprintf("No Docker images like %s not found locally, must pull from upstream.", pullImage))
+						ifNotPresentShouldPull = true
+					} else {
+						// Figure out if the latest tag needs to be defaulted
+						//   to, or if a specific one was requested.
+						searchTag := pullImage
+						tagIndex := strings.LastIndex(searchTag, ":")
+						if tagIndex == -1 {
+							log.Debug("Provided image isn't tagged; assuming latest")
+							searchTag = fmt.Sprintf("%s:latest", searchTag)
+						}
+
+						log.Trace(fmt.Sprintf("Searching for local copy of tag: %s", searchTag))
+
+						imageFound := false
+						for _, imageTag := range outputLines {
+							if imageTag == searchTag {
+								log.Debug(fmt.Sprintf("Docker image matching %s found, skipping upstream pull", searchTag))
+								imageFound = true
+								break
+							}
+						}
+
+						if !imageFound {
+							log.Info(fmt.Sprintf("Docker image %s not found among candidates, must pull from upstream", searchTag))
+							ifNotPresentShouldPull = true
+						}
 					}
 				}
-				if err := docker.ExecDocker("build", resource.Build.Path, "-t", resource.Build.Tag); err != nil {
-					return err
+
+				if ifNotPresentShouldPull || pullConstraintAlways {
+					if err := docker.ExecDocker("pull", pullImage); err != nil {
+						return errors.New(fmt.Sprintf("Failed to find image named %s", pullImage))
+					}
 				}
+
+				if isBuildCommand {
+					if err := docker.ExecDocker("build", resource.Build.Path, "-t", resource.Build.Tag); err != nil {
+						return err
+					}
+				} else {
+					if err := docker.ExecDocker("tag", resource.Build.Source, resource.Build.Tag); err != nil {
+						return err
+					}
+				}
+
 				if err := docker.ExecDocker("push", resource.Build.Tag); err != nil {
 					return err
 				}
-			case ResourceTypeJob:
+			case hope.ResourceTypeJob:
 				if err := hope.FollowLogsAndPollUntilJobComplete(log.WithFields(log.Fields{}), kubectl, resource.Job, 10, 60); err != nil {
 					return err
 				}
-			case ResourceTypeExec:
+			case hope.ResourceTypeExec:
 				allArgs := []string{"exec", "-it", resource.Exec.Selector}
 				if len(resource.Exec.Timeout) != 0 {
 					allArgs = append(allArgs, "--pod-running-timeout", resource.Exec.Timeout)
