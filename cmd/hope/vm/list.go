@@ -26,7 +26,7 @@ var listCmd = &cobra.Command{
 		}
 
 		if !hypervisor.IsHypervisor() {
-			return fmt.Errorf("Node %s is not a hypervisor; cannot start a VM on it", hypervisor.Name)
+			return fmt.Errorf("Node %s is not a hypervisor; cannot list VMs on it", hypervisor.Name)
 		}
 
 		list, err := esxi.ListVms(hypervisor.ConnectionString())

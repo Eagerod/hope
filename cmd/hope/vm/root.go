@@ -12,6 +12,7 @@ var RootCommand = &cobra.Command{
 
 func InitVMCommand() {
 	RootCommand.AddCommand(createCmd)
+	RootCommand.AddCommand(deleteCmd)
 	RootCommand.AddCommand(imageCmd)
 	RootCommand.AddCommand(ipCmd)
 	RootCommand.AddCommand(listCmd)

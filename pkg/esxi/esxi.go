@@ -9,6 +9,9 @@ import (
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
+const VmStatePoweredOn string = "Powered on"
+const VmStatePoweredOff string = "Powered off"
+
 func PowerOnVm(host string, vmId string) error {
 	return ssh.ExecSSH(host, "vim-cmd", "vmsvc/power.on", vmId)
 }
@@ -71,6 +74,47 @@ func ListVms(host string) (*[]string, error) {
 		fields := strings.Fields(line)
 		retVal = append(retVal, fields[1])
 	}
-	
+
 	return &retVal, nil
+}
+
+func DeleteVm(host string, vmId string) error {
+	return ssh.ExecSSH(host, "vim-cmd", "vmsvc/destroy", vmId)
+}
+
+func DeleteVmNamed(host string, vmName string) error {
+	vmId, err := idFromName(host, vmName)
+	if err != nil {
+		return err
+	}
+
+	return DeleteVm(host, vmId)
+}
+
+func PowerStateOfVm(host string, vmId string) (string, error) {
+	output, err := ssh.GetSSH(host, "vim-cmd", "vmsvc/power.getstate", vmId)
+	if err != nil {
+		return "", err
+	}
+
+	outputLines := strings.Split(output, "\n")
+	if len(outputLines) < 2 {
+		return "", fmt.Errorf("Failed to parse power state from: %s", output)
+	}
+
+	switch outputLines[1] {
+	case VmStatePoweredOff, VmStatePoweredOn:
+		return outputLines[1], nil
+	}
+
+	return "", fmt.Errorf("Unknown power state: %s", output)
+}
+
+func PowerStateOfVmNamed(host string, vmName string) (string, error) {
+	vmId, err := idFromName(host, vmName)
+	if err != nil {
+		return "", err
+	}
+
+	return PowerStateOfVm(host, vmId)
 }
