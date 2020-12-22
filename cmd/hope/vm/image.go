@@ -23,7 +23,7 @@ var imageCmdParameterSlice *[]string
 var imageCmdForceFlag bool
 
 func initImageCmdFlags() {
-	imageCmd.Flags().BoolVarP(&imageCmdForceFlag, "force", "", false, "remove existing image if one already exists")
+	imageCmd.Flags().BoolVarP(&imageCmdForceFlag, "force", "f", false, "remove existing image if one already exists")
 
 	imageCmdParameterSlice = imageCmd.Flags().StringArrayP("param", "p", []string{}, "parameters to forward to packer's -var")
 }
