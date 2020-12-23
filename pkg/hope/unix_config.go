@@ -21,11 +21,11 @@ func DisableSwapOnRemote(node *Node) error {
 	connectionString := node.ConnectionString()
 
 	// TODO: Execute in a single SSH session.
-	if err := ssh.ExecSSH(connectionString, "sed", "-i", "'/ swap / s/^/#/'", "/etc/fstab"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "sed", "-i", "'/ swap / s/^/#/'", "/etc/fstab"); err != nil {
 		return err
 	}
 
-	if err := ssh.ExecSSH(connectionString, "swapoff", "-a"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "swapoff", "-a"); err != nil {
 		return err
 	}
 
