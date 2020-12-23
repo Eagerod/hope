@@ -2,13 +2,12 @@ package kubeutil
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"os"
 )
 
 import (
-	"github.com/Eagerod/hope/pkg/scp"
+	"github.com/Eagerod/hope/pkg/ssh"
 )
 
 // Kubectl struct allows for execution of a kubectl command with a
@@ -24,8 +23,6 @@ func NewKubectl(kubeconfigPath string) *Kubectl {
 }
 
 func NewKubectlFromNode(host string) (*Kubectl, error) {
-	remoteFile := fmt.Sprintf("%s:/etc/kubernetes/admin.conf", host)
-
 	// Do not delete.
 	// Leave deletion up to destroying the kubectl instance.
 	tempFile, err := ioutil.TempFile("", "")
@@ -33,12 +30,19 @@ func NewKubectlFromNode(host string) (*Kubectl, error) {
 		return nil, err
 	}
 
-	// Close the file immediately, because it will be written by a subprocess.
-	if err := tempFile.Close(); err != nil {
+	// Because auth for the user in the config may not be for root, can't
+	//   reliably pull data via scp.
+	output, err := ssh.GetSSH(host, "sudo", "cat", "/etc/kubernetes/admin.conf")
+	if err != nil {
 		return nil, err
 	}
 
-	if err = scp.ExecSCP(remoteFile, tempFile.Name()); err != nil {
+	if _, err = tempFile.Write([]byte(output)); err != nil {
+		return nil, err
+	}
+
+	// Close the file immediately, because it will be written by a subprocess.
+	if err := tempFile.Close(); err != nil {
 		return nil, err
 	}
 

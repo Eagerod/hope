@@ -67,12 +67,23 @@ test: $(SRC)
 #   tasks, like imaging fresh VMs can be optionally ignored for routine
 #   testing.
 .PHONY: system-test
-system-test: $(BIN_NAME) system-test-1
+system-test: system-test-1
+	$(MAKE) system-test-clean
+
+.PHONY: system-test-clean
+system-test-clean: system-test-1-clean
 
 .PHONY: system-test-1
 system-test-1: $(BIN_NAME)
-	$(BIN_NAME) --config hope.yaml vm image beast1 -f some-image
+	$(BIN_NAME) --config hope.yaml vm image beast1 -f test-kubernetes-node
 	$(MAKE) system-test-2
+
+.PHONY: system-test-1-clean
+system-test-1-clean: $(BIN_NAME)
+	$(BIN_NAME) --config hope.yaml vm stop beast1 test-master-01
+	$(BIN_NAME) --config hope.yaml vm delete beast1 test-master-01
+	$(BIN_NAME) --config hope.yaml vm stop beast1 test-node-01
+	$(BIN_NAME) --config hope.yaml vm delete beast1 test-node-01
 
 .PHONY: system-test-2
 system-test-2: $(BIN_NAME)
@@ -81,14 +92,42 @@ system-test-2: $(BIN_NAME)
 		exit 1; \
 	fi
 
-	$(BIN_NAME) --config hope.yaml vm create beast1 some-image -n test-master-01
+	$(BIN_NAME) --config hope.yaml vm create beast1 test-kubernetes-node --name test-master-01 --cpu 2 --memory 2048
 	$(BIN_NAME) --config hope.yaml vm start beast1 test-master-01
+
+	$(BIN_NAME) --config hope.yaml vm create beast1 test-kubernetes-node -n test-node-01 -c 2 -m 4096
+	$(BIN_NAME) --config hope.yaml vm start beast1 test-node-01
 
 	@# Wait for the VM to finish powering on, and getting an IP address...
 	$(BIN_NAME) --config hope.yaml vm ip beast1 test-master-01
 	sshpass -p packer $(BIN_NAME) --config hope.yaml node ssh test-master-01
-	$(BIN_NAME) --config hope.yaml vm stop beast1 test-master-01
-	$(BIN_NAME) --config hope.yaml vm delete beast1 test-master-01
+
+	$(BIN_NAME) --config hope.yaml vm ip beast1 test-node-01
+	sshpass -p packer $(BIN_NAME) --config hope.yaml node ssh test-node-01
+
+	$(MAKE) system-test-3
+
+.PHONY: system-test-3
+system-test-3: $(BIN_NAME)
+	$(BIN_NAME) --config hope.yaml node hostname test-master-01 test-master-01
+	$(BIN_NAME) --config hope.yaml node hostname test-node-01 test-node-01
+
+	$(BIN_NAME) --config hope.yaml node init -f test-master-01
+	$(BIN_NAME) --config hope.yaml node init -f test-node-01
+
+.PHONY: system-test-3-clean
+system-test-3-clean: $(BIN_NAME)
+	$(BIN_NAME) --config hope.yaml node reset -f test-node-01
+	$(BIN_NAME) --config hope.yaml node reset -f test-master-01
+
+
+.PHONY: system-test-4
+system-test-4: $(BIN_NAME)
+	@if [ $$($(BIN_NAME) --config hope.yaml list | wc -l) -ne 6 ]; then \
+	    echo >&2 "Incorrect number of resources found"; \
+	fi
+
+	$(BIN_NAME) --config hope.yaml deploy calico
 
 
 .PHONY: interface-test

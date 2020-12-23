@@ -13,6 +13,7 @@ import (
 import (
 	"github.com/Eagerod/hope/pkg/esxi"
 	"github.com/Eagerod/hope/pkg/hope"
+	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
 func getNodes() (*[]hope.Node, error) {
@@ -141,4 +142,32 @@ func GetMasters() (*[]hope.Node, error) {
 	}
 
 	return &retVal, nil
+}
+
+func KubectlFromAnyMaster() (*kubeutil.Kubectl, error) {
+	// To prevent "dereferencing" all the master nodes in advance, and making
+	//   a ton of extra network traffic, do them incrementally until a valid
+	//   kubeconfig is found.
+	nodes, err := getNodes()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, node := range *nodes {
+		if !node.IsMaster() {
+			continue
+		}
+
+		nNode, err := expandHypervisor(&node)
+		if err != nil {
+			return nil, err
+		}
+
+		kubectl, err := kubeutil.NewKubectlFromNode(nNode.ConnectionString())
+		if err == nil {
+			return kubectl, nil
+		}
+	}
+
+	return nil, errors.New("Failed to find a kubeconfig file in any of the master nodes")
 }

@@ -13,7 +13,6 @@ import (
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/hope"
-	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
 var initCmdForce bool
@@ -49,12 +48,7 @@ var initCmd = &cobra.Command{
 				return err
 			}
 
-			masterIps := []string{}
-			for _, master := range *masters {
-				masterIps = append(masterIps, master.ConnectionString())
-			}
-
-			kubectl, err := kubeutil.NewKubectlFromAnyNode(masterIps)
+			kubectl, err := utils.KubectlFromAnyMaster()
 			if err != nil {
 				return err
 			}
