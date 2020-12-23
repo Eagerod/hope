@@ -176,20 +176,20 @@ func SetHostname(log *logrus.Entry, node *Node, hostname string, force bool) err
 	}
 
 	log.Trace("Setting hostname to ", hostname)
-	if err := ssh.ExecSSH(connectionString, "hostnamectl", "set-hostname", hostname); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "hostnamectl", "set-hostname", hostname); err != nil {
 		return err
 	}
 
 	// TODO: _Might_ be worth dropping word boundaries on the sed script?
 	log.Debug("Replacing all instances of ", existingHostname, " in /etc/hosts")
 	sedScript := fmt.Sprintf("'s/%s/%s/g'", existingHostname, hostname)
-	if err := ssh.ExecSSH(connectionString, "sed", "-i", sedScript, "/etc/hosts"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "sed", "-i", sedScript, "/etc/hosts"); err != nil {
 		return err
 	}
 
 	// Host _should_ come up before SSH times out.
 	log.Info("Restarting networking on ", node.Host)
-	if err := ssh.ExecSSH(connectionString, "systemctl", "restart", "network"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "systemctl", "restart", "network"); err != nil {
 	}
 
 	return nil
