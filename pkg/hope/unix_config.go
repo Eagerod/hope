@@ -36,6 +36,12 @@ func DisableSelinuxOnRemote(node *Node) error {
 	connectionString := node.ConnectionString()
 
 	// TODO: Execute in a single SSH session.
+	// If this is running on a non-SELinux distro, just bail without trying to
+	//   do anything meaningful.
+	if err := ssh.ExecSSH(connectionString, "which", "getenforce"); err != nil {
+		return nil
+	}
+
 	enforcing, err := ssh.GetSSH(connectionString, "getenforce")
 	if err != nil {
 		return err
