@@ -23,16 +23,20 @@ nodes:
   #   RAM needed to run everything.
   # Each node should have 8 gigs of memory, but that may change based on what
   #   hardware is available at the time.
-  - name: home-node-01
+  - name: test-node-01
     role: node
     hypervisor: beast1
-    user: root
+    user: packer
 vms:
   root: vms
   cache: /var/lib/packer/cache
   output: /var/lib/packer/images
   images:
     - name: some-image
+      parameters:
+        - ESXI_ROOT_PASSWORD
+        - ESXI_NETWORK=VM Network
+    - name: test-kubernetes-node
       parameters:
         - ESXI_ROOT_PASSWORD
         - ESXI_NETWORK=VM Network
