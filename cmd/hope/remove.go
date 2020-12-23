@@ -27,7 +27,7 @@ var removeCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Why not?
 		if len(args) == 0 && len(*removeCmdTagSlice) == 0 {
-			return errors.New("Cannot remove all resources at once.")
+			return errors.New("Cannot remove all resources at once")
 		}
 
 		resources, err := utils.GetIdentifiableResources(&args, removeCmdTagSlice)

@@ -71,7 +71,7 @@ system-test: system-test-1
 	$(MAKE) system-test-clean
 
 .PHONY: system-test-clean
-system-test-clean: system-test-1-clean
+system-test-clean: system-test-4-clean system-test-3-clean system-test-1-clean
 
 .PHONY: system-test-1
 system-test-1: $(BIN_NAME)
@@ -131,6 +131,14 @@ system-test-4: $(BIN_NAME)
 	METALLB_SYSTEM_MEMBERLIST_SECRET_KEY="$$(openssl rand -base64 128 | tr -d '\n')" $(BIN_NAME) --config hope.yaml deploy -t network
 
 	$(BIN_NAME) --config hope.yaml deploy -t database
+	
+	$(BIN_NAME) --config hope.yaml shell -l app=mysql -- mysql -u root -e "SELECT * FROM test.abc;"
+
+.PHONY: system-test-4-clean
+system-test-4-clean: $(BIN_NAME)
+	$(BIN_NAME) --config hope.yaml remove -t database
+	$(BIN_NAME) --config hope.yaml remove calico
+	METALLB_SYSTEM_MEMBERLIST_SECRET_KEY="$$(openssl rand -base64 128 | tr -d '\n')" $(BIN_NAME) --config hope.yaml remove -t network
 
 .PHONY: interface-test
 interface-test: $(BIN_NAME)
