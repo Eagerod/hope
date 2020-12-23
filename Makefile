@@ -130,6 +130,8 @@ system-test-4: $(BIN_NAME)
 	$(BIN_NAME) --config hope.yaml deploy calico
 	METALLB_SYSTEM_MEMBERLIST_SECRET_KEY="$$(openssl rand -base64 128 | tr -d '\n')" $(BIN_NAME) --config hope.yaml deploy -t network
 
+	$(BIN_NAME) --config hope.yaml deploy -t database
+
 .PHONY: interface-test
 interface-test: $(BIN_NAME)
 	@if [ -z $$T ]; then \

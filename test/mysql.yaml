@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_ALLOW_EMPTY_PASSWORD
+              value: "true"
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: mysql
+spec:
+  ports:
+    - port: 3306
+      protocol: TCP
+  selector:
+    app: mysql
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-the-database
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: init
+          image: mysql:8.0
+          command:
+            - sh
+            - -cx
+            - |
+                mysql -h ${MYSQL_SERVICE_HOST} -u root -e " \
+                CREATE DATABASE test; \
+                USE test; \
+                CREATE TABLE IF NOT EXISTS abc ( \
+                    val int \
+                ); \
+                INSERT INTO abc VALUES (123);"

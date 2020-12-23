@@ -131,6 +131,9 @@ resources:
   #   successfully.
   # For the sake of idempotence, jobs tested using this mechanism shouldn't be
   #   set to be deleted by any mechanism.
+  - name: database
+    file: test/mysql.yaml
+    tags: [database]
   - name: wait-for-some-kind-of-job
     job: init-the-database
     tags: [database]
@@ -143,8 +146,10 @@ resources:
       timeout: 60s
       command:
         - mysql
+        - --database
+        - test
         - -e
-        - select 1;
+        - select * from abc;
     tags: [database]
 # Jobs contains a collection of specifications of templated jobs that can be
 #   run on demand in the cluster.
