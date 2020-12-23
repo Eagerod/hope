@@ -14,10 +14,10 @@ nodes:
   # There should be three of these.
   # Any Kubernetes-Role nodes can either have a direct host, or name a
   #   hypervisor from which their IP Address can be fetched.
-  - name: home-master-01
+  - name: test-master-01
     role: master
-    host: 192.168.1.31
-    user: root
+    hypervisor: beast1
+    user: packer
   # Nodes
   # There should be any number of these, primarily dependent on the amount of
   #   RAM needed to run everything.

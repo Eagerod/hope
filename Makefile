@@ -59,8 +59,40 @@ test: $(SRC)
 		$(GO) test -v $(PACKAGE_PATHS) -run $$T; \
 	fi
 
+# Run a full suite of tests to make sure more than just the most basic of
+#   boundaries is functional.
+# Create a bunch of resources using a reasonably well defined process, and
+#   clean them up when done.
+# Tests are broken down in terms of their complexity, so that long-running
+#   tasks, like imaging fresh VMs can be optionally ignored for routine
+#   testing.
 .PHONY: system-test
-system-test: $(BIN_NAME)
+system-test: $(BIN_NAME) system-test-1
+
+.PHONY: system-test-1
+system-test-1: $(BIN_NAME)
+	$(BIN_NAME) --config hope.yaml vm image beast1 -f some-image
+	$(MAKE) system-test-2
+
+.PHONY: system-test-2
+system-test-2: $(BIN_NAME)
+	@if [ -z $$ESXI_ROOT_PASSWORD ]; then \
+		echo >&2 "Must set ESXI_ROOT_PASSWORD, or this process will require manual intervention."; \
+		exit 1; \
+	fi
+
+	$(BIN_NAME) --config hope.yaml vm create beast1 some-image -n test-master-01
+	$(BIN_NAME) --config hope.yaml vm start beast1 test-master-01
+
+	@# Wait for the VM to finish powering on, and getting an IP address...
+	$(BIN_NAME) --config hope.yaml vm ip beast1 test-master-01
+	sshpass -p packer $(BIN_NAME) --config hope.yaml node ssh test-master-01
+	$(BIN_NAME) --config hope.yaml vm stop beast1 test-master-01
+	$(BIN_NAME) --config hope.yaml vm delete beast1 test-master-01
+
+
+.PHONY: interface-test
+interface-test: $(BIN_NAME)
 	@if [ -z $$T ]; then \
 		$(GO) test -v main_test.go; \
 	else \
