@@ -13,7 +13,6 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/kubeutil"
-	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
@@ -29,30 +28,23 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 	log.Debug("Preparing Kubernetes components at ", node.Host)
 
 	connectionString := node.ConnectionString()
-	// Write all the empty files that should exist first.
-	dest := fmt.Sprintf("%s:%s", connectionString, "/etc/sysconfig/docker-storage")
-	if err := scp.ExecSCPBytes([]byte(""), dest); err != nil {
-		return err
-	}
 
-	dest = fmt.Sprintf("%s:%s", connectionString, "/etc/sysconfig/docker-storage-setup")
-	if err := scp.ExecSCPBytes([]byte(""), dest); err != nil {
-		return err
+	// TODO: Create a function in ssh pkg that allows for running
+	//   multi-statement commands on the target without needing to manually
+	//   construct the string.
+	// TODO: Consider writing these files using file provisioners in Packer
+	//   instead?
+	commands := []string{
+		"mkdir -p /etc/sysconfig",
+		"echo \"\" > /etc/sysconfig/docker-storage",
+		"echo \"\" > /etc/sysconfig/docker-storage-setup",
+		fmt.Sprintf("echo \"%s\" > /etc/docker/daemon.json", DockerDaemonJson),
+		fmt.Sprintf("echo \"%s\" > /etc/sysctl.d/k8s.conf", K8SConf),
+		fmt.Sprintf("echo \"%s\" > /proc/sys/net/ipv4/ip_forward", IpForward),
 	}
+	commandString := fmt.Sprintf("'%s'", strings.Join(commands, " && "))
 
-	// Write files with contents.
-	dest = fmt.Sprintf("%s:%s", connectionString, "/etc/docker/daemon.json")
-	if err := scp.ExecSCPBytes([]byte(DockerDaemonJson), dest); err != nil {
-		return err
-	}
-
-	dest = fmt.Sprintf("%s:%s", connectionString, "/etc/sysctl.d/k8s.conf")
-	if err := scp.ExecSCPBytes([]byte(K8SConf), dest); err != nil {
-		return err
-	}
-
-	dest = fmt.Sprintf("%s:%s", connectionString, "/proc/sys/net/ipv4/ip_forward")
-	if err := scp.ExecSCPBytes([]byte(IpForward), dest); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "sh", "-c", commandString); err != nil {
 		return err
 	}
 

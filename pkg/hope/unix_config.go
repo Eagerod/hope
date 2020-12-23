@@ -150,6 +150,9 @@ func CopySSHKeyToAuthorizedKeys(log *logrus.Entry, keyPath string, node *Node) e
 
 	// TODO: This should check to see if the given key already exists in the
 	//   authorized keys.
+	// TODO: Create a function in ssh pkg that allows for running
+	//   multi-statement commands on the target without needing to manually
+	//   construct the string.
 	commands := []string{
 		"mkdir -p $HOME/.ssh",
 		"chmod 700 $HOME/.ssh",
