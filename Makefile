@@ -123,12 +123,12 @@ system-test-3-clean: $(BIN_NAME)
 
 .PHONY: system-test-4
 system-test-4: $(BIN_NAME)
-	@if [ $$($(BIN_NAME) --config hope.yaml list | wc -l) -ne 6 ]; then \
+	@if [ $$($(BIN_NAME) --config hope.yaml list | wc -l) -ne 7 ]; then \
 	    echo >&2 "Incorrect number of resources found"; \
 	fi
 
 	$(BIN_NAME) --config hope.yaml deploy calico
-
+	METALLB_SYSTEM_MEMBERLIST_SECRET_KEY="$$(openssl rand -base64 128 | tr -d '\n')" $(BIN_NAME) --config hope.yaml deploy -t network
 
 .PHONY: interface-test
 interface-test: $(BIN_NAME)

@@ -59,6 +59,9 @@ resources:
   - name: calico
     file: https://docs.projectcalico.org/manifests/calico.yaml
     tags: [network]
+  - name: load-balancer-namespace
+    file: https://raw.githubusercontent.com/metallb/metallb/v0.9.5/manifests/namespace.yaml
+    tags: [network, load-balancer]
   # Inline definitions are also supported.
   # These values have to be provided as yaml strings under the `inline` key.
   # Values passed in through `inline` will be fed through `envsubst` before

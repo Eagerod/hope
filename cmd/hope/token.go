@@ -7,10 +7,10 @@ import (
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
@@ -26,9 +26,8 @@ var tokenCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		username := args[0]
-		masters := viper.GetStringSlice("masters")
 
-		kubectl, err := kubeutil.NewKubectlFromAnyNode(masters)
+		kubectl, err := utils.KubectlFromAnyMaster()
 		if err != nil {
 			return err
 		}
