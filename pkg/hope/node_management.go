@@ -2,6 +2,7 @@ package hope
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -85,7 +86,7 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 	return nil
 }
 
-func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string) error {
+func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, force bool) error {
 	if !node.IsMaster() {
 		return fmt.Errorf("Node has role %s and should not be set up as a Kubernetes master", node.Role)
 	}
@@ -94,20 +95,22 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string) e
 		return err
 	}
 
-	if err := forceUserToEnterHostnameToContinue(node); err != nil {
-		return err
+	if !force {
+		if err := forceUserToEnterHostnameToContinue(node); err != nil {
+			return err
+		}
 	}
 
 	connectionString := node.ConnectionString()
 	podNetworkCidrArg := fmt.Sprintf("--pod-network-cidr=%s", podNetworkCidr)
-	if err := ssh.ExecSSH(connectionString, "kubeadm", "init", podNetworkCidrArg); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "kubeadm", "init", podNetworkCidrArg); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func CreateClusterNode(log *logrus.Entry, node *Node, masterIp string) error {
+func CreateClusterNode(log *logrus.Entry, node *Node, masters *[]Node, force bool) error {
 	if !node.IsNode() {
 		return fmt.Errorf("Node has role %s and should not be set up as a Kubernetes node", node.Role)
 	}
@@ -116,17 +119,29 @@ func CreateClusterNode(log *logrus.Entry, node *Node, masterIp string) error {
 		return err
 	}
 
-	if err := forceUserToEnterHostnameToContinue(node); err != nil {
-		return err
+	if !force {
+		if err := forceUserToEnterHostnameToContinue(node); err != nil {
+			return err
+		}
 	}
 
-	joinCommand, err := ssh.GetSSH(masterIp, "kubeadm", "token", "create", "--print-join-command")
-	if err != nil {
-		return err
+	// Attempt to pull a token from a master within the list of masters.
+	// Accept the first one that succeeds.
+	var joinCommand string
+	for _, master := range *masters {
+		var err error
+		joinCommand, err = ssh.GetSSH(master.ConnectionString(), "sudo", "kubeadm", "token", "create", "--print-join-command")
+		if err != nil {
+			return err
+		}
+	}
+
+	if joinCommand == "" {
+		return errors.New("Failed to get a join token from cluster masters.")
 	}
 
 	joinComponents := strings.Split(joinCommand, " ")
-	allArguments := append([]string{node.ConnectionString()}, joinComponents...)
+	allArguments := append([]string{node.ConnectionString(), "sudo"}, joinComponents...)
 	if err := ssh.ExecSSH(allArguments...); err != nil {
 		return err
 	}

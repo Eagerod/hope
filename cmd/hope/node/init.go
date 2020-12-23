@@ -1,7 +1,6 @@
 package node
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -16,6 +15,12 @@ import (
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
+
+var initCmdForce bool
+
+func initInitCmd() {
+	initCmd.Flags().BoolVarP(&initCmdForce, "force", "f", false, "don't ask the user to verify the hostname")
+}
 
 var initCmd = &cobra.Command{
 	Use:   "init",
@@ -32,16 +37,24 @@ var initCmd = &cobra.Command{
 		log.Info("Bootstrapping a node...")
 
 		podNetworkCidr := viper.GetString("pod_network_cidr")
-		masters := viper.GetStringSlice("masters")
+		masters, err := utils.GetMasters()
+		if err != nil {
+			return err
+		}
 
 		if node.IsMasterAndNode() {
 			log.Info("Node ", node.Host, " appears to be both master and node. Creating master and removing NoSchedule taint...")
 
-			if err := hope.CreateClusterMaster(log.WithFields(log.Fields{}), node, podNetworkCidr); err != nil {
+			if err := hope.CreateClusterMaster(log.WithFields(log.Fields{}), node, podNetworkCidr, initCmdForce); err != nil {
 				return err
 			}
 
-			kubectl, err := kubeutil.NewKubectlFromAnyNode(masters)
+			masterIps := []string{}
+			for _, master := range *masters {
+				masterIps = append(masterIps, master.ConnectionString())
+			}
+
+			kubectl, err := kubeutil.NewKubectlFromAnyNode(masterIps)
 			if err != nil {
 				return err
 			}
@@ -52,16 +65,13 @@ var initCmd = &cobra.Command{
 				return err
 			}
 		} else if node.IsMaster() {
-			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), node, podNetworkCidr)
+			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), node, podNetworkCidr, initCmdForce)
 		} else if node.IsNode() {
-			// Have to send in a master ip for it to grab a join token.
-			aMaster := masters[0]
-
-			if err := hope.CreateClusterNode(log.WithFields(log.Fields{}), node, aMaster); err != nil {
+			if err := hope.CreateClusterNode(log.WithFields(log.Fields{}), node, masters, initCmdForce); err != nil {
 				return err
 			}
 		} else {
-			return errors.New(fmt.Sprintf("Failed to find node %s in config", nodeName))
+			return fmt.Errorf("Failed to find node %s in config", nodeName)
 		}
 
 		return nil

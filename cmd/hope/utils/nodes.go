@@ -122,3 +122,23 @@ func GetHypervisor(name string) (*hope.Node, error) {
 
 	return nil, fmt.Errorf("Failed to find a hypervisor named %s", name)
 }
+
+func GetMasters() (*[]hope.Node, error) {
+	retVal := []hope.Node{}
+	nodes, err := getNodes()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, node := range *nodes {
+		if node.IsMaster() {
+			exNode, err := expandHypervisor(&node)
+			if err != nil {
+				return nil, err
+			}
+			retVal = append(retVal, *exNode)
+		}
+	}
+
+	return &retVal, nil
+}
