@@ -19,7 +19,7 @@ import (
 var resetCmdForce bool
 
 func initResetCmd() {
-	resetCmd.Flags().BoolVarP(&resetCmdForce, "force", "", false, "run kubeadm reset even if the node isn't a part of the cluster")
+	resetCmd.Flags().BoolVarP(&resetCmdForce, "force", "f", false, "run kubeadm reset even if the node isn't a part of the cluster")
 }
 
 var resetCmd = &cobra.Command{
