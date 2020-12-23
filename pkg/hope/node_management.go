@@ -63,6 +63,9 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 		return err
 	}
 
+	// TODO: Create a function in ssh pkg that allows for running
+	//   multi-statement commands on the target without needing to manually
+	//   construct the string.
 	daemonsScript := fmt.Sprintf("\"%s\"", strings.Join(
 		[]string{
 			"systemctl daemon-reload",
