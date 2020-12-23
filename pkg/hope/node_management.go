@@ -49,13 +49,11 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 	}
 
 	// Various other setups.
-	if err := ssh.ExecSSH(connectionString, "sed", "-i", "'/--exec-opt native.cgroupdriver/d'", "/usr/lib/systemd/system/docker.service"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "sed", "-i", "'/--exec-opt native.cgroupdriver/d'", "/usr/lib/systemd/system/docker.service"); err != nil {
 		return err
 	}
 
-	ssh.ExecSSH(connectionString, "sed", "-i", "'s/--log-driver=journald//'", "/etc/sysconfig/docker")
-
-	if err := ssh.ExecSSH(connectionString, "sysctl", "-p"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "sysctl", "-p"); err != nil {
 		return err
 	}
 
@@ -76,7 +74,7 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 		},
 		" && ",
 	))
-	if err := ssh.ExecSSH(connectionString, "bash", "-c", daemonsScript); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "bash", "-c", daemonsScript); err != nil {
 		return err
 	}
 
