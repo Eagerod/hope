@@ -124,7 +124,8 @@ system-test-3-clean: $(BIN_NAME)
 .PHONY: system-test-4
 system-test-4: $(BIN_NAME)
 	@if [ $$($(BIN_NAME) --config hope.yaml list | wc -l) -ne 7 ]; then \
-	    echo >&2 "Incorrect number of resources found"; \
+		echo >&2 "Incorrect number of resources found"; \
+		exit 1; \
 	fi
 
 	$(BIN_NAME) --config hope.yaml deploy calico
