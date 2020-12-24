@@ -87,7 +87,7 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 	return nil
 }
 
-func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, loadBalancerHost string, allMasters []string, force bool) error {
+func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, loadBalancer *Node, masters *[]Node, force bool) error {
 	if !node.IsMaster() {
 		return fmt.Errorf("Node has role %s and should not be set up as a Kubernetes master", node.Role)
 	}
@@ -104,27 +104,29 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, l
 
 	// Update the load balancer before even starting the process.
 	// Trying to time it with the init process will be clumsy, so yeet.
-	SetLoadBalancerHosts(log, loadBalancerHost, allMasters)
+	SetLoadBalancerHosts(log, loadBalancer, masters)
 
 	// Search through the existing masters to see if this node is being added
 	//   as a master to an existing control plane, or if this will be the
 	//   first master in the pool.
-	for _, aMaster := range allMasters {
-		if aMaster == node.ConnectionString() {
+	connectionString := node.ConnectionString()
+	for _, aMaster := range *masters {
+		aMasterCs := aMaster.ConnectionString()
+		if aMasterCs == connectionString {
 			continue
 		}
 
 		remoteAdminConfPath := "/etc/kubernetes/admin.conf"
 		grepRegexp := "'\\s+server: https://api\\.internal\\.aleemhaji\\.com:6443'"
 
-		if err := ssh.ExecSSH(aMaster, "grep", "-E", grepRegexp, "-q", remoteAdminConfPath); err != nil {
-			log.Warn("Other master node", aMaster, "isn't connected to load balancer.")
+		if err := ssh.ExecSSH(aMasterCs, "grep", "-E", grepRegexp, "-q", remoteAdminConfPath); err != nil {
+			log.Warn("Other master node", aMaster.Host, "isn't connected to load balancer.")
 			continue
 		}
 
 		// From this master node, pull a control plane certificate key, and
 		//   use it to run the kubeadm join command.
-		output, err := ssh.GetSSH(aMaster, "kubeadm", "init", "phase", "upload-certs", "--upload-certs")
+		output, err := ssh.GetSSH(aMasterCs, "kubeadm", "init", "phase", "upload-certs", "--upload-certs")
 		if err != nil {
 			return err
 		}
@@ -147,7 +149,7 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, l
 			return fmt.Errorf("Failed to find cert key from selected master node: %s", aMaster)
 		}
 
-		joinCommand, err := ssh.GetSSH(aMaster, "kubeadm", "token", "create", "--print-join-command")
+		joinCommand, err := ssh.GetSSH(aMasterCs, "kubeadm", "token", "create", "--print-join-command")
 		if err != nil {
 			return err
 		}
@@ -170,8 +172,8 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, l
 	// Maybe wait 20 seconds before updating the lb.
 	podNetworkCidrArg := fmt.Sprintf("--pod-network-cidr=%s", podNetworkCidr)
 	allArgs := []string{node.ConnectionString(), "sudo", "kubeadm", "init", podNetworkCidrArg}
-	if loadBalancerHost != "" {
-		loadBalancerEndpoint := fmt.Sprintf("%s:%s", loadBalancerHost, "6443")
+	if loadBalancer != nil {
+		loadBalancerEndpoint := fmt.Sprintf("%s:%s", loadBalancer.Host, "6443")
 		allArgs = append(allArgs, "--control-plane-endpoint", loadBalancerEndpoint, "--upload-certs")
 	}
 

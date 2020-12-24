@@ -2,7 +2,6 @@ package hope
 
 import (
 	"fmt"
-	"net/url"
 )
 
 import (
@@ -16,44 +15,41 @@ import (
 
 // Just forwards to `SetLoadBalancerHosts`.
 // There may be a time where this does more.
-func InitLoadBalancer(log *logrus.Entry, host string, masterHosts []string) error {
-	log.Debug("Starting to bootstrap a simple NGINX load balancer for API Servers at ", host)
-	return SetLoadBalancerHosts(log, host, masterHosts)
+func InitLoadBalancer(log *logrus.Entry, node *Node, masters *[]Node) error {
+	log.Debug("Starting to bootstrap a simple NGINX load balancer for API Servers at ", node.Host)
+	return SetLoadBalancerHosts(log, node, masters)
 }
 
-func SetLoadBalancerHosts(log *logrus.Entry, loadBalancerHost string, masterHosts []string) error {
-	if len(masterHosts) == 0 {
+func SetLoadBalancerHosts(log *logrus.Entry, node *Node, masters *[]Node) error {
+	if len(*masters) == 0 {
 		log.Warn("Setting empty load balancer hosts.")
 	}
 
 	masterUpstreamContents := ""
-	for _, master := range masterHosts {
-		hostUrl, err := url.Parse(fmt.Sprintf("ssh://%s", master))
-		if err != nil {
-			return err
-		}
-
-		masterUpstreamContents = fmt.Sprintf("%s\nserver %s:6443;", masterUpstreamContents, hostUrl.Host)
+	for _, master := range *masters {
+		masterUpstreamContents = fmt.Sprintf("%s\nserver %s:6443;", masterUpstreamContents, master.Host)
 	}
 
-	if err := ssh.ExecSSH(loadBalancerHost, "mkdir", "-p", "/etc/nginx"); err != nil {
+	connectionString := node.ConnectionString()
+
+	if err := ssh.ExecSSH(connectionString, "mkdir", "-p", "/etc/nginx"); err != nil {
 		return err
 	}
 
-	dest := fmt.Sprintf("%s:/etc/nginx/nginx.conf", loadBalancerHost)
+	dest := fmt.Sprintf("%s:/etc/nginx/nginx.conf", connectionString)
 	populatedConfig := fmt.Sprintf(NginxConfig, masterUpstreamContents)
 	if err := scp.ExecSCPBytes([]byte(populatedConfig), dest); err != nil {
 		return err
 	}
 
-	err := ssh.ExecSSH(loadBalancerHost, "sh", "-c", "'docker kill $(docker ps -f expose=6443 -q)'")
+	err := ssh.ExecSSH(connectionString, "sh", "-c", "'docker kill $(docker ps -f expose=6443 -q)'")
 	if err != nil {
 		log.Info("Failed to kill existing nginx containers on load balancer")
 		log.Info(err)
 	}
 
 	return ssh.ExecSSH(
-		loadBalancerHost,
+		connectionString,
 		"docker", "run", "-d",
 		"-v", "/etc/nginx/nginx.conf:/etc/nginx/nginx.conf",
 		"-p", "6443:6443",

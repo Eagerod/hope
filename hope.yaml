@@ -1,4 +1,3 @@
-master_load_balancer: root@192.168.1.82
 access_points:
   - 192.168.2.43
 access_point_controller: http://192.168.2.10:8080
@@ -11,6 +10,13 @@ nodes:
     user: root
     datastore: Main
     network: VM Network
+  # Master Load Balancer
+  # Just one of these; manages providing a single endpoint for the set of
+  #   master nodes.
+  - name: test-load-balancer
+    role: load-balancer
+    host: testapi.internal.aleemhaji.com
+    user: packer
   # Masters
   # There should be three of these.
   # Any Kubernetes-Role nodes can either have a direct host, or name a

@@ -40,12 +40,15 @@ var initCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		masterLoadBalancer := viper.GetString("master_load_balancer")
+		loadBalancer, err := utils.GetLoadBalancer()
+		if err != nil {
+			return err
+		}
 
 		if node.IsMasterAndNode() {
 			log.Info("Node ", node.Host, " appears to be both master and node. Creating master and removing NoSchedule taint...")
 
-			if err := hope.CreateClusterMaster(log.WithFields(log.Fields{}), node, podNetworkCidr, masterLoadBalancer, masters, initCmdForce); err != nil {
+			if err := hope.CreateClusterMaster(log.WithFields(log.Fields{}), node, podNetworkCidr, loadBalancer, masters, initCmdForce); err != nil {
 				return err
 			}
 
@@ -60,13 +63,13 @@ var initCmd = &cobra.Command{
 				return err
 			}
 		} else if node.IsMaster() {
-			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), node, podNetworkCidr, masterLoadBalancer, masters, initCmdForce)
+			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), node, podNetworkCidr, loadBalancer, masters, initCmdForce)
 		} else if node.IsNode() {
 			if err := hope.CreateClusterNode(log.WithFields(log.Fields{}), node, masters, initCmdForce); err != nil {
 				return err
 			}
 		} else if node.IsLoadBalancer() {
-			return hope.InitLoadBalancer(log.WithFields(log.Fields{}), node.ConnectionString(), masters)
+			return hope.InitLoadBalancer(log.WithFields(log.Fields{}), node, masters)
 		} else {
 			return fmt.Errorf("Failed to find node %s in config", nodeName)
 		}
