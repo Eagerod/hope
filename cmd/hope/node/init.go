@@ -18,7 +18,7 @@ import (
 var initCmdForce bool
 
 func initInitCmd() {
-	initCmd.Flags().BoolVarP(&initCmdForce, "force", "f", false, "don't ask the user to verify the hostname")
+	initCmd.Flags().BoolVarP(&initCmdForce, "force", "f", false, "skip hostname verification")
 }
 
 var initCmd = &cobra.Command{
