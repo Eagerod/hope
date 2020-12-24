@@ -1,3 +1,7 @@
+# Test mysql deployment that has no data volume.
+# Tests shouldn't rely on stable data from previous runs, and should also run
+#   quickly enough that there would be no restarts of this pod resulting in
+#   data loss.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -48,9 +52,9 @@ spec:
             - -cx
             - |
                 mysql -h ${MYSQL_SERVICE_HOST} -u root -e " \
-                CREATE DATABASE test; \
+                CREATE DATABASE IF NOT EXISTS test; \
                 USE test; \
                 CREATE TABLE IF NOT EXISTS abc ( \
-                    val int \
+                    val INT \
                 ); \
                 INSERT INTO abc VALUES (123);"
