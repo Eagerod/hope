@@ -131,13 +131,13 @@ func CreateClusterNode(log *logrus.Entry, node *Node, masters *[]Node, force boo
 	for _, master := range *masters {
 		var err error
 		joinCommand, err = ssh.GetSSH(master.ConnectionString(), "sudo", "kubeadm", "token", "create", "--print-join-command")
-		if err != nil {
-			return err
+		if err == nil {
+			break
 		}
 	}
 
 	if joinCommand == "" {
-		return errors.New("Failed to get a join token from cluster masters.")
+		return errors.New("Failed to get a join token from cluster masters")
 	}
 
 	joinComponents := strings.Split(joinCommand, " ")
@@ -176,11 +176,10 @@ func SetHostname(log *logrus.Entry, node *Node, hostname string, force bool) err
 
 		if hostname == existingHostname {
 			log.Debug("Hostname of ", node.Host, " is already ", hostname, ". Skipping hostname setting.")
-
 			return nil
-		} else {
-			log.Trace("Hostname of ", node.Host, " is ", existingHostname)
 		}
+		
+		log.Trace("Hostname of ", node.Host, " is ", existingHostname)
 	}
 
 	log.Trace("Setting hostname to ", hostname)
