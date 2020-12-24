@@ -41,7 +41,6 @@ func NewKubectlFromNode(host string) (*Kubectl, error) {
 		return nil, err
 	}
 
-	// Close the file immediately, because it will be written by a subprocess.
 	if err := tempFile.Close(); err != nil {
 		return nil, err
 	}
