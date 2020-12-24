@@ -7,10 +7,10 @@ import (
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 import (
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
@@ -22,15 +22,19 @@ func initShellCmd() {
 
 var shellCmd = &cobra.Command{
 	Use:   "shell",
-	Short: "Start a shell in the provided pod.",
-	Args:  cobra.RangeArgs(0, 1),
+	Short: "Start a shell, or run a command in the provided pod or any pod matching a label.",
+	Args:  cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// If the label argument is given, assume all arguments make up the
+		//   command.
+		// If the label argument isn't given, assume the first argument is the
+		//   pod name, and the remainder make up the command.
+		// If no command arguments are given, start an interactive shell.
 		if len(args) == 0 && shellCmdLabelsString == "" {
 			return errors.New("Nothing to run against")
 		}
 
-		masters := viper.GetStringSlice("masters")
-		kubectl, err := kubeutil.NewKubectlFromAnyNode(masters)
+		kubectl, err := utils.KubectlFromAnyMaster()
 		if err != nil {
 			return err
 		}
@@ -38,9 +42,8 @@ var shellCmd = &cobra.Command{
 		defer kubectl.Destroy()
 
 		var podName string
-		if len(args) == 1 {
-			podName = args[0]
-		} else if shellCmdLabelsString != "" {
+		var commandArgs []string
+		if shellCmdLabelsString != "" {
 			output, err := kubeutil.GetKubectl(kubectl, "get", "pods", "-l", shellCmdLabelsString, "-o", "template={{range .items}}{{.metadata.name}} {{end}}")
 			if err != nil {
 				return err
@@ -48,15 +51,28 @@ var shellCmd = &cobra.Command{
 
 			pods := strings.Split(strings.TrimSpace(output), " ")
 			podName = pods[0]
+			commandArgs = args
 		} else {
-			return errors.New("Inconsistency issue")
+			podName = args[0]
+			commandArgs = args[1:]
 		}
 
+		if len(commandArgs) == 0 {
 		// Check to see if the pod will start a bash shell.
-		if err := kubeutil.ExecKubectl(kubectl, "exec", "-it", podName, "--", "bash", "-c", "exit"); err == nil {
-			return kubeutil.ExecKubectl(kubectl, "exec", "-it", podName, "--", "bash")
-		}
+			if err := kubeutil.ExecKubectl(kubectl, "exec", "-it", podName, "--", "bash", "-c", "exit"); err == nil {
+				return kubeutil.ExecKubectl(kubectl, "exec", "-it", podName, "--", "bash")
+			}
 
-		return kubeutil.ExecKubectl(kubectl, "exec", "-it", podName, "--", "sh")
+			return kubeutil.ExecKubectl(kubectl, "exec", "-it", podName, "--", "sh")
+		} else {
+			allArgs := []string {
+				"exec",
+				"-it",
+				podName,
+				"--",
+			}
+			allArgs = append(allArgs, commandArgs...)
+			return kubeutil.ExecKubectl(kubectl, allArgs...)
+		}
 	},
 }

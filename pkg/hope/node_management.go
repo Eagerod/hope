@@ -2,6 +2,7 @@ package hope
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -13,7 +14,6 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/kubeutil"
-	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
@@ -29,41 +29,32 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 	log.Debug("Preparing Kubernetes components at ", node.Host)
 
 	connectionString := node.ConnectionString()
-	// Write all the empty files that should exist first.
-	dest := fmt.Sprintf("%s:%s", connectionString, "/etc/sysconfig/docker-storage")
-	if err := scp.ExecSCPBytes([]byte(""), dest); err != nil {
-		return err
-	}
 
-	dest = fmt.Sprintf("%s:%s", connectionString, "/etc/sysconfig/docker-storage-setup")
-	if err := scp.ExecSCPBytes([]byte(""), dest); err != nil {
-		return err
+	// TODO: Create a function in ssh pkg that allows for running
+	//   multi-statement commands on the target without needing to manually
+	//   construct the string.
+	// TODO: Consider writing these files using file provisioners in Packer
+	//   instead?
+	commands := []string{
+		"mkdir -p /etc/sysconfig",
+		"echo \"\" > /etc/sysconfig/docker-storage",
+		"echo \"\" > /etc/sysconfig/docker-storage-setup",
+		fmt.Sprintf("echo \"%s\" > /etc/docker/daemon.json", DockerDaemonJson),
+		fmt.Sprintf("echo \"%s\" > /etc/sysctl.d/k8s.conf", K8SConf),
+		fmt.Sprintf("echo \"%s\" > /proc/sys/net/ipv4/ip_forward", IpForward),
 	}
+	commandString := fmt.Sprintf("'%s'", strings.Join(commands, " && "))
 
-	// Write files with contents.
-	dest = fmt.Sprintf("%s:%s", connectionString, "/etc/docker/daemon.json")
-	if err := scp.ExecSCPBytes([]byte(DockerDaemonJson), dest); err != nil {
-		return err
-	}
-
-	dest = fmt.Sprintf("%s:%s", connectionString, "/etc/sysctl.d/k8s.conf")
-	if err := scp.ExecSCPBytes([]byte(K8SConf), dest); err != nil {
-		return err
-	}
-
-	dest = fmt.Sprintf("%s:%s", connectionString, "/proc/sys/net/ipv4/ip_forward")
-	if err := scp.ExecSCPBytes([]byte(IpForward), dest); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "sh", "-c", commandString); err != nil {
 		return err
 	}
 
 	// Various other setups.
-	if err := ssh.ExecSSH(connectionString, "sed", "-i", "'/--exec-opt native.cgroupdriver/d'", "/usr/lib/systemd/system/docker.service"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "sed", "-i", "'/--exec-opt native.cgroupdriver/d'", "/usr/lib/systemd/system/docker.service"); err != nil {
 		return err
 	}
 
-	ssh.ExecSSH(connectionString, "sed", "-i", "'s/--log-driver=journald//'", "/etc/sysconfig/docker")
-
-	if err := ssh.ExecSSH(connectionString, "sysctl", "-p"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "sysctl", "-p"); err != nil {
 		return err
 	}
 
@@ -71,6 +62,9 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 		return err
 	}
 
+	// TODO: Create a function in ssh pkg that allows for running
+	//   multi-statement commands on the target without needing to manually
+	//   construct the string.
 	daemonsScript := fmt.Sprintf("\"%s\"", strings.Join(
 		[]string{
 			"systemctl daemon-reload",
@@ -81,7 +75,7 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 		},
 		" && ",
 	))
-	if err := ssh.ExecSSH(connectionString, "bash", "-c", daemonsScript); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "bash", "-c", daemonsScript); err != nil {
 		return err
 	}
 
@@ -92,7 +86,7 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 	return nil
 }
 
-func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string) error {
+func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, force bool) error {
 	if !node.IsMaster() {
 		return fmt.Errorf("Node has role %s and should not be set up as a Kubernetes master", node.Role)
 	}
@@ -101,20 +95,22 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string) e
 		return err
 	}
 
-	if err := forceUserToEnterHostnameToContinue(node); err != nil {
-		return err
+	if !force {
+		if err := forceUserToEnterHostnameToContinue(node); err != nil {
+			return err
+		}
 	}
 
 	connectionString := node.ConnectionString()
 	podNetworkCidrArg := fmt.Sprintf("--pod-network-cidr=%s", podNetworkCidr)
-	if err := ssh.ExecSSH(connectionString, "kubeadm", "init", podNetworkCidrArg); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "kubeadm", "init", podNetworkCidrArg); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func CreateClusterNode(log *logrus.Entry, node *Node, masterIp string) error {
+func CreateClusterNode(log *logrus.Entry, node *Node, masters *[]Node, force bool) error {
 	if !node.IsNode() {
 		return fmt.Errorf("Node has role %s and should not be set up as a Kubernetes node", node.Role)
 	}
@@ -123,17 +119,29 @@ func CreateClusterNode(log *logrus.Entry, node *Node, masterIp string) error {
 		return err
 	}
 
-	if err := forceUserToEnterHostnameToContinue(node); err != nil {
-		return err
+	if !force {
+		if err := forceUserToEnterHostnameToContinue(node); err != nil {
+			return err
+		}
 	}
 
-	joinCommand, err := ssh.GetSSH(masterIp, "kubeadm", "token", "create", "--print-join-command")
-	if err != nil {
-		return err
+	// Attempt to pull a token from a master within the list of masters.
+	// Accept the first one that succeeds.
+	var joinCommand string
+	for _, master := range *masters {
+		var err error
+		joinCommand, err = ssh.GetSSH(master.ConnectionString(), "sudo", "kubeadm", "token", "create", "--print-join-command")
+		if err == nil {
+			break
+		}
+	}
+
+	if joinCommand == "" {
+		return errors.New("Failed to get a join token from cluster masters")
 	}
 
 	joinComponents := strings.Split(joinCommand, " ")
-	allArguments := append([]string{node.ConnectionString()}, joinComponents...)
+	allArguments := append([]string{node.ConnectionString(), "sudo"}, joinComponents...)
 	if err := ssh.ExecSSH(allArguments...); err != nil {
 		return err
 	}
@@ -168,28 +176,27 @@ func SetHostname(log *logrus.Entry, node *Node, hostname string, force bool) err
 
 		if hostname == existingHostname {
 			log.Debug("Hostname of ", node.Host, " is already ", hostname, ". Skipping hostname setting.")
-
 			return nil
-		} else {
-			log.Trace("Hostname of ", node.Host, " is ", existingHostname)
 		}
+		
+		log.Trace("Hostname of ", node.Host, " is ", existingHostname)
 	}
 
 	log.Trace("Setting hostname to ", hostname)
-	if err := ssh.ExecSSH(connectionString, "hostnamectl", "set-hostname", hostname); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "hostnamectl", "set-hostname", hostname); err != nil {
 		return err
 	}
 
 	// TODO: _Might_ be worth dropping word boundaries on the sed script?
 	log.Debug("Replacing all instances of ", existingHostname, " in /etc/hosts")
 	sedScript := fmt.Sprintf("'s/%s/%s/g'", existingHostname, hostname)
-	if err := ssh.ExecSSH(connectionString, "sed", "-i", sedScript, "/etc/hosts"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "sed", "-i", sedScript, "/etc/hosts"); err != nil {
 		return err
 	}
 
 	// Host _should_ come up before SSH times out.
 	log.Info("Restarting networking on ", node.Host)
-	if err := ssh.ExecSSH(connectionString, "systemctl", "restart", "network"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "systemctl", "restart", "network"); err != nil {
 	}
 
 	return nil

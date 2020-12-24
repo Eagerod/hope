@@ -8,13 +8,11 @@ import (
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/hope"
-	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
 var removeCmdTagSlice *[]string
@@ -29,7 +27,7 @@ var removeCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Why not?
 		if len(args) == 0 && len(*removeCmdTagSlice) == 0 {
-			return errors.New("Cannot remove all resources at once.")
+			return errors.New("Cannot remove all resources at once")
 		}
 
 		resources, err := utils.GetIdentifiableResources(&args, removeCmdTagSlice)
@@ -42,10 +40,7 @@ var removeCmd = &cobra.Command{
 			return nil
 		}
 
-		// Wait as long as possible before pulling the temporary kubectl from
-		//   a master node.
-		masters := viper.GetStringSlice("masters")
-		kubectl, err := kubeutil.NewKubectlFromAnyNode(masters)
+		kubectl, err := utils.KubectlFromAnyMaster()
 		if err != nil {
 			return err
 		}

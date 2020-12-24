@@ -35,6 +35,16 @@ func PowerOffVmNamed(host string, vmName string) error {
 		return err
 	}
 
+	// Check the VMs power state; if it's already off, call this a success.
+	powerState, err := PowerStateOfVm(host, vmId)
+	if err != nil {
+		return err
+	}
+
+	if powerState == VmStatePoweredOff {
+		return nil
+	}
+
 	return PowerOffVm(host, vmId)
 }
 

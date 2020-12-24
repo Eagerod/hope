@@ -9,7 +9,6 @@ import (
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 import (
@@ -81,10 +80,8 @@ var deployCmd = &cobra.Command{
 
 		var kubectl *kubeutil.Kubectl
 		if hasKubernetesResource {
-			masters := viper.GetStringSlice("masters")
-
 			var err error
-			kubectl, err = kubeutil.NewKubectlFromAnyNode(masters)
+			kubectl, err = utils.KubectlFromAnyMaster()
 			if err != nil {
 				return err
 			}

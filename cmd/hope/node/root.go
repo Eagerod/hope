@@ -17,5 +17,6 @@ func InitNodeCommand() {
 	RootCommand.AddCommand(sshCmd)
 
 	initHostnameCmdFlags()
+	initInitCmd()
 	initResetCmd()
 }

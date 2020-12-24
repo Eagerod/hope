@@ -3,6 +3,7 @@ package hope
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -13,7 +14,6 @@ import (
 )
 
 import (
-	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
@@ -21,11 +21,11 @@ func DisableSwapOnRemote(node *Node) error {
 	connectionString := node.ConnectionString()
 
 	// TODO: Execute in a single SSH session.
-	if err := ssh.ExecSSH(connectionString, "sed", "-i", "'/ swap / s/^/#/'", "/etc/fstab"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "sed", "-i", "'/ swap / s/^/#/'", "/etc/fstab"); err != nil {
 		return err
 	}
 
-	if err := ssh.ExecSSH(connectionString, "swapoff", "-a"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "swapoff", "-a"); err != nil {
 		return err
 	}
 
@@ -36,6 +36,12 @@ func DisableSelinuxOnRemote(node *Node) error {
 	connectionString := node.ConnectionString()
 
 	// TODO: Execute in a single SSH session.
+	// If this is running on a non-SELinux distro, just bail without trying to
+	//   do anything meaningful.
+	if err := ssh.ExecSSH(connectionString, "which", "getenforce"); err != nil {
+		return nil
+	}
+
 	enforcing, err := ssh.GetSSH(connectionString, "getenforce")
 	if err != nil {
 		return err
@@ -137,20 +143,25 @@ func CopySSHKeyToAuthorizedKeys(log *logrus.Entry, keyPath string, node *Node) e
 
 	// TODO: Maybe confirm that this actually is a public key, and if it looks
 	//   like a private key, try to add .pub and see if there's a file there.
-	// TODO: Don't even copy the public key to a file on the remote.
-	//   Just write it through stdin from the ssh command.
-	destination := fmt.Sprintf("%s:tmp.pub", connectionString)
-	if err := scp.ExecSCP(keyPath, destination); err != nil {
-		return err
-	}
-
-	if err := ssh.ExecSSH(connectionString, "sh", "-c", "'mkdir -p $HOME/.ssh && chmod 700 $HOME/.ssh'"); err != nil {
+	sshPubKey, err := ioutil.ReadFile(keyPath)
+	if err != nil {
 		return err
 	}
 
 	// TODO: This should check to see if the given key already exists in the
 	//   authorized keys.
-	if err := ssh.ExecSSH(connectionString, "sh", "-c", "'cat tmp.pub >> $HOME/.ssh/authorized_keys && rm tmp.pub && chmod 600 $HOME/.ssh/authorized_keys'"); err != nil {
+	// TODO: Create a function in ssh pkg that allows for running
+	//   multi-statement commands on the target without needing to manually
+	//   construct the string.
+	commands := []string{
+		"mkdir -p $HOME/.ssh",
+		"chmod 700 $HOME/.ssh",
+		fmt.Sprintf("printf \"%s\n\" >> $HOME/.ssh/authorized_keys", strings.TrimSpace(string(sshPubKey))),
+		"chmod 600 $HOME/.ssh/authorized_keys",
+	}
+	commandString := fmt.Sprintf("'%s'", strings.Join(commands, " && "))
+
+	if err := ssh.ExecSSH(connectionString, "sh", "-c", commandString); err != nil {
 		return err
 	}
 

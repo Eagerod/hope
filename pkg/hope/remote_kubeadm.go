@@ -28,7 +28,17 @@ func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, node *Node
 		}
 	}
 
-	if err := ssh.ExecSSH(node.ConnectionString(), "kubeadm", "reset"); err != nil {
+	args := []string{
+		node.ConnectionString(),
+		"sudo",
+		"kubeadm",
+		"reset",
+	}
+	if force {
+		args = append(args, "--force")
+	}
+
+	if err := ssh.ExecSSH(args...); err != nil {
 		return err
 	}
 
