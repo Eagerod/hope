@@ -71,19 +71,12 @@ system-test: system-test-1
 	$(MAKE) system-test-clean
 
 .PHONY: system-test-clean
-system-test-clean: system-test-4-clean system-test-3-clean system-test-1-clean
+system-test-clean: system-test-4-clean system-test-3-clean system-test-2-clean
 
 .PHONY: system-test-1
 system-test-1: $(BIN_NAME)
 	$(BIN_NAME) --config hope.yaml vm image beast1 -f test-kubernetes-node
 	$(MAKE) system-test-2
-
-.PHONY: system-test-1-clean
-system-test-1-clean: $(BIN_NAME)
-	$(BIN_NAME) --config hope.yaml vm stop beast1 test-master-01
-	$(BIN_NAME) --config hope.yaml vm delete beast1 test-master-01
-	$(BIN_NAME) --config hope.yaml vm stop beast1 test-node-01
-	$(BIN_NAME) --config hope.yaml vm delete beast1 test-node-01
 
 .PHONY: system-test-2
 system-test-2: $(BIN_NAME)
@@ -106,6 +99,13 @@ system-test-2: $(BIN_NAME)
 	sshpass -p packer $(BIN_NAME) --config hope.yaml node ssh test-node-01
 
 	$(MAKE) system-test-3
+
+.PHONY: system-test-2-clean
+system-test-2-clean: $(BIN_NAME)
+	$(BIN_NAME) --config hope.yaml vm stop beast1 test-master-01
+	$(BIN_NAME) --config hope.yaml vm delete beast1 test-master-01
+	$(BIN_NAME) --config hope.yaml vm stop beast1 test-node-01
+	$(BIN_NAME) --config hope.yaml vm delete beast1 test-node-01
 
 .PHONY: system-test-3
 system-test-3: $(BIN_NAME)
