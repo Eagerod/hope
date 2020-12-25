@@ -21,8 +21,8 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/fileutil"
-	"github.com/Eagerod/hope/pkg/kubeutil"
 	"github.com/Eagerod/hope/pkg/hope"
+	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
 func ReplaceParametersInString(str string, parameters []string) (string, error) {

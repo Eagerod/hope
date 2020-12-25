@@ -33,15 +33,21 @@ var initCmd = &cobra.Command{
 			return err
 		}
 
-		log.Info("Bootstrapping a node...")
+		// Load balancer have a super lightweight init, so run its init before
+		//   fetching some potentially heavier state from the cluster.
+		if node.IsLoadBalancer() {
+			return hope.InitLoadBalancer(log.WithFields(log.Fields{}), node)
+		}
 
 		podNetworkCidr := viper.GetString("pod_network_cidr")
 		masters, err := utils.GetMasters()
 		if err != nil {
 			return err
 		}
-		loadBalancer, err := utils.GetLoadBalancer()
-		if err != nil {
+
+		var loadBalancer *hope.Node
+		loadBalancer, err = utils.GetLoadBalancer()
+		if err != nil && loadBalancer != nil {
 			return err
 		}
 
@@ -68,8 +74,6 @@ var initCmd = &cobra.Command{
 			if err := hope.CreateClusterNode(log.WithFields(log.Fields{}), node, masters, initCmdForce); err != nil {
 				return err
 			}
-		} else if node.IsLoadBalancer() {
-			return hope.InitLoadBalancer(log.WithFields(log.Fields{}), node, masters)
 		} else {
 			return fmt.Errorf("Failed to find node %s in config", nodeName)
 		}

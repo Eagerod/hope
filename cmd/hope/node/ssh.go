@@ -37,7 +37,6 @@ var sshCmd = &cobra.Command{
 			return hope.CopySSHKeyToAuthorizedKeys(log.WithFields(log.Fields{}), localKeyPath, node)
 		}
 
-
 		if _, err := net.LookupHost(node.Host); err != nil {
 			return err
 		}

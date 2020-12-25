@@ -1,6 +1,7 @@
 access_points:
   - 192.168.2.43
 access_point_controller: http://192.168.2.10:8080
+load_balancer_endpoint: testapi.internal.aleemhaji.com
 nodes:
   # Hypervisors
   # This is the list of hypervisors that host each of the VMs described below.
@@ -13,9 +14,10 @@ nodes:
   # Master Load Balancer
   # Just one of these; manages providing a single endpoint for the set of
   #   master nodes.
+  # Can also omit this entirely if a single master is being used.
   - name: test-load-balancer
     role: load-balancer
-    host: testapi.internal.aleemhaji.com
+    hypervisor: beast1
     user: packer
   # Masters
   # There should be three of these.

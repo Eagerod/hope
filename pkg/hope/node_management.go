@@ -252,7 +252,7 @@ func SetHostname(log *logrus.Entry, node *Node, hostname string, force bool) err
 			log.Debug("Hostname of ", node.Host, " is already ", hostname, ". Skipping hostname setting.")
 			return nil
 		}
-		
+
 		log.Trace("Hostname of ", node.Host, " is ", existingHostname)
 	}
 

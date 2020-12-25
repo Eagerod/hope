@@ -58,14 +58,14 @@ var shellCmd = &cobra.Command{
 		}
 
 		if len(commandArgs) == 0 {
-		// Check to see if the pod will start a bash shell.
+			// Check to see if the pod will start a bash shell.
 			if err := kubeutil.ExecKubectl(kubectl, "exec", "-it", podName, "--", "bash", "-c", "exit"); err == nil {
 				return kubeutil.ExecKubectl(kubectl, "exec", "-it", podName, "--", "bash")
 			}
 
 			return kubeutil.ExecKubectl(kubectl, "exec", "-it", podName, "--", "sh")
 		} else {
-			allArgs := []string {
+			allArgs := []string{
 				"exec",
 				"-it",
 				podName,

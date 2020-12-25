@@ -85,6 +85,9 @@ system-test-2: $(BIN_NAME)
 		exit 1; \
 	fi
 
+	$(BIN_NAME) --config hope.yaml vm create beast1 test-kubernetes-node -n test-load-balancer -c 2 -m 512
+	$(BIN_NAME) --config hope.yaml vm start beast1 test-load-balancer
+
 	$(BIN_NAME) --config hope.yaml vm create beast1 test-kubernetes-node --name test-master-01 --cpu 2 --memory 2048
 	$(BIN_NAME) --config hope.yaml vm start beast1 test-master-01
 
@@ -92,6 +95,9 @@ system-test-2: $(BIN_NAME)
 	$(BIN_NAME) --config hope.yaml vm start beast1 test-node-01
 
 	@# Wait for the VM to finish powering on, and getting an IP address...
+	$(BIN_NAME) --config hope.yaml vm ip beast1 test-load-balancer
+	sshpass -p packer $(BIN_NAME) --config hope.yaml node ssh test-load-balancer
+
 	$(BIN_NAME) --config hope.yaml vm ip beast1 test-master-01
 	sshpass -p packer $(BIN_NAME) --config hope.yaml node ssh test-master-01
 
@@ -109,9 +115,11 @@ system-test-2-clean: $(BIN_NAME)
 
 .PHONY: system-test-3
 system-test-3: $(BIN_NAME)
+	$(BIN_NAME) --config hope.yaml node hostname test-load-balancer testapi
 	$(BIN_NAME) --config hope.yaml node hostname test-master-01 test-master-01
 	$(BIN_NAME) --config hope.yaml node hostname test-node-01 test-node-01
 
+	$(BIN_NAME) --config hope.yaml node init -f test-load-balancer
 	$(BIN_NAME) --config hope.yaml node init -f test-master-01
 	$(BIN_NAME) --config hope.yaml node init -f test-node-01
 

@@ -201,5 +201,8 @@ func GetLoadBalancer() (*hope.Node, error) {
 		}
 	}
 
+	// This feels dirty, and a little broken.
+	// Maybe need a dedicated NodeNotFound kind of error that can be handled
+	//   independently of other errors if desired.
 	return nil, nil
 }
