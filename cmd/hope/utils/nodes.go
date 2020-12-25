@@ -46,6 +46,23 @@ func GetNode(name string) (*hope.Node, error) {
 	return nil, fmt.Errorf("Failed to find a node named %s", name)
 }
 
+// HasNode -- Check whether a node has been defined in the hope file, even if
+//   the node doesn't exist on its hypervisor yet.
+func HasNode(name string) bool {
+	nodes, err := getNodes()
+	if err != nil {
+		return false
+	}
+
+	for _, node := range *nodes {
+		if node.Name == name {
+			return true
+		}
+	}
+
+	return false
+}
+
 func GetAnyMaster() (*hope.Node, error) {
 	nodes, err := getNodes()
 	if err != nil {
