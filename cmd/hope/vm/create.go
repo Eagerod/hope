@@ -40,6 +40,10 @@ var createCmd = &cobra.Command{
 			return errors.New("Must provide a VM name")
 		}
 
+		if !utils.HasNode(createCmdVmName) {
+			return fmt.Errorf("Node named %s not found in hope in node definitions", createCmdVmName)
+		}
+
 		hypervisor, err := utils.GetNode(hypervisorName)
 		if err != nil {
 			return err
