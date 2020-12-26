@@ -94,6 +94,8 @@ system-test-2: $(BIN_NAME)
 	$(BIN_NAME) --config hope.yaml vm create beast1 test-kubernetes-node -n test-node-01 -c 2 -m 4096
 	$(BIN_NAME) --config hope.yaml vm start beast1 test-node-01
 
+	$(MAKE) system-test-3
+
 .PHONY: system-test-2-clean
 system-test-2-clean: $(BIN_NAME)
 	$(BIN_NAME) --config hope.yaml vm stop beast1 test-load-balancer
