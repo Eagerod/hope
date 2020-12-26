@@ -27,6 +27,15 @@ import (
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
+// Subcommands that will be proxied by the bare hope command if given.
+const (
+	proxySubcommandKubectl string = "kubectl"
+)
+
+var proxySubcommands = []string{
+	proxySubcommandKubectl,
+}
+
 var cfgFile string
 var configParseError error
 var debugLogFlag bool
@@ -43,12 +52,14 @@ var rootCmd = &cobra.Command{
 	Args: cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
-			cmd.Help()
-			os.Exit(1)
+			return fmt.Errorf("Subcommand must be provided; additional options: %s", strings.Join(proxySubcommands, ", "))
 		}
 
-		switch args[0] {
-		case "kubectl":
+		possibleSubcommand := args[0]
+		subcommandArgs := args[1:]
+
+		switch possibleSubcommand {
+		case proxySubcommandKubectl:
 			kubectl, err := utils.KubectlFromAnyMaster()
 			if err != nil {
 				return err
@@ -56,9 +67,9 @@ var rootCmd = &cobra.Command{
 	
 			defer kubectl.Destroy()
 	
-			return kubeutil.ExecKubectl(kubectl, args[1:]...)
+			return kubeutil.ExecKubectl(kubectl, subcommandArgs...)
 		default:
-			return fmt.Errorf("Unknown command %s", args[0])
+			return fmt.Errorf("unknown command %q for %q", possibleSubcommand, cmd.CommandPath())
 		}
 	},
 }
@@ -91,7 +102,6 @@ func Execute() {
 	unifi.InitUnifiCommand()
 	vm.InitVMCommand()
 
-	log.Debug("Executing:", os.Args)
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}
