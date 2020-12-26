@@ -16,6 +16,7 @@ import (
 import (
 	"github.com/Eagerod/hope/cmd/hope/node"
 	"github.com/Eagerod/hope/cmd/hope/unifi"
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/cmd/hope/vm"
 
 	"github.com/Eagerod/hope/pkg/docker"
@@ -39,6 +40,27 @@ var rootCmd = &cobra.Command{
 		"manual pieces of managing my home Kubernetes cluster. It includes " +
 		"mechanisms for setting up my router, my switch (maybe, eventually), " +
 		"and controlling the management of the Kubernetes resources I run.",
+	Args: cobra.ArbitraryArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			cmd.Help()
+			os.Exit(1)
+		}
+
+		switch args[0] {
+		case "kubectl":
+			kubectl, err := utils.KubectlFromAnyMaster()
+			if err != nil {
+				return err
+			}
+	
+			defer kubectl.Destroy()
+	
+			return kubeutil.ExecKubectl(kubectl, args[1:]...)
+		default:
+			return fmt.Errorf("Unknown command %s", args[0])
+		}
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -47,7 +69,6 @@ func Execute() {
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(kubeconfigCmd)
-	rootCmd.AddCommand(kubectlCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(removeCmd)
 	rootCmd.AddCommand(runCmd)
