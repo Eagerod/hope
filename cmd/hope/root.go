@@ -47,6 +47,7 @@ func Execute() {
 	rootCmd.AddCommand(deployCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(kubeconfigCmd)
+	rootCmd.AddCommand(kubectlCmd)
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(removeCmd)
 	rootCmd.AddCommand(runCmd)
