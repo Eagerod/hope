@@ -16,6 +16,7 @@ import (
 import (
 	"github.com/Eagerod/hope/cmd/hope/node"
 	"github.com/Eagerod/hope/cmd/hope/unifi"
+	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/cmd/hope/vm"
 
 	"github.com/Eagerod/hope/pkg/docker"
@@ -26,6 +27,15 @@ import (
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
+// Subcommands that will be proxied by the bare hope command if given.
+const (
+	proxySubcommandKubectl string = "kubectl"
+)
+
+var proxySubcommands = []string{
+	proxySubcommandKubectl,
+}
+
 var cfgFile string
 var configParseError error
 var debugLogFlag bool
@@ -35,10 +45,33 @@ var verboseLogFlag bool
 var rootCmd = &cobra.Command{
 	Use:   "hope",
 	Short: "command line tool for managing all the resources I have deployed at home",
-	Long: `Hope is a command line tool that has been set up to manage all the manual pieces
-of managing my home Kubernetes cluster. It includes mechanisms for setting up 
-my router, my switch (maybe, eventually), and controlling the management of the
-Kubernetes resources I run.`,
+	Long: "Hope is a command line tool that has been set up to manage all the " +
+		"manual pieces of managing my home Kubernetes cluster. It includes " +
+		"mechanisms for setting up my router, my switch (maybe, eventually), " +
+		"and controlling the management of the Kubernetes resources I run.",
+	Args: cobra.ArbitraryArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			return fmt.Errorf("Subcommand must be provided; additional options: %s", strings.Join(proxySubcommands, ", "))
+		}
+
+		possibleSubcommand := args[0]
+		subcommandArgs := args[1:]
+
+		switch possibleSubcommand {
+		case proxySubcommandKubectl:
+			kubectl, err := utils.KubectlFromAnyMaster()
+			if err != nil {
+				return err
+			}
+	
+			defer kubectl.Destroy()
+	
+			return kubeutil.ExecKubectl(kubectl, subcommandArgs...)
+		default:
+			return fmt.Errorf("unknown command %q for %q", possibleSubcommand, cmd.CommandPath())
+		}
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -69,7 +102,6 @@ func Execute() {
 	unifi.InitUnifiCommand()
 	vm.InitVMCommand()
 
-	log.Debug("Executing:", os.Args)
 	if err := rootCmd.Execute(); err != nil {
 		log.Fatal(err)
 	}
