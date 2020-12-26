@@ -66,15 +66,11 @@ var initCmd = &cobra.Command{
 
 			defer kubectl.Destroy()
 
-			if err := hope.TaintNodeByHost(kubectl, node, "node-role.kubernetes.io/master:NoSchedule-"); err != nil {
-				return err
-			}
+			return hope.TaintNodeByHost(kubectl, node, "node-role.kubernetes.io/master:NoSchedule-")
 		} else if node.IsMaster() {
 			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), node, podNetworkCidr, loadBalancer, loadBalancerHost, masters, initCmdForce)
 		} else if node.IsNode() {
-			if err := hope.CreateClusterNode(log.WithFields(log.Fields{}), node, masters, initCmdForce); err != nil {
-				return err
-			}
+			return hope.CreateClusterNode(log.WithFields(log.Fields{}), node, masters, initCmdForce)
 		} else {
 			return fmt.Errorf("Failed to find node %s in config", nodeName)
 		}
