@@ -35,10 +35,10 @@ var verboseLogFlag bool
 var rootCmd = &cobra.Command{
 	Use:   "hope",
 	Short: "command line tool for managing all the resources I have deployed at home",
-	Long: `Hope is a command line tool that has been set up to manage all the manual pieces
-of managing my home Kubernetes cluster. It includes mechanisms for setting up 
-my router, my switch (maybe, eventually), and controlling the management of the
-Kubernetes resources I run.`,
+	Long: "Hope is a command line tool that has been set up to manage all the " +
+		"manual pieces of managing my home Kubernetes cluster. It includes " +
+		"mechanisms for setting up my router, my switch (maybe, eventually), " +
+		"and controlling the management of the Kubernetes resources I run.",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
