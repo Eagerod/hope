@@ -197,7 +197,7 @@ func GetLoadBalancer() (*hope.Node, error) {
 
 	for _, node := range *nodes {
 		if node.IsLoadBalancer() {
-			return &node, nil
+			return expandHypervisor(&node)
 		}
 	}
 

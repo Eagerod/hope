@@ -256,6 +256,29 @@ func SetHostname(log *logrus.Entry, node *Node, hostname string, force bool) err
 		log.Trace("Hostname of ", node.Host, " is ", existingHostname)
 	}
 
+	// Before setting the hostname, make sure the primary interface is set to
+	//   bring itself back up on a networking restart.
+	// If it's not, the device may not turn back on with the network.
+	// TODO: Test on different distros with different ways of managing the
+	//   network.
+	ethInterface, err := ssh.GetSSH(connectionString, "sudo", "sh", "-c", "'ip route get 8.8.8.8 | head -1 | awk \"{print \\$5}\"'")
+	if err != nil {
+		return err
+	}
+
+	ethInterface = strings.TrimSpace(ethInterface)
+	ethScript := fmt.Sprintf("auto %s\nallow-hotplug %s\niface %s inet dhcp\n", ethInterface, ethInterface, ethInterface)
+
+	scripts := []string{
+		fmt.Sprintf("sed -i \"/%s/d\" /etc/network/interfaces", ethInterface),
+		fmt.Sprintf("printf \"%s\" >> /etc/network/interfaces", ethScript),
+	}
+
+	combinedScript := fmt.Sprintf("'%s'", strings.Join(scripts, " && "))
+	if err := ssh.ExecSSH(connectionString, "sudo", "sh", "-c", combinedScript); err != nil {
+		return err
+	}
+
 	log.Trace("Setting hostname to ", hostname)
 	if err := ssh.ExecSSH(connectionString, "sudo", "hostnamectl", "set-hostname", hostname); err != nil {
 		return err
@@ -270,7 +293,8 @@ func SetHostname(log *logrus.Entry, node *Node, hostname string, force bool) err
 
 	// Host _should_ come up before SSH times out.
 	log.Info("Restarting networking on ", node.Host)
-	if err := ssh.ExecSSH(connectionString, "sudo", "systemctl", "restart", "network"); err != nil {
+	script := "'if [ -f /etc/init.d/networking ]; then /etc/init.d/networking restart; else systemctl restart network; fi'"
+	if err := ssh.ExecSSH(connectionString, "sudo", "sh", "-c", script); err != nil {
 	}
 
 	return nil
