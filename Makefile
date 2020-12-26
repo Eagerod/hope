@@ -143,14 +143,26 @@ system-test-5: $(BIN_NAME)
 	fi
 
 	$(BIN_NAME) --config hope.yaml deploy calico
-	METALLB_SYSTEM_MEMBERLIST_SECRET_KEY="$$(openssl rand -base64 128 | tr -d '\n')" $(BIN_NAME) --config hope.yaml deploy -t network
 
+	@# Wait a few minutes until nodes register as ready.
+	@# It can take a while for nodes to register as ready after installing the
+	@#   networking plugin.
+	while true; do \
+		n_ready_nodes="$$($(BIN_NAME) --config hope.yaml -- kubectl get nodes -o template='{{range .items}}{{range .status.conditions}}{{if eq .reason "KubeletReady"}}{{.status}}{{"\n"}}{{end}}{{end}}{{end}}' | grep "True" | wc -l)"; \
+		if [ $$n_ready_nodes -eq 2 ]; then \
+		    break; \
+		else \
+			echo >&2 "Only $$n_ready_node/2 nodes are ready"; \
+		fi; \
+	done
+
+	METALLB_SYSTEM_MEMBERLIST_SECRET_KEY="$$(openssl rand -base64 128 | tr -d '\n')" $(BIN_NAME) --config hope.yaml deploy -t network
 	$(BIN_NAME) --config hope.yaml deploy -t database
 	
 	$(BIN_NAME) --config hope.yaml shell -l app=mysql -- mysql -u root -e "SELECT * FROM test.abc;"
 
 .PHONY: system-test-5-clean
-system-test-4-clean: $(BIN_NAME)
+system-test-5-clean: $(BIN_NAME)
 	$(BIN_NAME) --config hope.yaml remove -t database
 	$(BIN_NAME) --config hope.yaml remove calico
 	METALLB_SYSTEM_MEMBERLIST_SECRET_KEY="$$(openssl rand -base64 128 | tr -d '\n')" $(BIN_NAME) --config hope.yaml remove -t network
