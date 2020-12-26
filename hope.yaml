@@ -1,7 +1,7 @@
 access_points:
   - 192.168.2.43
 access_point_controller: http://192.168.2.10:8080
-load_balancer_endpoint: testapi.internal.aleemhaji.com
+load_balancer_host: testapi.internal.aleemhaji.com
 nodes:
   # Hypervisors
   # This is the list of hypervisors that host each of the VMs described below.
