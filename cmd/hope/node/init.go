@@ -33,7 +33,11 @@ var initCmd = &cobra.Command{
 			return err
 		}
 
-		log.Info("Bootstrapping a node...")
+		// Load balancer have a super lightweight init, so run its init before
+		//   fetching some potentially heavier state from the cluster.
+		if node.IsLoadBalancer() {
+			return hope.InitLoadBalancer(log.WithFields(log.Fields{}), node)
+		}
 
 		podNetworkCidr := viper.GetString("pod_network_cidr")
 		masters, err := utils.GetMasters()
@@ -41,10 +45,17 @@ var initCmd = &cobra.Command{
 			return err
 		}
 
+		var loadBalancer *hope.Node
+		loadBalancer, err = utils.GetLoadBalancer()
+		if err != nil && loadBalancer != nil {
+			return err
+		}
+		loadBalancerHost := viper.GetString("load_balancer_host")
+
 		if node.IsMasterAndNode() {
 			log.Info("Node ", node.Host, " appears to be both master and node. Creating master and removing NoSchedule taint...")
 
-			if err := hope.CreateClusterMaster(log.WithFields(log.Fields{}), node, podNetworkCidr, initCmdForce); err != nil {
+			if err := hope.CreateClusterMaster(log.WithFields(log.Fields{}), node, podNetworkCidr, loadBalancer, loadBalancerHost, masters, initCmdForce); err != nil {
 				return err
 			}
 
@@ -57,13 +68,13 @@ var initCmd = &cobra.Command{
 
 			return hope.TaintNodeByHost(kubectl, node, "node-role.kubernetes.io/master:NoSchedule-")
 		} else if node.IsMaster() {
-			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), node, podNetworkCidr, initCmdForce)
+			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), node, podNetworkCidr, loadBalancer, loadBalancerHost, masters, initCmdForce)
 		} else if node.IsNode() {
 			return hope.CreateClusterNode(log.WithFields(log.Fields{}), node, masters, initCmdForce)
 		} else {
 			return fmt.Errorf("Failed to find node %s in config", nodeName)
 		}
 
-		return nil
+		return fmt.Errorf("Failed to find node %s in config", node.ConnectionString())
 	},
 }

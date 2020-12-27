@@ -1,7 +1,6 @@
 package node
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -35,7 +34,7 @@ var hostnameCmd = &cobra.Command{
 		}
 
 		if !node.IsRoleValid() {
-			return errors.New(fmt.Sprintf("Node %s has invalid role %s.", node.Name, node.Role))
+			return fmt.Errorf("Node %s has invalid role %s", node.Name, node.Role)
 		}
 
 		log.Info("Setting hostname on node ", node.Name, "(", node.Host, ")", " to ", hostname)

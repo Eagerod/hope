@@ -1,6 +1,7 @@
 access_points:
   - 192.168.2.43
 access_point_controller: http://192.168.2.10:8080
+load_balancer_host: testapi.internal.aleemhaji.com
 nodes:
   # Hypervisors
   # This is the list of hypervisors that host each of the VMs described below.
@@ -10,11 +11,27 @@ nodes:
     user: root
     datastore: Main
     network: VM Network
+  # Master Load Balancer
+  # Just one of these; manages providing a single endpoint for the set of
+  #   master nodes.
+  # Can also omit this entirely if a single master is being used.
+  - name: test-load-balancer
+    role: load-balancer
+    hypervisor: beast1
+    user: packer
   # Masters
   # There should be three of these.
   # Any Kubernetes-Role nodes can either have a direct host, or name a
   #   hypervisor from which their IP Address can be fetched.
   - name: test-master-01
+    role: master
+    hypervisor: beast1
+    user: packer
+  - name: test-master-02
+    role: master
+    hypervisor: beast1
+    user: packer
+  - name: test-master-03
     role: master
     hypervisor: beast1
     user: packer

@@ -64,9 +64,9 @@ var rootCmd = &cobra.Command{
 			if err != nil {
 				return err
 			}
-	
+
 			defer kubectl.Destroy()
-	
+
 			return kubeutil.ExecKubectl(kubectl, subcommandArgs...)
 		default:
 			return fmt.Errorf("unknown command %q for %q", possibleSubcommand, cmd.CommandPath())

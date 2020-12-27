@@ -3,6 +3,7 @@ module github.com/Eagerod/hope
 go 1.13
 
 require (
+	github.com/google/uuid v1.1.2
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/cobra v0.0.5

@@ -188,3 +188,21 @@ func KubectlFromAnyMaster() (*kubeutil.Kubectl, error) {
 
 	return nil, errors.New("Failed to find a kubeconfig file in any of the master nodes")
 }
+
+func GetLoadBalancer() (*hope.Node, error) {
+	nodes, err := getNodes()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, node := range *nodes {
+		if node.IsLoadBalancer() {
+			return expandHypervisor(&node)
+		}
+	}
+
+	// This feels dirty, and a little broken.
+	// Maybe need a dedicated NodeNotFound kind of error that can be handled
+	//   independently of other errors if desired.
+	return nil, nil
+}

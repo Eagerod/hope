@@ -1,6 +1,10 @@
 package node
 
 import (
+	"net"
+)
+
+import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -31,6 +35,10 @@ var sshCmd = &cobra.Command{
 		if hasKeyArg {
 			localKeyPath := args[1]
 			return hope.CopySSHKeyToAuthorizedKeys(log.WithFields(log.Fields{}), localKeyPath, node)
+		}
+
+		if _, err := net.LookupHost(node.Host); err != nil {
+			return err
 		}
 
 		return hope.EnsureSSHWithoutPassword(log.WithFields(log.Fields{}), node)

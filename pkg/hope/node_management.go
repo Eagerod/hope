@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -86,7 +87,7 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 	return nil
 }
 
-func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, force bool) error {
+func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, loadBalancer *Node, loadBalancerHost string, masters *[]Node, force bool) error {
 	if !node.IsMaster() {
 		return fmt.Errorf("Node has role %s and should not be set up as a Kubernetes master", node.Role)
 	}
@@ -101,13 +102,71 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, f
 		}
 	}
 
+	if loadBalancer == nil {
+		return createClusterMasterStandalone(log, node, podNetworkCidr)
+	}
+
+	// Search through the existing masters to see if this node is being added
+	//   as a master to an existing control plane, or if this will be the
+	//   first master in the pool.
 	connectionString := node.ConnectionString()
-	podNetworkCidrArg := fmt.Sprintf("--pod-network-cidr=%s", podNetworkCidr)
-	if err := ssh.ExecSSH(connectionString, "sudo", "kubeadm", "init", podNetworkCidrArg); err != nil {
+	loadBalancerEndpoint := fmt.Sprintf("%s:%s", loadBalancerHost, "6443")
+
+	// Loop over the list of defined masters, and filter it down to a list
+	//   only includes masters that have already been initialized and added to
+	//   the load balancer, plus the one about to added.
+	lbMasters := []Node{*node}
+	grepRegexp := fmt.Sprintf("'\\s+server: https://%s'", regexp.QuoteMeta(loadBalancerEndpoint))
+	for _, aMaster := range *masters {
+		aMasterCs := aMaster.ConnectionString()
+		if aMasterCs == connectionString {
+			continue
+		}
+
+		if err := ssh.ExecSSH(aMasterCs, "sudo", "grep", "-E", grepRegexp, "-q", "/etc/kubernetes/admin.conf"); err != nil {
+			log.Infof("Other master node %s isn't connected to load balancer.", aMaster.Host)
+			continue
+		}
+
+		lbMasters = append(lbMasters, aMaster)
+	}
+
+	SetLoadBalancerHosts(log, loadBalancer, &lbMasters)
+
+	// If no other defined masters existed, or no other masters were
+	//   configured to use the defined load balancer, set up this node as the
+	//   first node in the load balanced group.make clean
+	if len(lbMasters) == 1 {
+		podNetworkCidrArg := fmt.Sprintf("--pod-network-cidr=%s", podNetworkCidr)
+		allArgs := []string{connectionString, "sudo", "kubeadm", "init", podNetworkCidrArg}
+		allArgs = append(allArgs, "--control-plane-endpoint", loadBalancerEndpoint, "--upload-certs")
+
+		return ssh.ExecSSH(allArgs...)
+	}
+
+	// This master is being added to an existing pool.
+	otherMaster := lbMasters[1]
+	certKey, err := KubeadmGetClusterCertificateKey(log, &otherMaster)
+	if err != nil {
 		return err
 	}
 
-	return nil
+	joinCommand, err := ssh.GetSSH(otherMaster.ConnectionString(), "sudo", "kubeadm", "token", "create", "--print-join-command")
+	if err != nil {
+		return err
+	}
+
+	joinComponents := strings.Split(strings.TrimSpace(joinCommand), " ")
+	allArguments := append([]string{connectionString}, "sudo")
+	allArguments = append(allArguments, joinComponents...)
+	allArguments = append(allArguments, "--control-plane", "--certificate-key", certKey)
+
+	return ssh.ExecSSH(allArguments...)
+}
+
+func createClusterMasterStandalone(log *logrus.Entry, node *Node, podNetworkCidr string) error {
+	podNetworkCidrArg := fmt.Sprintf("--pod-network-cidr=%s", podNetworkCidr)
+	return ssh.ExecSSH(node.ConnectionString(), "sudo", "kubeadm", "init", podNetworkCidrArg)
 }
 
 func CreateClusterNode(log *logrus.Entry, node *Node, masters *[]Node, force bool) error {
@@ -178,8 +237,31 @@ func SetHostname(log *logrus.Entry, node *Node, hostname string, force bool) err
 			log.Debug("Hostname of ", node.Host, " is already ", hostname, ". Skipping hostname setting.")
 			return nil
 		}
-		
+
 		log.Trace("Hostname of ", node.Host, " is ", existingHostname)
+	}
+
+	// Before setting the hostname, make sure the primary interface is set to
+	//   bring itself back up on a networking restart.
+	// If it's not, the device may not turn back on with the network.
+	// TODO: Test on different distros with different ways of managing the
+	//   network.
+	ethInterface, err := ssh.GetSSH(connectionString, "sudo", "sh", "-c", "'ip route get 8.8.8.8 | head -1 | awk \"{print \\$5}\"'")
+	if err != nil {
+		return err
+	}
+
+	ethInterface = strings.TrimSpace(ethInterface)
+	ethScript := fmt.Sprintf("auto %s\nallow-hotplug %s\niface %s inet dhcp\n", ethInterface, ethInterface, ethInterface)
+
+	scripts := []string{
+		fmt.Sprintf("sed -i \"/%s/d\" /etc/network/interfaces", ethInterface),
+		fmt.Sprintf("printf \"%s\" >> /etc/network/interfaces", ethScript),
+	}
+
+	combinedScript := fmt.Sprintf("'%s'", strings.Join(scripts, " && "))
+	if err := ssh.ExecSSH(connectionString, "sudo", "sh", "-c", combinedScript); err != nil {
+		return err
 	}
 
 	log.Trace("Setting hostname to ", hostname)
@@ -196,7 +278,8 @@ func SetHostname(log *logrus.Entry, node *Node, hostname string, force bool) err
 
 	// Host _should_ come up before SSH times out.
 	log.Info("Restarting networking on ", node.Host)
-	if err := ssh.ExecSSH(connectionString, "sudo", "systemctl", "restart", "network"); err != nil {
+	script := "'if [ -f /etc/init.d/networking ]; then /etc/init.d/networking restart; else systemctl restart network; fi'"
+	if err := ssh.ExecSSH(connectionString, "sudo", "sh", "-c", script); err != nil {
 	}
 
 	return nil
