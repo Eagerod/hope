@@ -90,6 +90,10 @@ system-test-2: $(BIN_NAME)
 
 	$(BIN_NAME) --config hope.yaml vm create beast1 test-kubernetes-node --name test-master-01 --cpu 2 --memory 2048
 	$(BIN_NAME) --config hope.yaml vm start beast1 test-master-01
+	$(BIN_NAME) --config hope.yaml vm create beast1 test-kubernetes-node --name test-master-02 --cpu 2 --memory 2048
+	$(BIN_NAME) --config hope.yaml vm start beast1 test-master-02
+	$(BIN_NAME) --config hope.yaml vm create beast1 test-kubernetes-node --name test-master-03 --cpu 2 --memory 2048
+	$(BIN_NAME) --config hope.yaml vm start beast1 test-master-03
 
 	$(BIN_NAME) --config hope.yaml vm create beast1 test-kubernetes-node -n test-node-01 -c 2 -m 4096
 	$(BIN_NAME) --config hope.yaml vm start beast1 test-node-01
@@ -102,6 +106,10 @@ system-test-2-clean: $(BIN_NAME)
 	$(BIN_NAME) --config hope.yaml vm delete beast1 test-load-balancer
 	$(BIN_NAME) --config hope.yaml vm stop beast1 test-master-01
 	$(BIN_NAME) --config hope.yaml vm delete beast1 test-master-01
+	$(BIN_NAME) --config hope.yaml vm stop beast1 test-master-02
+	$(BIN_NAME) --config hope.yaml vm delete beast1 test-master-02
+	$(BIN_NAME) --config hope.yaml vm stop beast1 test-master-03
+	$(BIN_NAME) --config hope.yaml vm delete beast1 test-master-03
 	$(BIN_NAME) --config hope.yaml vm stop beast1 test-node-01
 	$(BIN_NAME) --config hope.yaml vm delete beast1 test-node-01
 
@@ -113,6 +121,10 @@ system-test-3: $(BIN_NAME)
 
 	$(BIN_NAME) --config hope.yaml vm ip beast1 test-master-01
 	sshpass -p packer $(BIN_NAME) --config hope.yaml node ssh test-master-01
+	$(BIN_NAME) --config hope.yaml vm ip beast1 test-master-02
+	sshpass -p packer $(BIN_NAME) --config hope.yaml node ssh test-master-02
+	$(BIN_NAME) --config hope.yaml vm ip beast1 test-master-03
+	sshpass -p packer $(BIN_NAME) --config hope.yaml node ssh test-master-03
 
 	$(BIN_NAME) --config hope.yaml vm ip beast1 test-node-01
 	sshpass -p packer $(BIN_NAME) --config hope.yaml node ssh test-node-01
@@ -123,10 +135,14 @@ system-test-3: $(BIN_NAME)
 system-test-4: $(BIN_NAME)
 	$(BIN_NAME) --config hope.yaml node hostname test-load-balancer testapi
 	$(BIN_NAME) --config hope.yaml node hostname test-master-01 test-master-01
+	$(BIN_NAME) --config hope.yaml node hostname test-master-02 test-master-02
+	$(BIN_NAME) --config hope.yaml node hostname test-master-03 test-master-03
 	$(BIN_NAME) --config hope.yaml node hostname test-node-01 test-node-01
 
 	$(BIN_NAME) --config hope.yaml node init -f test-load-balancer
 	$(BIN_NAME) --config hope.yaml node init -f test-master-01
+	$(BIN_NAME) --config hope.yaml node init -f test-master-02
+	$(BIN_NAME) --config hope.yaml node init -f test-master-03
 	$(BIN_NAME) --config hope.yaml node init -f test-node-01
 
 	$(MAKE) system-test-5
@@ -135,6 +151,8 @@ system-test-4: $(BIN_NAME)
 system-test-4-clean: $(BIN_NAME)
 	$(BIN_NAME) --config hope.yaml node reset -f test-node-01
 	$(BIN_NAME) --config hope.yaml node reset -f test-master-01
+	$(BIN_NAME) --config hope.yaml node reset -f test-master-02
+	$(BIN_NAME) --config hope.yaml node reset -f test-master-03
 
 
 .PHONY: system-test-5
@@ -152,16 +170,16 @@ system-test-5: $(BIN_NAME)
 	@#   network plugin.
 	while true; do \
 		n_ready_nodes="$$($(BIN_NAME) --config hope.yaml -- kubectl get nodes -o template='{{range .items}}{{range .status.conditions}}{{if eq .reason "KubeletReady"}}{{.status}}{{"\n"}}{{end}}{{end}}{{end}}' | grep "True" | wc -l)"; \
-		if [ $$n_ready_nodes -eq 2 ]; then \
+		if [ $$n_ready_nodes -eq 4 ]; then \
 		    break; \
 		else \
-			echo >&2 "Only $$n_ready_node/2 nodes are ready. Waiting 5 seconds before next poll"; \
+			echo >&2 "Only $$n_ready_nodes/4 nodes are ready. Waiting 5 seconds before next poll"; \
 			sleep 5; \
 		fi; \
 	done
 
 	$(BIN_NAME) --config hope.yaml deploy -t database
-	
+
 	$(BIN_NAME) --config hope.yaml shell -l app=mysql -- mysql -u root -e "SELECT * FROM test.abc;"
 
 .PHONY: system-test-5-clean

@@ -27,6 +27,14 @@ nodes:
     role: master
     hypervisor: beast1
     user: packer
+  - name: test-master-02
+    role: master
+    hypervisor: beast1
+    user: packer
+  - name: test-master-03
+    role: master
+    hypervisor: beast1
+    user: packer
   # Nodes
   # There should be any number of these, primarily dependent on the amount of
   #   RAM needed to run everything.

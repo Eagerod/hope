@@ -106,73 +106,81 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, l
 		return createClusterMasterStandalone(log, node, podNetworkCidr)
 	}
 
-	// Update the load balancer before even starting the process.
-	// Trying to time it with the init process will be clumsy, so yeet.
-	SetLoadBalancerHosts(log, loadBalancer, masters)
-
 	// Search through the existing masters to see if this node is being added
 	//   as a master to an existing control plane, or if this will be the
 	//   first master in the pool.
 	connectionString := node.ConnectionString()
 	loadBalancerEndpoint := fmt.Sprintf("%s:%s", loadBalancerHost, "6443")
 
+	// Loop over the list of defined masters, and filter it down to a list
+	//   only includes masters that have already been initialized and added to
+	//   the load balancer, plus the one about to added.
+	lbMasters := []Node{*node}
+	grepRegexp := fmt.Sprintf("'\\s+server: https://%s'", regexp.QuoteMeta(loadBalancerEndpoint))
 	for _, aMaster := range *masters {
 		aMasterCs := aMaster.ConnectionString()
 		if aMasterCs == connectionString {
 			continue
 		}
 
-		certKey := ""
-		grepRegexp := fmt.Sprintf("'\\s+server: https://%s'", regexp.QuoteMeta(loadBalancerEndpoint))
-
-		if err := ssh.ExecSSH(aMasterCs, "grep", "-E", grepRegexp, "-q", "/etc/kubernetes/admin.conf"); err != nil {
-			log.Warnf("Other master node %s isn't connected to load balancer.", aMaster.Host)
+		if err := ssh.ExecSSH(aMasterCs, "sudo", "grep", "-E", grepRegexp, "-q", "/etc/kubernetes/admin.conf"); err != nil {
+			log.Infof("Other master node %s isn't connected to load balancer.", aMaster.Host)
 			continue
 		}
 
-		// From this master node, pull a control plane certificate key, and
-		//   use it to run the kubeadm join command.
-		output, err := ssh.GetSSH(aMasterCs, "kubeadm", "init", "phase", "upload-certs", "--upload-certs")
-		if err != nil {
-			return err
-		}
-
-		for _, line := range strings.Split(output, "\n") {
-			line = strings.TrimSpace(line)
-			match, err := regexp.MatchString("[0-9a-f]{64}", line)
-			if err != nil {
-				return err
-			}
-
-			if match {
-				certKey = line
-				break
-			}
-		}
-
-		if certKey == "" {
-			return fmt.Errorf("Failed to find cert key from selected master node: %s", aMaster)
-		}
-
-		joinCommand, err := ssh.GetSSH(aMasterCs, "kubeadm", "token", "create", "--print-join-command")
-		if err != nil {
-			return err
-		}
-
-		joinComponents := strings.Split(strings.TrimSpace(joinCommand), " ")
-		allArguments := append([]string{connectionString}, joinComponents...)
-		allArguments = append(allArguments, "--control-plane", "--certificate-key", certKey)
-
-		return ssh.ExecSSH(allArguments...)
+		lbMasters = append(lbMasters, aMaster)
 	}
 
-	// At this point, it's very probable that the node being added is the
-	//   first master node to be created in the cluster.
-	podNetworkCidrArg := fmt.Sprintf("--pod-network-cidr=%s", podNetworkCidr)
-	allArgs := []string{connectionString, "sudo", "kubeadm", "init", podNetworkCidrArg}
-	allArgs = append(allArgs, "--control-plane-endpoint", loadBalancerEndpoint, "--upload-certs")
+	SetLoadBalancerHosts(log, loadBalancer, &lbMasters)
 
-	return ssh.ExecSSH(allArgs...)
+	// If no other defined masters existed, or no other masters were
+	//   configured to use the defined load balancer, set up this node as the
+	//   first node in the load balanced group.make clean
+	if len(lbMasters) == 1 {
+		podNetworkCidrArg := fmt.Sprintf("--pod-network-cidr=%s", podNetworkCidr)
+		allArgs := []string{connectionString, "sudo", "kubeadm", "init", podNetworkCidrArg}
+		allArgs = append(allArgs, "--control-plane-endpoint", loadBalancerEndpoint, "--upload-certs")
+
+		return ssh.ExecSSH(allArgs...)
+	}
+
+	// This master is being added to an existing pool.
+	certKey := ""
+	otherMaster := lbMasters[1]
+	otherMasterConnectionString := otherMaster.ConnectionString()
+	output, err := ssh.GetSSH(otherMasterConnectionString, "sudo", "kubeadm", "init", "phase", "upload-certs", "--upload-certs")
+	if err != nil {
+		return err
+	}
+
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		match, err := regexp.MatchString("[0-9a-f]{64}", line)
+		if err != nil {
+			return err
+		}
+
+		if match {
+			certKey = line
+			break
+		}
+	}
+
+	if certKey == "" {
+		return fmt.Errorf("Failed to find cert key from existing master node: %s", otherMaster.Host)
+	}
+
+	joinCommand, err := ssh.GetSSH(otherMasterConnectionString, "sudo", "kubeadm", "token", "create", "--print-join-command")
+	if err != nil {
+		return err
+	}
+
+	joinComponents := strings.Split(strings.TrimSpace(joinCommand), " ")
+	allArguments := append([]string{connectionString}, "sudo")
+	allArguments = append(allArguments, joinComponents...)
+	allArguments = append(allArguments, "--control-plane", "--certificate-key", certKey)
+
+	return ssh.ExecSSH(allArguments...)
 }
 
 func createClusterMasterStandalone(log *logrus.Entry, node *Node, podNetworkCidr string) error {
