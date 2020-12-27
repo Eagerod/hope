@@ -1,6 +1,12 @@
 package hope
 
 import (
+	"fmt"
+	"regexp"
+	"strings"
+)
+
+import (
 	"github.com/sirupsen/logrus"
 )
 
@@ -49,4 +55,25 @@ func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, node *Node
 	}
 
 	return nil
+}
+
+func KubeadmGetClusterCertificateKey(log *logrus.Entry, node *Node) (string, error) {
+	output, err := ssh.GetSSH(node.ConnectionString(), "sudo", "kubeadm", "init", "phase", "upload-certs", "--upload-certs")
+	if err != nil {
+		return "", err
+	}
+
+	for _, line := range strings.Split(output, "\n") {
+		line = strings.TrimSpace(line)
+		match, err := regexp.MatchString("[0-9a-f]{64}", line)
+		if err != nil {
+			return "", err
+		}
+
+		if match {
+			return line, nil
+		}
+	}
+
+	return "", fmt.Errorf("Failed to find cert key from existing master node: %s", node.Host)
 }

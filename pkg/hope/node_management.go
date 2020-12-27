@@ -145,32 +145,13 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, l
 	}
 
 	// This master is being added to an existing pool.
-	certKey := ""
 	otherMaster := lbMasters[1]
-	otherMasterConnectionString := otherMaster.ConnectionString()
-	output, err := ssh.GetSSH(otherMasterConnectionString, "sudo", "kubeadm", "init", "phase", "upload-certs", "--upload-certs")
+	certKey, err := KubeadmGetClusterCertificateKey(log, &otherMaster)
 	if err != nil {
 		return err
 	}
 
-	for _, line := range strings.Split(output, "\n") {
-		line = strings.TrimSpace(line)
-		match, err := regexp.MatchString("[0-9a-f]{64}", line)
-		if err != nil {
-			return err
-		}
-
-		if match {
-			certKey = line
-			break
-		}
-	}
-
-	if certKey == "" {
-		return fmt.Errorf("Failed to find cert key from existing master node: %s", otherMaster.Host)
-	}
-
-	joinCommand, err := ssh.GetSSH(otherMasterConnectionString, "sudo", "kubeadm", "token", "create", "--print-join-command")
+	joinCommand, err := ssh.GetSSH(otherMaster.ConnectionString(), "sudo", "kubeadm", "token", "create", "--print-join-command")
 	if err != nil {
 		return err
 	}
