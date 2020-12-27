@@ -8,7 +8,6 @@
 package utils
 
 import (
-	"errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -16,13 +15,8 @@ import (
 )
 
 import (
-	"github.com/sirupsen/logrus"
-)
-
-import (
 	"github.com/Eagerod/hope/pkg/fileutil"
 	"github.com/Eagerod/hope/pkg/hope"
-	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
 func ReplaceParametersInString(str string, parameters []string) (string, error) {
@@ -104,18 +98,4 @@ func ReplaceParametersInDirectoryCopy(dir string, parameters []string) (string, 
 	}
 
 	return tempDir, nil
-}
-
-// Loops through the list of hosts in order, and attempts to fetch a
-//   kubeconfig file that will allow access to the cluster.
-func GetKubectlFromAnyMaster(log *logrus.Entry, masters []string) (*kubeutil.Kubectl, error) {
-	for _, host := range masters {
-		log.Debug("Trying to fetch kubeconfig from host ", host, " from masters list")
-		kubectl, err := kubeutil.NewKubectlFromNode(host)
-		if err == nil {
-			return kubectl, nil
-		}
-	}
-
-	return nil, errors.New("Failed to find a kubeconfig file on any host")
 }
