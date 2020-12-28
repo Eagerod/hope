@@ -14,6 +14,7 @@ import (
 	"github.com/Eagerod/hope/pkg/esxi"
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
+	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
 func getNodes() (*[]hope.Node, error) {
@@ -141,7 +142,11 @@ func GetHypervisor(name string) (*hope.Node, error) {
 	return nil, fmt.Errorf("Failed to find a hypervisor named %s", name)
 }
 
-func GetMasters() (*[]hope.Node, error) {
+// GetAvailableMasters -- Returns the list of master nodes that can be reached
+//   in one way or another.
+// Doesn't confirm if the masters are configured, or are in the load balanced
+//   set of masters; only that the node exists on its defined hypervisor.
+func GetAvailableMasters() (*[]hope.Node, error) {
 	retVal := []hope.Node{}
 	nodes, err := getNodes()
 	if err != nil {
@@ -150,11 +155,23 @@ func GetMasters() (*[]hope.Node, error) {
 
 	for _, node := range *nodes {
 		if node.IsMaster() {
-			exNode, err := expandHypervisor(&node)
+			hv, err := GetHypervisor(node.Hypervisor)
 			if err != nil {
 				return nil, err
 			}
-			retVal = append(retVal, *exNode)
+
+			hvNodes, err := esxi.ListVms(hv.ConnectionString())
+			if err != nil {
+				return nil, err
+			}
+
+			if sliceutil.StringInSlice(node.Name, *hvNodes) {
+				exNode, err := expandHypervisor(&node)
+				if err != nil {
+					return nil, err
+				}
+				retVal = append(retVal, *exNode)
+			}
 		}
 	}
 

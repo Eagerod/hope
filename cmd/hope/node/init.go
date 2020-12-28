@@ -40,7 +40,7 @@ var initCmd = &cobra.Command{
 		}
 
 		podNetworkCidr := viper.GetString("pod_network_cidr")
-		masters, err := utils.GetMasters()
+		masters, err := utils.GetAvailableMasters()
 		if err != nil {
 			return err
 		}
