@@ -40,7 +40,7 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 		"mkdir -p /etc/sysconfig",
 		"echo \"\" > /etc/sysconfig/docker-storage",
 		"echo \"\" > /etc/sysconfig/docker-storage-setup",
-		fmt.Sprintf("echo \"%s\" > /etc/docker/daemon.json", DockerDaemonJson),
+		fmt.Sprintf("echo \"%s\" > /etc/docker/daemon.json", strings.ReplaceAll(DockerDaemonJson, "\"", "\\\"")),
 		fmt.Sprintf("echo \"%s\" > /etc/sysctl.d/k8s.conf", K8SConf),
 		fmt.Sprintf("echo \"%s\" > /proc/sys/net/ipv4/ip_forward", IpForward),
 	}
