@@ -49,21 +49,6 @@ func NewKubectlFromNode(host string) (*Kubectl, error) {
 	return kubectl, nil
 }
 
-func NewKubectlFromAnyNode(hosts []string) (*Kubectl, error) {
-	allErrorsStr := ""
-
-	for _, host := range hosts {
-		kubectl, err := NewKubectlFromNode(host)
-		if err == nil {
-			return kubectl, nil
-		}
-
-		allErrorsStr += "  " + err.Error() + "\n"
-	}
-
-	return nil, errors.New("Failed to find a kubeconfig file on any host:\n" + allErrorsStr)
-}
-
 func (kubectl *Kubectl) Destroy() error {
 	return os.Remove(kubectl.KubeconfigPath)
 }
