@@ -55,6 +55,11 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 		return err
 	}
 
+	// Make sure the Kubelet cgroups driver is also systemd.
+	if err := ssh.ExecSSH(connectionString, "sudo", "sed", "-i", "'s#Environment=\"KUBELET_CONFIG_ARGS=.*#Environment=\"KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml --cgroup-driver=systemd\"#g'", "/etc/systemd/system/kubelet.service.d/10-kubeadm.conf"); err != nil {
+		return err
+	}
+
 	if err := ssh.ExecSSH(connectionString, "sudo", "sysctl", "-p"); err != nil {
 		return err
 	}

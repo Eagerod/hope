@@ -1,7 +1,6 @@
 package kubeutil
 
 import (
-	"errors"
 	"io/ioutil"
 	"os"
 )
