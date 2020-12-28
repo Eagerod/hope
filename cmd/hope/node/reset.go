@@ -7,13 +7,11 @@ import (
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/hope"
-	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
 var resetCmdForce bool
@@ -28,7 +26,6 @@ var resetCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		nodeName := args[0]
-		masters := viper.GetStringSlice("masters")
 
 		node, err := utils.GetNode(nodeName)
 		if err != nil {
@@ -36,12 +33,10 @@ var resetCmd = &cobra.Command{
 		}
 
 		if !node.IsKubernetesNode() {
-			return fmt.Errorf("Host (%s) not found in list of Kubernetes nodes.", node.Host)
+			return fmt.Errorf("Host (%s) not found in list of Kubernetes nodes", node.Host)
 		}
 
-		// If force is set, failing to find a kubeconfig shouldn't stop the
-		//   command from brute force reseting the node.
-		kubectl, err := kubeutil.NewKubectlFromAnyNode(masters)
+		kubectl, err := utils.KubectlFromAnyMaster()
 		if err != nil {
 			if !resetCmdForce {
 				return err
