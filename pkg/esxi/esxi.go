@@ -13,15 +13,6 @@ const VmStatePoweredOn string = "Powered on"
 const VmStatePoweredOff string = "Powered off"
 
 func PowerOnVm(host string, vmId string) error {
-	return ssh.ExecSSH(host, "vim-cmd", "vmsvc/power.on", vmId)
-}
-
-func PowerOnVmNamed(host string, vmName string) error {
-	vmId, err := idFromName(host, vmName)
-	if err != nil {
-		return err
-	}
-
 	powerState, err := PowerStateOfVm(host, vmId)
 	if err != nil {
 		return err
@@ -31,19 +22,19 @@ func PowerOnVmNamed(host string, vmName string) error {
 		return nil
 	}
 
-	return PowerOnVm(host, vmId)
+	return ssh.ExecSSH(host, "vim-cmd", "vmsvc/power.on", vmId)
 }
 
-func PowerOffVm(host string, vmId string) error {
-	return ssh.ExecSSH(host, "vim-cmd", "vmsvc/power.off", vmId)
-}
-
-func PowerOffVmNamed(host string, vmName string) error {
+func PowerOnVmNamed(host string, vmName string) error {
 	vmId, err := idFromName(host, vmName)
 	if err != nil {
 		return err
 	}
 
+	return PowerOnVm(host, vmId)
+}
+
+func PowerOffVm(host string, vmId string) error {
 	powerState, err := PowerStateOfVm(host, vmId)
 	if err != nil {
 		return err
@@ -51,6 +42,15 @@ func PowerOffVmNamed(host string, vmName string) error {
 
 	if powerState == VmStatePoweredOff {
 		return nil
+	}
+
+	return ssh.ExecSSH(host, "vim-cmd", "vmsvc/power.off", vmId)
+}
+
+func PowerOffVmNamed(host string, vmName string) error {
+	vmId, err := idFromName(host, vmName)
+	if err != nil {
+		return err
 	}
 
 	return PowerOffVm(host, vmId)
