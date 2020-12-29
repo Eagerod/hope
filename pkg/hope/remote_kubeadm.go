@@ -20,11 +20,14 @@ func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, node *Node
 
 	nodeName := ""
 	if kubectl != nil {
-		nodeName, err := kubeutil.NodeNameFromHost(kubectl, node.Host)
-		if err != nil && !force {
-			return err
-		} else if force {
-			log.Info("Did not find node in the cluster.")
+		var err error
+		nodeName, err = kubeutil.NodeNameFromHost(kubectl, node.Host)
+		if err != nil {
+			if !force {
+				return err
+			} else {
+				log.Warn("Did not find node in the cluster.")
+			}
 		} else {
 			log.Info("Draining node ", nodeName, " from the cluster")
 
