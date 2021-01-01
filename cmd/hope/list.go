@@ -37,7 +37,7 @@ var listCmd = &cobra.Command{
 			resources = r
 			log.Trace("Received no arguments for list. Listing all resources.")
 		} else {
-			r, err := utils.GetIdentifiableResources(&args, deployCmdTagSlice)
+			r, err := utils.GetIdentifiableResources(&args, listCmdTagSlice)
 			if err != nil {
 				return err
 			}
