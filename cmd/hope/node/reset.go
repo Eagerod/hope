@@ -15,9 +15,11 @@ import (
 )
 
 var resetCmdForce bool
+var resetCmdDeleteLocalData bool
 
 func initResetCmd() {
 	resetCmd.Flags().BoolVarP(&resetCmdForce, "force", "f", false, "run kubeadm reset even if the node isn't a part of the cluster")
+	resetCmd.Flags().BoolVarP(&resetCmdDeleteLocalData, "--delete-local-data", "d", false, "pass the --delete-local-data flag to kubectl drain")
 }
 
 var resetCmd = &cobra.Command{
@@ -53,6 +55,6 @@ var resetCmd = &cobra.Command{
 
 		// TODO: may need to add more validation, like that this isn't the
 		//   only master and is being removed, unless force is provided.
-		return hope.KubeadmResetRemote(log.WithFields(log.Fields{}), kubectl, node, resetCmdForce)
+		return hope.KubeadmResetRemote(log.WithFields(log.Fields{}), kubectl, node, resetCmdDeleteLocalData, resetCmdForce)
 	},
 }

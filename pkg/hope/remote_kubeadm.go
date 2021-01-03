@@ -15,7 +15,7 @@ import (
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
-func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, node *Node, force bool) error {
+func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, node *Node, deleteLocalData bool, force bool) error {
 	log.Debug("Searching for node name for host: ", node.Host)
 
 	nodeName := ""
@@ -31,7 +31,16 @@ func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, node *Node
 		} else {
 			log.Info("Draining node ", nodeName, " from the cluster")
 
-			if err := kubeutil.ExecKubectl(kubectl, "drain", nodeName, "--ignore-daemonsets"); err != nil {
+			args := []string{
+				"drain",
+				nodeName,
+				"--ignore-daemonsets",
+			}
+			if deleteLocalData {
+				args = append(args, "--delete-local-data")
+			}
+
+			if err := kubeutil.ExecKubectl(kubectl, args...); err != nil {
 				return err
 			}
 		}
