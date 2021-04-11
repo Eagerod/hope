@@ -12,9 +12,11 @@ PKG_PACKAGE_DIR := ./pkg/*
 PACKAGE_PATHS := $(CMD_PACKAGE_DIR) $(PKG_PACKAGE_DIR)
 
 AUTOGEN_VERSION_FILENAME=./cmd/hope/version-temp.go
+COVERAGE_FILE=./coverage.out
 
 ALL_GO_DIRS = $(shell find . -iname "*.go" -exec dirname {} \; | sort | uniq)
 SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go") $(AUTOGEN_VERSION_FILENAME)
+SRC_WITH_TESTS := $(shell find . -iname "*.go") $(AUTOGEN_VERSION_FILENAME)
 PUBLISH = publish/linux-amd64 publish/darwin-amd64
 
 .PHONY: all
@@ -196,13 +198,16 @@ interface-test: $(BIN_NAME)
 		$(GO) test -v main_test.go -run $$T; \
 	fi
 
-.PHONY: test-cover
-test-cover: $(SRC)
-	$(GO) test -v --coverprofile=coverage.out ./...
+$(COVERAGE_FILE): $(SRC_WITH_TESTS)
+	$(GO) test -v --coverprofile=$(COVERAGE_FILE) ./...
 
 .PHONY: coverage
-coverage: test-cover
-	$(GO) tool cover -func=coverage.out
+coverage: $(COVERAGE_FILE)
+	$(GO) tool cover -func=$(COVERAGE_FILE)
+
+.PHONY: pretty-coverage
+pretty-coverage: $(COVERAGE_FILE)
+	$(GO) tool cover -html=$(COVERAGE_FILE)
 
 .INTERMEDIATE: $(AUTOGEN_VERSION_FILENAME)
 $(AUTOGEN_VERSION_FILENAME):
@@ -211,14 +216,10 @@ $(AUTOGEN_VERSION_FILENAME):
 	dirty="$$(if [ ! -z "$$(git diff; git diff --cached)" ]; then echo "-dirty"; fi)" && \
 	printf "package cmd\n\nconst VersionBuild = \"%s%s%s\"" $$version $$build $$dirty > $@
 
-.PHONY: pretty-coverage
-pretty-coverage: test-cover
-	$(GO) tool cover -html=coverage.out
-
 .PHONY: fmt
 fmt:
 	@$(GO) fmt ./...
 
 .PHONY: clean
 clean:
-	rm -rf coverage.out $(BUILD_DIR)
+	rm -rf $(COVERAGE_FILE) $(BUILD_DIR)
