@@ -54,9 +54,9 @@ $(INSTALLED_NAME): $(BIN_NAME)
 .PHONY: test
 test: $(SRC)
 	@if [ -z $$T ]; then \
-		$(GO) test -v $(PACKAGE_PATHS); \
+		$(GO) test -v ./...; \
 	else \
-		$(GO) test -v $(PACKAGE_PATHS) -run $$T; \
+		$(GO) test -v ./... -run $$T; \
 	fi
 
 # Run a full suite of tests to make sure more than just the most basic of
@@ -198,7 +198,7 @@ interface-test: $(BIN_NAME)
 
 .PHONY: test-cover
 test-cover: $(SRC)
-	$(GO) test -v --coverprofile=coverage.out $(PACKAGE_PATHS)
+	$(GO) test -v --coverprofile=coverage.out ./...
 
 .PHONY: coverage
 coverage: test-cover
@@ -217,7 +217,7 @@ pretty-coverage: test-cover
 
 .PHONY: fmt
 fmt:
-	@$(GO) fmt $(ALL_GO_DIRS)
+	@$(GO) fmt ./...
 
 .PHONY: clean
 clean:
