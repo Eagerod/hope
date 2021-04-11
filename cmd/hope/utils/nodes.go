@@ -80,12 +80,12 @@ func GetAnyMaster() (*hope.Node, error) {
 }
 
 func GetHypervisors() (*[]hope.Node, error) {
-	retVal := []hope.Node{}
 	nodes, err := getNodes()
 	if err != nil {
 		return nil, err
 	}
 
+	retVal := []hope.Node{}
 	for _, node := range *nodes {
 		if node.IsHypervisor() {
 			retVal = append(retVal, node)
