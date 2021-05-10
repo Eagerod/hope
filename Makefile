@@ -54,7 +54,7 @@ $(INSTALLED_NAME): $(BIN_NAME)
 	cp $(BIN_NAME) $(INSTALLED_NAME)
 
 .PHONY: test
-test: $(SRC)
+test: $(SRC) $(BIN_NAME)
 	@if [ -z $$T ]; then \
 		$(GO) test -v ./...; \
 	else \
