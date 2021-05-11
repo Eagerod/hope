@@ -76,8 +76,8 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 			"systemctl daemon-reload",
 			"systemctl enable docker",
 			"systemctl enable kubelet",
-			"systemctl start docker",
-			"systemctl start kubelet",
+			"systemctl restart docker",
+			"systemctl restart kubelet",
 		},
 		" && ",
 	))
