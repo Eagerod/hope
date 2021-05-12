@@ -3,7 +3,6 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"strings"
 )
 
 import (
@@ -11,8 +10,8 @@ import (
 )
 
 import (
-	"github.com/Eagerod/hope/pkg/esxi"
 	"github.com/Eagerod/hope/pkg/hope"
+	"github.com/Eagerod/hope/pkg/hope/hypervisors"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 	"github.com/Eagerod/hope/pkg/sliceutil"
 )
@@ -79,49 +78,27 @@ func GetAnyMaster() (*hope.Node, error) {
 	return nil, errors.New("Failed to find any master in nodes config")
 }
 
-func GetHypervisors() (*[]hope.Node, error) {
+func GetHypervisors() (*[]hypervisors.Hypervisor, error) {
 	nodes, err := getNodes()
 	if err != nil {
 		return nil, err
 	}
 
-	retVal := []hope.Node{}
+	retVal := []hypervisors.Hypervisor{}
 	for _, node := range *nodes {
 		if node.IsHypervisor() {
-			retVal = append(retVal, node)
+			hypervisor, err := hypervisors.ToHypervisor(&node)
+			if err != nil {
+				return nil, err
+			}
+			retVal = append(retVal, hypervisor)
 		}
 	}
 
 	return &retVal, nil
 }
 
-func expandHypervisor(node *hope.Node) (*hope.Node, error) {
-	if node.Hypervisor == "" {
-		return node, nil
-	}
-
-	hypervisor, err := GetHypervisor(node.Hypervisor)
-	if err != nil {
-		return nil, err
-	}
-
-	ip, err := esxi.GetIpAddressOfVmNamed(hypervisor.ConnectionString(), node.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	ip = strings.TrimSpace(ip)
-	if ip == "0.0.0.0" {
-		return nil, fmt.Errorf("Failed to find IP for vm %s on %s", node.Name, hypervisor.Name)
-	}
-
-	newNode := *node
-	newNode.Hypervisor = ""
-	newNode.Host = ip
-	return &newNode, nil
-}
-
-func GetHypervisor(name string) (*hope.Node, error) {
+func GetHypervisor(name string) (hypervisors.Hypervisor, error) {
 	// Any nice way to generalize this?
 	// Copied from GetNode
 	nodes, err := getNodes()
@@ -131,11 +108,7 @@ func GetHypervisor(name string) (*hope.Node, error) {
 
 	for _, node := range *nodes {
 		if node.Name == name {
-			if node.IsHypervisor() {
-				return &node, nil
-			}
-
-			return nil, fmt.Errorf("Node named %s is not a hypervisor", name)
+			return hypervisors.ToHypervisor(&node)
 		}
 	}
 
@@ -160,7 +133,7 @@ func GetAvailableMasters() (*[]hope.Node, error) {
 				return nil, err
 			}
 
-			hvNodes, err := esxi.ListVms(hv.ConnectionString())
+			hvNodes, err := hv.ListNodes()
 			if err != nil {
 				return nil, err
 			}
@@ -222,4 +195,17 @@ func GetLoadBalancer() (*hope.Node, error) {
 	// Maybe need a dedicated NodeNotFound kind of error that can be handled
 	//   independently of other errors if desired.
 	return nil, nil
+}
+
+func expandHypervisor(node *hope.Node) (*hope.Node, error) {
+	if node.Hypervisor == "" {
+			return node, nil
+	}
+
+	hypervisor, err := GetHypervisor(node.Hypervisor)
+	if err != nil {
+			return nil, err
+	}
+
+	return hypervisor.ResolveNode(node)
 }

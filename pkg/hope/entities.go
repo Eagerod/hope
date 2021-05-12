@@ -83,6 +83,7 @@ type Node struct {
 	Role       string
 	Host       string
 	Hypervisor string
+	Engine     string
 	User       string
 	Datastore  string
 	Network    string
