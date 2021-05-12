@@ -6,8 +6,8 @@ import (
 )
 
 import (
-	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/esxi"
+	"github.com/Eagerod/hope/pkg/hope"
 )
 
 type EsxiHypervisor struct {

@@ -1,7 +1,7 @@
 package hypervisors
 
 import (
-	"fmt"	
+	"fmt"
 )
 
 import (
