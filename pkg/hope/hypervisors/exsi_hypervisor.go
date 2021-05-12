@@ -34,3 +34,8 @@ func (hyp *EsxiHypervisor) ResolveNode(node *hope.Node) (*hope.Node, error) {
 	newNode.Host = ip
 	return &newNode, nil
 }
+
+func (hyp *EsxiHypervisor) UnderlyingNode() (*hope.Node, error) {
+	fmt.Printf("Node is: %s", hyp.node.Name)
+	return hyp.node, nil
+}

@@ -16,8 +16,8 @@ import (
 	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
-func getNodes() (*[]hope.Node, error) {
-	var nodes []hope.Node
+func getNodes() ([]*hope.Node, error) {
+	var nodes []*hope.Node
 	err := viper.UnmarshalKey("nodes", &nodes)
 
 	nameMap := map[string]bool{}
@@ -28,7 +28,7 @@ func getNodes() (*[]hope.Node, error) {
 		nameMap[node.Name] = true
 	}
 
-	return &nodes, err
+	return nodes, err
 }
 
 func GetNode(name string) (*hope.Node, error) {
@@ -37,9 +37,9 @@ func GetNode(name string) (*hope.Node, error) {
 		return nil, err
 	}
 
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if node.Name == name {
-			return expandHypervisor(&node)
+			return expandHypervisor(node)
 		}
 	}
 
@@ -54,7 +54,7 @@ func HasNode(name string) bool {
 		return false
 	}
 
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if node.Name == name {
 			return true
 		}
@@ -69,9 +69,9 @@ func GetAnyMaster() (*hope.Node, error) {
 		return nil, err
 	}
 
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if node.IsMaster() {
-			return expandHypervisor(&node)
+			return expandHypervisor(node)
 		}
 	}
 
@@ -85,9 +85,9 @@ func GetHypervisors() (*[]hypervisors.Hypervisor, error) {
 	}
 
 	retVal := []hypervisors.Hypervisor{}
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if node.IsHypervisor() {
-			hypervisor, err := hypervisors.ToHypervisor(&node)
+			hypervisor, err := hypervisors.ToHypervisor(node)
 			if err != nil {
 				return nil, err
 			}
@@ -106,9 +106,9 @@ func GetHypervisor(name string) (hypervisors.Hypervisor, error) {
 		return nil, err
 	}
 
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if node.Name == name {
-			return hypervisors.ToHypervisor(&node)
+			return hypervisors.ToHypervisor(node)
 		}
 	}
 
@@ -126,7 +126,7 @@ func GetAvailableMasters() (*[]hope.Node, error) {
 		return nil, err
 	}
 
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if node.IsMaster() {
 			hv, err := GetHypervisor(node.Hypervisor)
 			if err != nil {
@@ -139,7 +139,7 @@ func GetAvailableMasters() (*[]hope.Node, error) {
 			}
 
 			if sliceutil.StringInSlice(node.Name, *hvNodes) {
-				exNode, err := expandHypervisor(&node)
+				exNode, err := expandHypervisor(node)
 				if err != nil {
 					return nil, err
 				}
@@ -160,12 +160,12 @@ func KubectlFromAnyMaster() (*kubeutil.Kubectl, error) {
 		return nil, err
 	}
 
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if !node.IsMaster() {
 			continue
 		}
 
-		nNode, err := expandHypervisor(&node)
+		nNode, err := expandHypervisor(node)
 		if err != nil {
 			return nil, err
 		}
@@ -185,9 +185,9 @@ func GetLoadBalancer() (*hope.Node, error) {
 		return nil, err
 	}
 
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if node.IsLoadBalancer() {
-			return expandHypervisor(&node)
+			return expandHypervisor(node)
 		}
 	}
 
@@ -199,12 +199,12 @@ func GetLoadBalancer() (*hope.Node, error) {
 
 func expandHypervisor(node *hope.Node) (*hope.Node, error) {
 	if node.Hypervisor == "" {
-			return node, nil
+		return node, nil
 	}
 
 	hypervisor, err := GetHypervisor(node.Hypervisor)
 	if err != nil {
-			return nil, err
+		return nil, err
 	}
 
 	return hypervisor.ResolveNode(node)

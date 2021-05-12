@@ -51,6 +51,11 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
+		hypervisorNode, err := hypervisor.UnderlyingNode()
+		if err != nil {
+			return err
+		}
+
 		vmDir := path.Join(vms.Root, vm.Name)
 		outputDir := path.Join(vms.Output, vm.Name)
 		log.Tracef("Looking for VM definition in %s", vmDir)
@@ -67,9 +72,9 @@ var imageCmd = &cobra.Command{
 
 		// Create full parameter set.
 		allParameters := append(vm.Parameters,
-			fmt.Sprintf("ESXI_HOST=%s", hypervisor.Host),
-			fmt.Sprintf("ESXI_USERNAME=%s", hypervisor.User),
-			fmt.Sprintf("ESXI_DATASTORE=%s", hypervisor.Datastore),
+			fmt.Sprintf("ESXI_HOST=%s", hypervisorNode.Host),
+			fmt.Sprintf("ESXI_USERNAME=%s", hypervisorNode.User),
+			fmt.Sprintf("ESXI_DATASTORE=%s", hypervisorNode.Datastore),
 			fmt.Sprintf("OUTPUT_DIR=%s", outputDir),
 		)
 
@@ -164,10 +169,15 @@ var imageCmd = &cobra.Command{
 		//   because SCP is bad at nesting directories, or I'm bad at figuring
 		//   out the right arguments.
 		for _, hv := range *hypervisors {
-			connectionString := hv.ConnectionString()
+			hvNode, err := hv.UnderlyingNode()
+			if err != nil {
+				return err
+			}
+
+			connectionString := hvNode.ConnectionString()
 			scpSrcDir := packerOutDir
-			remoteVmfsPath := path.Join("/", "vmfs", "volumes", hv.Datastore, "ovfs", packerSpec.Builders[0].VMName)
-			remoteVMPath := fmt.Sprintf("%s:%s", hv.ConnectionString(), remoteVmfsPath)
+			remoteVmfsPath := path.Join("/", "vmfs", "volumes", hvNode.Datastore, "ovfs", packerSpec.Builders[0].VMName)
+			remoteVMPath := fmt.Sprintf("%s:%s", hvNode.ConnectionString(), remoteVmfsPath)
 
 			if err := ssh.ExecSSH(connectionString, "rm", "-rf", remoteVmfsPath); err != nil {
 				return err

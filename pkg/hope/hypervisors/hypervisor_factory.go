@@ -10,7 +10,7 @@ import (
 
 func ToHypervisor(node *hope.Node) (Hypervisor, error) {
 	if !node.IsHypervisor() {
-		return nil, fmt.Errorf("Node %s is not a hypervisor", node.Name)
+		return nil, fmt.Errorf("Node named %s is not a hypervisor", node.Name)
 	}
 
 	switch node.Engine {

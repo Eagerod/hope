@@ -11,6 +11,7 @@ var testNodes []hope.Node = []hope.Node{
 	{
 		Name:      "beast1",
 		Role:      "hypervisor",
+		Engine:    "esxi",
 		Host:      "192.168.10.40",
 		User:      "root",
 		Datastore: "Main",
@@ -53,9 +54,15 @@ var testNodes []hope.Node = []hope.Node{
 func TestGetNodes(t *testing.T) {
 	resetViper(t)
 
+	nodesAsPointer := []*hope.Node{}
+
+	for i, _ := range testNodes {
+		nodesAsPointer = append(nodesAsPointer, &testNodes[i])
+	}
+
 	nodes, err := getNodes()
 	assert.Nil(t, err)
-	assert.Equal(t, testNodes, *nodes)
+	assert.Equal(t, nodesAsPointer, nodes)
 }
 
 func TestHasNode(t *testing.T) {
@@ -68,14 +75,13 @@ func TestHasNode(t *testing.T) {
 func TestGetHypervisors(t *testing.T) {
 	resetViper(t)
 
-	expected := []hope.Node{
-		testNodes[0],
-	}
-
 	hypervisors, err := GetHypervisors()
-
 	assert.Nil(t, err)
-	assert.Equal(t, &expected, hypervisors)
+
+	assert.Equal(t, 1, len(*hypervisors))
+
+	node, err := (*hypervisors)[0].UnderlyingNode()
+	assert.Equal(t, testNodes[0], *node)
 }
 
 func TestGetHypervisor(t *testing.T) {
@@ -84,17 +90,17 @@ func TestGetHypervisor(t *testing.T) {
 	expected := testNodes[0]
 
 	hypervisor, err := GetHypervisor("beast1")
-
 	assert.Nil(t, err)
-	assert.Equal(t, &expected, hypervisor)
+
+	n, err := hypervisor.UnderlyingNode()
+	assert.Nil(t, err)
+	assert.Equal(t, &expected, n)
 
 	hypervisor, err = GetHypervisor("test-node-01")
-
 	assert.Nil(t, hypervisor)
 	assert.Equal(t, "Node named test-node-01 is not a hypervisor", err.Error())
 
 	hypervisor, err = GetHypervisor("sets-node-01")
-
 	assert.Nil(t, hypervisor)
 	assert.Equal(t, "Failed to find a hypervisor named sets-node-01", err.Error())
 }
