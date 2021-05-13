@@ -16,7 +16,7 @@ import (
 //
 // UnderlyingNode returns the base obejct used to create the hypervisor.
 type Hypervisor interface {
-	ListNodes() (*[]string, error)
-	ResolveNode(node *hope.Node) (*hope.Node, error)
-	UnderlyingNode() (*hope.Node, error)
+	ListNodes() ([]string, error)
+	ResolveNode(node hope.Node) (hope.Node, error)
+	UnderlyingNode() (hope.Node, error)
 }

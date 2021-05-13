@@ -8,7 +8,7 @@ import (
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
-func ToHypervisor(node *hope.Node) (Hypervisor, error) {
+func ToHypervisor(node hope.Node) (Hypervisor, error) {
 	if !node.IsHypervisor() {
 		return nil, fmt.Errorf("Node named %s is not a hypervisor", node.Name)
 	}

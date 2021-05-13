@@ -54,15 +54,9 @@ var testNodes []hope.Node = []hope.Node{
 func TestGetNodes(t *testing.T) {
 	resetViper(t)
 
-	nodesAsPointer := []*hope.Node{}
-
-	for i, _ := range testNodes {
-		nodesAsPointer = append(nodesAsPointer, &testNodes[i])
-	}
-
 	nodes, err := getNodes()
 	assert.Nil(t, err)
-	assert.Equal(t, nodesAsPointer, nodes)
+	assert.Equal(t, testNodes, nodes)
 }
 
 func TestHasNode(t *testing.T) {
@@ -78,10 +72,10 @@ func TestGetHypervisors(t *testing.T) {
 	hypervisors, err := GetHypervisors()
 	assert.Nil(t, err)
 
-	assert.Equal(t, 1, len(*hypervisors))
+	assert.Equal(t, 1, len(hypervisors))
 
-	node, err := (*hypervisors)[0].UnderlyingNode()
-	assert.Equal(t, testNodes[0], *node)
+	node, err := hypervisors[0].UnderlyingNode()
+	assert.Equal(t, testNodes[0], node)
 }
 
 func TestGetHypervisor(t *testing.T) {
@@ -94,7 +88,7 @@ func TestGetHypervisor(t *testing.T) {
 
 	n, err := hypervisor.UnderlyingNode()
 	assert.Nil(t, err)
-	assert.Equal(t, &expected, n)
+	assert.Equal(t, expected, n)
 
 	hypervisor, err = GetHypervisor("test-node-01")
 	assert.Nil(t, hypervisor)

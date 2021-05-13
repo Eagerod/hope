@@ -39,6 +39,6 @@ var hostnameCmd = &cobra.Command{
 
 		log.Info("Setting hostname on node ", node.Name, "(", node.Host, ")", " to ", hostname)
 
-		return hope.SetHostname(log.WithFields(log.Fields{}), node, hostname, hostnameCmdForce)
+		return hope.SetHostname(log.WithFields(log.Fields{}), &node, hostname, hostnameCmdForce)
 	},
 }

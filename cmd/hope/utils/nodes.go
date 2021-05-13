@@ -16,8 +16,8 @@ import (
 	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
-func getNodes() ([]*hope.Node, error) {
-	var nodes []*hope.Node
+func getNodes() ([]hope.Node, error) {
+	var nodes []hope.Node
 	err := viper.UnmarshalKey("nodes", &nodes)
 
 	nameMap := map[string]bool{}
@@ -31,10 +31,10 @@ func getNodes() ([]*hope.Node, error) {
 	return nodes, err
 }
 
-func GetNode(name string) (*hope.Node, error) {
+func GetNode(name string) (hope.Node, error) {
 	nodes, err := getNodes()
 	if err != nil {
-		return nil, err
+		return hope.Node{}, err
 	}
 
 	for _, node := range nodes {
@@ -43,7 +43,7 @@ func GetNode(name string) (*hope.Node, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("Failed to find a node named %s", name)
+	return hope.Node{}, fmt.Errorf("Failed to find a node named %s", name)
 }
 
 // HasNode -- Check whether a node has been defined in the hope file, even if
@@ -63,10 +63,10 @@ func HasNode(name string) bool {
 	return false
 }
 
-func GetAnyMaster() (*hope.Node, error) {
+func GetAnyMaster() (hope.Node, error) {
 	nodes, err := getNodes()
 	if err != nil {
-		return nil, err
+		return hope.Node{}, err
 	}
 
 	for _, node := range nodes {
@@ -75,16 +75,17 @@ func GetAnyMaster() (*hope.Node, error) {
 		}
 	}
 
-	return nil, errors.New("Failed to find any master in nodes config")
+	return hope.Node{}, errors.New("Failed to find any master in nodes config")
 }
 
-func GetHypervisors() (*[]hypervisors.Hypervisor, error) {
+func GetHypervisors() ([]hypervisors.Hypervisor, error) {
+	retVal := []hypervisors.Hypervisor{}
+
 	nodes, err := getNodes()
 	if err != nil {
-		return nil, err
+		return retVal, err
 	}
 
-	retVal := []hypervisors.Hypervisor{}
 	for _, node := range nodes {
 		if node.IsHypervisor() {
 			hypervisor, err := hypervisors.ToHypervisor(node)
@@ -95,7 +96,7 @@ func GetHypervisors() (*[]hypervisors.Hypervisor, error) {
 		}
 	}
 
-	return &retVal, nil
+	return retVal, nil
 }
 
 func GetHypervisor(name string) (hypervisors.Hypervisor, error) {
@@ -119,7 +120,7 @@ func GetHypervisor(name string) (hypervisors.Hypervisor, error) {
 //   in one way or another.
 // Doesn't confirm if the masters are configured, or are in the load balanced
 //   set of masters; only that the node exists on its defined hypervisor.
-func GetAvailableMasters() (*[]hope.Node, error) {
+func GetAvailableMasters() ([]hope.Node, error) {
 	retVal := []hope.Node{}
 	nodes, err := getNodes()
 	if err != nil {
@@ -138,17 +139,17 @@ func GetAvailableMasters() (*[]hope.Node, error) {
 				return nil, err
 			}
 
-			if sliceutil.StringInSlice(node.Name, *hvNodes) {
+			if sliceutil.StringInSlice(node.Name, hvNodes) {
 				exNode, err := expandHypervisor(node)
 				if err != nil {
 					return nil, err
 				}
-				retVal = append(retVal, *exNode)
+				retVal = append(retVal, exNode)
 			}
 		}
 	}
 
-	return &retVal, nil
+	return retVal, nil
 }
 
 func KubectlFromAnyMaster() (*kubeutil.Kubectl, error) {
@@ -179,10 +180,10 @@ func KubectlFromAnyMaster() (*kubeutil.Kubectl, error) {
 	return nil, errors.New("Failed to find a kubeconfig file in any of the master nodes")
 }
 
-func GetLoadBalancer() (*hope.Node, error) {
+func GetLoadBalancer() (hope.Node, error) {
 	nodes, err := getNodes()
 	if err != nil {
-		return nil, err
+		return hope.Node{}, err
 	}
 
 	for _, node := range nodes {
@@ -194,17 +195,17 @@ func GetLoadBalancer() (*hope.Node, error) {
 	// This feels dirty, and a little broken.
 	// Maybe need a dedicated NodeNotFound kind of error that can be handled
 	//   independently of other errors if desired.
-	return nil, nil
+	return hope.Node{}, nil
 }
 
-func expandHypervisor(node *hope.Node) (*hope.Node, error) {
+func expandHypervisor(node hope.Node) (hope.Node, error) {
 	if node.Hypervisor == "" {
 		return node, nil
 	}
 
 	hypervisor, err := GetHypervisor(node.Hypervisor)
 	if err != nil {
-		return nil, err
+		return hope.Node{}, err
 	}
 
 	return hypervisor.ResolveNode(node)

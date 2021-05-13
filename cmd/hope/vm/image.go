@@ -168,7 +168,7 @@ var imageCmd = &cobra.Command{
 		// Remove the destination file from the Hypervisor before copying,
 		//   because SCP is bad at nesting directories, or I'm bad at figuring
 		//   out the right arguments.
-		for _, hv := range *hypervisors {
+		for _, hv := range hypervisors {
 			hvNode, err := hv.UnderlyingNode()
 			if err != nil {
 				return err
