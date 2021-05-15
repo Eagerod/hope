@@ -1,10 +1,18 @@
 package utils
 
 import (
+	"fmt"
 	"testing"
+)
 
-	"github.com/Eagerod/hope/pkg/hope"
+import (
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
+)
+
+import (
+	"github.com/Eagerod/hope/pkg/hope"
+	"github.com/Eagerod/hope/pkg/hope/hypervisors"
 )
 
 var testNodes []hope.Node = []hope.Node{
@@ -49,9 +57,63 @@ var testNodes []hope.Node = []hope.Node{
 	},
 }
 
+var oldToHypervisor func(hope.Node) (hypervisors.Hypervisor, error) = toHypervisor
+
+type MockHypervisor struct {
+	node hope.Node
+}
+
+func (m *MockHypervisor) ListNodes() ([]string, error) {
+	nodes := []string{}
+	for _, n := range testNodes {
+		if !n.IsHypervisor() {
+			nodes = append(nodes, n.Name)
+		}
+	}
+	return nodes, nil
+}
+
+func (m *MockHypervisor) ResolveNode(node hope.Node) (hope.Node, error) {
+	node.Hypervisor = ""
+	node.Host = node.Name
+	return node, nil
+}
+
+func (m *MockHypervisor) UnderlyingNode() (hope.Node, error) {
+	return m.node, nil
+}
+
+func toHypervisorStub(node hope.Node) (hypervisors.Hypervisor, error) {
+	if !node.IsHypervisor() {
+		return nil, fmt.Errorf("Not a hypervisor")
+	}
+	return &MockHypervisor{node}, nil
+}
+
+// Implemented as a suite to allow manipulating the HypervisorFactory
+//   function .
+type NodesTestSuite struct {
+	suite.Suite
+}
+
+func (s *NodesTestSuite) SetupTest() {
+	toHypervisor = toHypervisorStub
+}
+
+func (s *NodesTestSuite) TeardownTest() {
+	toHypervisor = oldToHypervisor
+}
+
+// In order for 'go test' to run this suite, we need to create
+// a normal test function and pass our suite to suite.Run
+func TestExampleTestSuite(t *testing.T) {
+	suite.Run(t, new(NodesTestSuite))
+}
+
 // Basically a smoke test, don't want to define a ton of yaml blocks to test
 //   this extensively quite yet.
-func TestGetNodes(t *testing.T) {
+func (s *NodesTestSuite) TestGetNodes() {
+	t := s.T()
 	resetViper(t)
 
 	nodes, err := getNodes()
@@ -59,14 +121,16 @@ func TestGetNodes(t *testing.T) {
 	assert.Equal(t, testNodes, nodes)
 }
 
-func TestHasNode(t *testing.T) {
+func (s *NodesTestSuite) TestHasNode() {
+	t := s.T()
 	resetViper(t)
 
 	assert.True(t, HasNode("test-node-01"))
 	assert.False(t, HasNode("sets-node-01"))
 }
 
-func TestGetHypervisors(t *testing.T) {
+func (s *NodesTestSuite) TestGetHypervisors() {
+	t := s.T()
 	resetViper(t)
 
 	hypervisors, err := GetHypervisors()
@@ -78,7 +142,8 @@ func TestGetHypervisors(t *testing.T) {
 	assert.Equal(t, testNodes[0], node)
 }
 
-func TestGetHypervisor(t *testing.T) {
+func (s *NodesTestSuite) TestGetHypervisor() {
+	t := s.T()
 	resetViper(t)
 
 	expected := testNodes[0]
@@ -92,7 +157,7 @@ func TestGetHypervisor(t *testing.T) {
 
 	hypervisor, err = GetHypervisor("test-node-01")
 	assert.Nil(t, hypervisor)
-	assert.Equal(t, "Node named test-node-01 is not a hypervisor", err.Error())
+	assert.Equal(t, "Not a hypervisor", err.Error())
 
 	hypervisor, err = GetHypervisor("sets-node-01")
 	assert.Nil(t, hypervisor)
