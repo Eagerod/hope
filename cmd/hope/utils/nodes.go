@@ -101,6 +101,19 @@ func GetHypervisors() ([]hypervisors.Hypervisor, error) {
 	return retVal, nil
 }
 
+func expandHypervisor(node hope.Node) (hope.Node, error) {
+	if node.Hypervisor == "" {
+		return node, nil
+	}
+
+	hypervisor, err := GetHypervisor(node.Hypervisor)
+	if err != nil {
+		return hope.Node{}, err
+	}
+
+	return hypervisor.ResolveNode(node)
+}
+
 func GetHypervisor(name string) (hypervisors.Hypervisor, error) {
 	// Any nice way to generalize this?
 	// Copied from GetNode
@@ -198,17 +211,4 @@ func GetLoadBalancer() (hope.Node, error) {
 	// Maybe need a dedicated NodeNotFound kind of error that can be handled
 	//   independently of other errors if desired.
 	return hope.Node{}, nil
-}
-
-func expandHypervisor(node hope.Node) (hope.Node, error) {
-	if node.Hypervisor == "" {
-		return node, nil
-	}
-
-	hypervisor, err := GetHypervisor(node.Hypervisor)
-	if err != nil {
-		return hope.Node{}, err
-	}
-
-	return hypervisor.ResolveNode(node)
 }
