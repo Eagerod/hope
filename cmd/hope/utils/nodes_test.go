@@ -90,8 +90,8 @@ func toHypervisorStub(node hope.Node) (hypervisors.Hypervisor, error) {
 	return &MockHypervisor{node}, nil
 }
 
-// Implemented as a suite to allow manipulating the HypervisorFactory
-//   function .
+// Implemented as a suite to allow manipulating the hypervisor factory
+//   function.
 type NodesTestSuite struct {
 	suite.Suite
 }
@@ -125,14 +125,17 @@ func (s *NodesTestSuite) TestGetNode() {
 	t := s.T()
 	resetViper(t)
 
-	expected := testNodes[2]
-	expected.Host = "test-master-01"
+	expected := testNodes[5]
+	expected.Host = "test-node-01"
 	expected.Hypervisor = ""
 
-	node, err := GetAnyMaster()
+	node, err := GetNode("test-node-01")
 	assert.Nil(t, err)
 
-	assert.Equal(t, node, expected)
+	assert.Equal(t, expected, node)
+
+	node, err = GetNode("sets-node-01")
+	assert.Equal(t, "Failed to find a node named sets-node-01", err.Error())
 }
 
 func (s *NodesTestSuite) TestHasNode() {
@@ -147,11 +150,11 @@ func (s *NodesTestSuite) TestGetAnyMaster() {
 	t := s.T()
 	resetViper(t)
 
-	expected := testNodes[5]
-	expected.Host = "test-node-01"
+	expected := testNodes[2]
+	expected.Host = "test-master-01"
 	expected.Hypervisor = ""
 
-	node, err := GetNode("test-node-01")
+	node, err := GetAnyMaster()
 	assert.Nil(t, err)
 
 	assert.Equal(t, node, expected)
