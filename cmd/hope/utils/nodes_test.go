@@ -106,7 +106,7 @@ func (s *NodesTestSuite) TeardownTest() {
 
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
-func TestExampleTestSuite(t *testing.T) {
+func TestNodes(t *testing.T) {
 	suite.Run(t, new(NodesTestSuite))
 }
 
@@ -121,12 +121,40 @@ func (s *NodesTestSuite) TestGetNodes() {
 	assert.Equal(t, testNodes, nodes)
 }
 
+func (s *NodesTestSuite) TestGetNode() {
+	t := s.T()
+	resetViper(t)
+
+	expected := testNodes[2]
+	expected.Host = "test-master-01"
+	expected.Hypervisor = ""
+
+	node, err := GetAnyMaster()
+	assert.Nil(t, err)
+
+	assert.Equal(t, node, expected)
+}
+
 func (s *NodesTestSuite) TestHasNode() {
 	t := s.T()
 	resetViper(t)
 
 	assert.True(t, HasNode("test-node-01"))
 	assert.False(t, HasNode("sets-node-01"))
+}
+
+func (s *NodesTestSuite) TestGetAnyMaster() {
+	t := s.T()
+	resetViper(t)
+
+	expected := testNodes[5]
+	expected.Host = "test-node-01"
+	expected.Hypervisor = ""
+
+	node, err := GetNode("test-node-01")
+	assert.Nil(t, err)
+
+	assert.Equal(t, node, expected)
 }
 
 func (s *NodesTestSuite) TestGetHypervisors() {
@@ -162,4 +190,36 @@ func (s *NodesTestSuite) TestGetHypervisor() {
 	hypervisor, err = GetHypervisor("sets-node-01")
 	assert.Nil(t, hypervisor)
 	assert.Equal(t, "Failed to find a hypervisor named sets-node-01", err.Error())
+}
+
+func (s *NodesTestSuite) TestGetAvailableMasters() {
+	t := s.T()
+	resetViper(t)
+
+	expectedOrig := testNodes[2:5]
+	expected := []hope.Node{}
+	for i, n := range expectedOrig {
+		n.Host = fmt.Sprintf("test-master-0%d", i+1)
+		n.Hypervisor = ""
+		expected = append(expected, n)
+	}
+
+	masters, err := GetAvailableMasters()
+	assert.Nil(t, err)
+
+	assert.Equal(t, expected, masters)
+}
+
+func (s *NodesTestSuite) TestGetLoadBalancer() {
+	t := s.T()
+	resetViper(t)
+
+	expected := testNodes[1]
+	expected.Host = "test-load-balancer"
+	expected.Hypervisor = ""
+
+	node, err := GetLoadBalancer()
+	assert.Nil(t, err)
+
+	assert.Equal(t, node, expected)
 }
