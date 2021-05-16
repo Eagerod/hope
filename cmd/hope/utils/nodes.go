@@ -3,7 +3,6 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"strings"
 )
 
 import (
@@ -11,13 +10,15 @@ import (
 )
 
 import (
-	"github.com/Eagerod/hope/pkg/esxi"
 	"github.com/Eagerod/hope/pkg/hope"
+	"github.com/Eagerod/hope/pkg/hope/hypervisors"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
-func getNodes() (*[]hope.Node, error) {
+var toHypervisor func(hope.Node) (hypervisors.Hypervisor, error) = hypervisors.ToHypervisor
+
+func getNodes() ([]hope.Node, error) {
 	var nodes []hope.Node
 	err := viper.UnmarshalKey("nodes", &nodes)
 
@@ -29,22 +30,22 @@ func getNodes() (*[]hope.Node, error) {
 		nameMap[node.Name] = true
 	}
 
-	return &nodes, err
+	return nodes, err
 }
 
-func GetNode(name string) (*hope.Node, error) {
+func GetNode(name string) (hope.Node, error) {
 	nodes, err := getNodes()
 	if err != nil {
-		return nil, err
+		return hope.Node{}, err
 	}
 
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if node.Name == name {
-			return expandHypervisor(&node)
+			return expandHypervisor(node)
 		}
 	}
 
-	return nil, fmt.Errorf("Failed to find a node named %s", name)
+	return hope.Node{}, fmt.Errorf("Failed to find a node named %s", name)
 }
 
 // HasNode -- Check whether a node has been defined in the hope file, even if
@@ -55,7 +56,7 @@ func HasNode(name string) bool {
 		return false
 	}
 
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if node.Name == name {
 			return true
 		}
@@ -64,64 +65,56 @@ func HasNode(name string) bool {
 	return false
 }
 
-func GetAnyMaster() (*hope.Node, error) {
+func GetAnyMaster() (hope.Node, error) {
 	nodes, err := getNodes()
 	if err != nil {
-		return nil, err
+		return hope.Node{}, err
 	}
 
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if node.IsMaster() {
-			return expandHypervisor(&node)
+			return expandHypervisor(node)
 		}
 	}
 
-	return nil, errors.New("Failed to find any master in nodes config")
+	return hope.Node{}, errors.New("Failed to find any master in nodes config")
 }
 
-func GetHypervisors() (*[]hope.Node, error) {
+func GetHypervisors() ([]hypervisors.Hypervisor, error) {
+	retVal := []hypervisors.Hypervisor{}
+
 	nodes, err := getNodes()
 	if err != nil {
-		return nil, err
+		return retVal, err
 	}
 
-	retVal := []hope.Node{}
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if node.IsHypervisor() {
-			retVal = append(retVal, node)
+			hypervisor, err := toHypervisor(node)
+			if err != nil {
+				return nil, err
+			}
+			retVal = append(retVal, hypervisor)
 		}
 	}
 
-	return &retVal, nil
+	return retVal, nil
 }
 
-func expandHypervisor(node *hope.Node) (*hope.Node, error) {
+func expandHypervisor(node hope.Node) (hope.Node, error) {
 	if node.Hypervisor == "" {
 		return node, nil
 	}
 
 	hypervisor, err := GetHypervisor(node.Hypervisor)
 	if err != nil {
-		return nil, err
+		return hope.Node{}, err
 	}
 
-	ip, err := esxi.GetIpAddressOfVmNamed(hypervisor.ConnectionString(), node.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	ip = strings.TrimSpace(ip)
-	if ip == "0.0.0.0" {
-		return nil, fmt.Errorf("Failed to find IP for vm %s on %s", node.Name, hypervisor.Name)
-	}
-
-	newNode := *node
-	newNode.Hypervisor = ""
-	newNode.Host = ip
-	return &newNode, nil
+	return hypervisor.ResolveNode(node)
 }
 
-func GetHypervisor(name string) (*hope.Node, error) {
+func GetHypervisor(name string) (hypervisors.Hypervisor, error) {
 	// Any nice way to generalize this?
 	// Copied from GetNode
 	nodes, err := getNodes()
@@ -129,13 +122,9 @@ func GetHypervisor(name string) (*hope.Node, error) {
 		return nil, err
 	}
 
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if node.Name == name {
-			if node.IsHypervisor() {
-				return &node, nil
-			}
-
-			return nil, fmt.Errorf("Node named %s is not a hypervisor", name)
+			return toHypervisor(node)
 		}
 	}
 
@@ -146,36 +135,36 @@ func GetHypervisor(name string) (*hope.Node, error) {
 //   in one way or another.
 // Doesn't confirm if the masters are configured, or are in the load balanced
 //   set of masters; only that the node exists on its defined hypervisor.
-func GetAvailableMasters() (*[]hope.Node, error) {
+func GetAvailableMasters() ([]hope.Node, error) {
 	retVal := []hope.Node{}
 	nodes, err := getNodes()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if node.IsMaster() {
 			hv, err := GetHypervisor(node.Hypervisor)
 			if err != nil {
 				return nil, err
 			}
 
-			hvNodes, err := esxi.ListVms(hv.ConnectionString())
+			hvNodes, err := hv.ListNodes()
 			if err != nil {
 				return nil, err
 			}
 
-			if sliceutil.StringInSlice(node.Name, *hvNodes) {
-				exNode, err := expandHypervisor(&node)
+			if sliceutil.StringInSlice(node.Name, hvNodes) {
+				exNode, err := expandHypervisor(node)
 				if err != nil {
 					return nil, err
 				}
-				retVal = append(retVal, *exNode)
+				retVal = append(retVal, exNode)
 			}
 		}
 	}
 
-	return &retVal, nil
+	return retVal, nil
 }
 
 func KubectlFromAnyMaster() (*kubeutil.Kubectl, error) {
@@ -187,12 +176,12 @@ func KubectlFromAnyMaster() (*kubeutil.Kubectl, error) {
 		return nil, err
 	}
 
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if !node.IsMaster() {
 			continue
 		}
 
-		nNode, err := expandHypervisor(&node)
+		nNode, err := expandHypervisor(node)
 		if err != nil {
 			return nil, err
 		}
@@ -206,20 +195,20 @@ func KubectlFromAnyMaster() (*kubeutil.Kubectl, error) {
 	return nil, errors.New("Failed to find a kubeconfig file in any of the master nodes")
 }
 
-func GetLoadBalancer() (*hope.Node, error) {
+func GetLoadBalancer() (hope.Node, error) {
 	nodes, err := getNodes()
 	if err != nil {
-		return nil, err
+		return hope.Node{}, err
 	}
 
-	for _, node := range *nodes {
+	for _, node := range nodes {
 		if node.IsLoadBalancer() {
-			return expandHypervisor(&node)
+			return expandHypervisor(node)
 		}
 	}
 
 	// This feels dirty, and a little broken.
 	// Maybe need a dedicated NodeNotFound kind of error that can be handled
 	//   independently of other errors if desired.
-	return nil, nil
+	return hope.Node{}, nil
 }

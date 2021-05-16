@@ -27,7 +27,7 @@ var kubeconfigCmd = &cobra.Command{
 	Args:  cobra.RangeArgs(0, 1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		var master *hope.Node
+		var master hope.Node
 		if len(args) == 0 {
 			aMaster, err := utils.GetAnyMaster()
 			if err != nil {
@@ -52,6 +52,6 @@ var kubeconfigCmd = &cobra.Command{
 
 		log.Debug("Fetching admin kubeconfig file from ", master.Host)
 
-		return hope.FetchKubeconfig(log.WithFields(log.Fields{}), master, kubeconfigCmdMergeFlag)
+		return hope.FetchKubeconfig(log.WithFields(log.Fields{}), &master, kubeconfigCmdMergeFlag)
 	},
 }
