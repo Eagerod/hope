@@ -104,8 +104,7 @@ func (s *NodesTestSuite) TeardownTest() {
 	toHypervisor = oldToHypervisor
 }
 
-// In order for 'go test' to run this suite, we need to create
-// a normal test function and pass our suite to suite.Run
+// Actual test method to run the suite
 func TestNodes(t *testing.T) {
 	suite.Run(t, new(NodesTestSuite))
 }
