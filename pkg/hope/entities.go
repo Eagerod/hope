@@ -126,6 +126,8 @@ type VMs struct {
 	Root   string
 }
 
+// Not using stringer generation because of user-provided strings.
+// Not using arrays to prevent ordering issues.
 func (rt ResourceType) String() string {
 	switch rt {
 	case ResourceTypeFile:
@@ -140,7 +142,7 @@ func (rt ResourceType) String() string {
 		return "exec"
 	}
 
-	return "UNDEFINED"
+	return fmt.Sprintf("%%!%T(%d)", rt, rt)
 }
 
 func (nr NodeRole) String() string {
@@ -157,7 +159,7 @@ func (nr NodeRole) String() string {
 		return "node"
 	}
 
-	return "UNDEFINED"
+	return fmt.Sprintf("%%!%T(%d)", nr, nr)
 }
 
 // GetType - Scan through defined properties, and return the resource type
