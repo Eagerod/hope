@@ -142,7 +142,7 @@ func (rt ResourceType) String() string {
 		return "exec"
 	}
 
-	return fmt.Sprintf("%%!%T(%d)", rt, rt)
+	return fmt.Sprintf("%%!ResourceType(%d)", rt)
 }
 
 func (nr NodeRole) String() string {
@@ -159,7 +159,7 @@ func (nr NodeRole) String() string {
 		return "node"
 	}
 
-	return fmt.Sprintf("%%!%T(%d)", nr, nr)
+	return fmt.Sprintf("%%!NodeRole(%d)", nr)
 }
 
 // GetType - Scan through defined properties, and return the resource type
