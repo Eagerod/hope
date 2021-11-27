@@ -18,7 +18,7 @@ import (
 var testNodes []hope.Node = []hope.Node{
 	{
 		Name:      "beast1",
-		Role:      "hypervisor",
+		Role:      hope.NodeRoleHypervisor.String(),
 		Engine:    "esxi",
 		Host:      "192.168.10.40",
 		User:      "root",
@@ -27,31 +27,31 @@ var testNodes []hope.Node = []hope.Node{
 	},
 	{
 		Name:       "test-load-balancer",
-		Role:       "load-balancer",
+		Role:       hope.NodeRoleLoadBalancer.String(),
 		Hypervisor: "beast1",
 		User:       "packer",
 	},
 	{
 		Name:       "test-master-01",
-		Role:       "master",
+		Role:       hope.NodeRoleMaster.String(),
 		Hypervisor: "beast1",
 		User:       "packer",
 	},
 	{
 		Name:       "test-master-02",
-		Role:       "master",
+		Role:       hope.NodeRoleMaster.String(),
 		Hypervisor: "beast1",
 		User:       "packer",
 	},
 	{
 		Name:       "test-master-03",
-		Role:       "master",
+		Role:       hope.NodeRoleMaster.String(),
 		Hypervisor: "beast1",
 		User:       "packer",
 	},
 	{
 		Name:       "test-node-01",
-		Role:       "node",
+		Role:       hope.NodeRoleNode.String(),
 		Hypervisor: "beast1",
 		User:       "packer",
 	},

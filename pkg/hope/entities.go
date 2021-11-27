@@ -34,6 +34,28 @@ const (
 	ResourceTypeExec
 )
 
+type NodeRole int
+
+const (
+	// NodeRoleHypervisor - Host that manages the other nodes listed.
+	NodeRoleHypervisor NodeRole = iota
+
+	// NodeRoleLoadBalancer - API Server load balancer VM that runs an
+	//   instance of NGINX pointing at the Master nodes' API servers.
+	NodeRoleLoadBalancer
+
+	// NodeRoleMaster - Control plane nodes
+	NodeRoleMaster
+
+	// NodeRoleMasterAndNode - For small clusters, a machine that acts as both
+	//   master and node.
+	// Master node with the master:NoSchedule taint removed.
+	NodeRoleMasterAndNode
+
+	// NodeRoleNode - Plain Kubernetes node.
+	NodeRoleNode
+)
+
 // BuildSpec - Properties of a ResourceTypeDockerBuild
 type BuildSpec struct {
 	Path   string
@@ -104,6 +126,8 @@ type VMs struct {
 	Root   string
 }
 
+// Not using stringer generation because of user-provided strings.
+// Not using arrays to prevent ordering issues.
 func (rt ResourceType) String() string {
 	switch rt {
 	case ResourceTypeFile:
@@ -118,7 +142,24 @@ func (rt ResourceType) String() string {
 		return "exec"
 	}
 
-	return "UNDEFINED"
+	return fmt.Sprintf("%%!ResourceType(%d)", rt)
+}
+
+func (nr NodeRole) String() string {
+	switch nr {
+	case NodeRoleHypervisor:
+		return "hypervisor"
+	case NodeRoleLoadBalancer:
+		return "load-balancer"
+	case NodeRoleMaster:
+		return "master"
+	case NodeRoleMasterAndNode:
+		return "master+node"
+	case NodeRoleNode:
+		return "node"
+	}
+
+	return fmt.Sprintf("%%!NodeRole(%d)", nr)
 }
 
 // GetType - Scan through defined properties, and return the resource type
@@ -167,27 +208,27 @@ func (node *Node) ConnectionString() string {
 // IsMasterAndNode - Whether or not this node plays the roles of both control
 //   plane and worker node.
 func (node *Node) IsMasterAndNode() bool {
-	return node.Role == "master+node"
+	return node.Role == NodeRoleMasterAndNode.String()
 }
 
 // IsMaster - Whether or not this node is a control plane node.
 func (node *Node) IsMaster() bool {
-	return node.Role == "master" || node.IsMasterAndNode()
+	return node.Role == NodeRoleMaster.String() || node.IsMasterAndNode()
 }
 
 // IsNode - Whether or not this node is a worker node.
 func (node *Node) IsNode() bool {
-	return node.Role == "node" || node.IsMasterAndNode()
+	return node.Role == NodeRoleNode.String() || node.IsMasterAndNode()
 }
 
 // IsHypervisor - Whether or not this node is a hypervisor node.
 func (node *Node) IsHypervisor() bool {
-	return node.Role == "hypervisor"
+	return node.Role == NodeRoleHypervisor.String()
 }
 
 // IsLoadBalancer - Whether or not this node is a load-balancer node.
 func (node *Node) IsLoadBalancer() bool {
-	return node.Role == "load-balancer"
+	return node.Role == NodeRoleLoadBalancer.String()
 }
 
 // IsKubernetesNode - Whether or not this node has one of the Kubernetes
