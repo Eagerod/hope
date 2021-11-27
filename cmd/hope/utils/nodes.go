@@ -33,6 +33,27 @@ func getNodes() ([]hope.Node, error) {
 	return nodes, err
 }
 
+func GetNodeNames(types []string) ([]string, error) {
+	typesMap := map[string]bool{}
+	for _, t := range types {
+		typesMap[t] = true
+	}
+
+	nodes, err := getNodes()
+	if err != nil {
+		return nil, err
+	}
+
+	nodeNames := make([]string, 0, len(nodes))
+	for _, node := range nodes {
+		if _, ok := typesMap[node.Role]; ok {
+			nodeNames = append(nodeNames, node.Name)
+		}
+	}
+
+	return nodeNames, nil
+}
+
 func GetNode(name string) (hope.Node, error) {
 	nodes, err := getNodes()
 	if err != nil {

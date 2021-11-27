@@ -120,6 +120,30 @@ func (s *NodesTestSuite) TestGetNodes() {
 	assert.Equal(t, testNodes, nodes)
 }
 
+func (s *NodesTestSuite) TestGetNodeNames() {
+	t := s.T()
+	resetViper(t)
+
+	var tests = []struct {
+		name     string
+		roles    []string
+		nodeNames     []string
+	}{
+		{"Hypervisors", []string{hope.NodeRoleHypervisor.String()}, []string{"beast1"}},
+		{"Load Balancers", []string{hope.NodeRoleLoadBalancer.String()}, []string{"test-load-balancer"}},
+		{"Masters", []string{hope.NodeRoleMaster.String()}, []string{"test-master-01", "test-master-02", "test-master-03"}},
+		{"Nodes", []string{hope.NodeRoleNode.String()}, []string{"test-node-01"}},
+		{"Masters and Nodes", []string{hope.NodeRoleMaster.String(), hope.NodeRoleNode.String()}, []string{"test-master-01", "test-master-02", "test-master-03", "test-node-01"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			names, err := GetNodeNames(tt.roles)
+			assert.Nil(t, err)
+			assert.Equal(t, tt.nodeNames, names)
+		})
+	}
+}
+
 func (s *NodesTestSuite) TestGetNode() {
 	t := s.T()
 	resetViper(t)
