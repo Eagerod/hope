@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"path"
 )
 
 import (
@@ -43,6 +44,10 @@ func FetchKubeconfig(log *logrus.Entry, node *Node, merge bool) error {
 			return errors.New("Refusing to overwrite existing kubeconfig file.")
 		}
 	} else if os.IsNotExist(err) {
+		if err := os.MkdirAll(path.Dir(kubeconfigFile), 0700); err != nil {
+			return err
+		}
+
 		log.Debug("Local kubeconfig file does not exist. Writing new file.")
 		if err := fileutil.CopyFileMode(kubectl.KubeconfigPath, kubeconfigFile, 0600); err != nil {
 			return err
