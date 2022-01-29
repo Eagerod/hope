@@ -1,6 +1,7 @@
 package esxi
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -11,6 +12,10 @@ import (
 
 const VmStatePoweredOn string = "Powered on"
 const VmStatePoweredOff string = "Powered off"
+
+type vimCmdGetGuestOutput struct {
+	IpAddress string `json:"ipAddress"`
+}
 
 func PowerOnVm(host string, vmId string) error {
 	powerState, err := PowerStateOfVm(host, vmId)
@@ -57,25 +62,24 @@ func PowerOffVmNamed(host string, vmName string) error {
 }
 
 func GetIpAddressOfVmNamed(host string, vmName string) (string, error) {
-	vmWorldId, err := worldIdFromName(host, vmName)
+	vmId, err := idFromName(host, vmName)
 	if err != nil {
 		return "", err
 	}
 
-	output, err := ssh.GetSSH(host, "esxcli", "--formatter", "csv", "--format-param", "fields=IPAddress", "network", "vm", "port", "list", "-w", vmWorldId)
+	output, err := ssh.GetSSH(host, "vim-cmd", "vmsvc/get.guest", vmId)
 	if err != nil {
 		return "", err
 	}
 
-	lines := strings.Split(output, "\n")
+	cleanedOutput := VimCmdParseOutput(output)
 
-	// "Couldn't find VM with given world ID"
-	if len(lines) == 1 {
-		return "", fmt.Errorf("Failed to find IP Address of VM %s on %s", vmName, host)
+	var outputObj vimCmdGetGuestOutput
+	if err := json.Unmarshal([]byte(cleanedOutput), &outputObj); err != nil {
+		return "", err
 	}
 
-	ip := strings.TrimSpace(strings.Split(lines[1], ",")[0])
-	return ip, nil
+	return outputObj.IpAddress, nil
 }
 
 func ListVms(host string) (*[]string, error) {
