@@ -79,7 +79,31 @@ func GetIpAddressOfVmNamed(host string, vmName string) (string, error) {
 		return "", err
 	}
 
-	return outputObj.IpAddress, nil
+	// Core VM information worked.
+	if outputObj.IpAddress != "" {
+		return outputObj.IpAddress, nil
+	}
+
+	// Guest OS may have tools installed, fall-back to using esxcli.
+	vmWorldId, err := worldIdFromName(host, vmName)
+	if err != nil {
+		return "", err
+	}
+
+	output, err = ssh.GetSSH(host, "esxcli", "--formatter", "csv", "--format-param", "fields=IPAddress", "network", "vm", "port", "list", "-w", vmWorldId)
+	if err != nil {
+		return "", err
+	}
+
+	lines := strings.Split(output, "\n")
+
+	// "Couldn't find VM with given world ID"
+	if len(lines) == 1 {
+		return "", fmt.Errorf("Failed to find IP Address of VM %s on %s", vmName, host)
+	}
+
+	ip := strings.TrimSpace(strings.Split(lines[1], ",")[0])
+	return ip, nil
 }
 
 func ListVms(host string) (*[]string, error) {
