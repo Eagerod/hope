@@ -175,7 +175,7 @@ system-test-5: $(BIN_NAME)
 	while true; do \
 		n_ready_nodes="$$($(BIN_NAME) --config hope.yaml -- kubectl get nodes -o template='{{range .items}}{{range .status.conditions}}{{if eq .reason "KubeletReady"}}{{.status}}{{"\n"}}{{end}}{{end}}{{end}}' | grep "True" | wc -l)"; \
 		if [ $$n_ready_nodes -eq 4 ]; then \
-		    break; \
+			break; \
 		else \
 			echo >&2 "Only $$n_ready_nodes/4 nodes are ready. Waiting 5 seconds before next poll"; \
 			sleep 5; \
