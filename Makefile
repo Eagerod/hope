@@ -17,7 +17,15 @@ COVERAGE_FILE=./coverage.out
 ALL_GO_DIRS = $(shell find . -iname "*.go" -exec dirname {} \; | sort | uniq)
 SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go") $(AUTOGEN_VERSION_FILENAME)
 SRC_WITH_TESTS := $(shell find . -iname "*.go") $(AUTOGEN_VERSION_FILENAME)
-PUBLISH = publish/linux-amd64 publish/darwin-amd64
+
+# Publish targets are treated as phony to force rebuilds.
+PUBLISH_DIR=publish
+PUBLISH := \
+	$(PUBLISH_DIR)/linux-amd64 \
+	$(PUBLISH_DIR)/darwin-amd64 \
+	$(PUBLISH_DIR)/darwin-arm64
+
+.PHONY: $(PUBLISH)
 
 DOCKER_IMAGE_NAME := hope
 
@@ -32,19 +40,12 @@ $(BIN_NAME): $(SRC)
 .PHONY: publish
 publish: $(PUBLISH)
 
-.PHONY: publish/linux-amd64
-publish/linux-amd64:
-	# Force build; don't let existing versions interfere.
+$(PUBLISH):
 	rm -f $(BIN_NAME)
-	GOOS=linux GOARCH=amd64 $(MAKE) $(BIN_NAME)
-	mkdir -p $$(dirname "$@")
-	mv $(BIN_NAME) $@
-
-.PHONY: publish/darwin-amd64
-publish/darwin-amd64:
-	# Force build; don't let existing versions interfere.
-	rm -f $(BIN_NAME)
-	GOOS=darwin GOARCH=amd64 $(MAKE) $(BIN_NAME)
+	GOOS_GOARCH="$$(basename $@)" \
+	GOOS="$$(cut -d '-' -f 1 <<< "$$GOOS_GOARCH")" \
+	GOARCH="$$(cut -d '-' -f 2 <<< "$$GOOS_GOARCH")" \
+		$(MAKE) $(BIN_NAME)
 	mkdir -p $$(dirname "$@")
 	mv $(BIN_NAME) $@
 
@@ -222,7 +223,7 @@ fmt:
 
 .PHONY: clean
 clean:
-	rm -rf $(COVERAGE_FILE) $(BUILD_DIR)
+	rm -rf $(COVERAGE_FILE) $(BUILD_DIR) $(PUBLISH_DIR)
 
 .PHONY: container
 container: $(BIN_NAME)
