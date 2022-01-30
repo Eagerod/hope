@@ -1,6 +1,7 @@
 package esxi
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -11,6 +12,10 @@ import (
 
 const VmStatePoweredOn string = "Powered on"
 const VmStatePoweredOff string = "Powered off"
+
+type vimCmdGetGuestOutput struct {
+	IpAddress string `json:"ipAddress"`
+}
 
 func PowerOnVm(host string, vmId string) error {
 	powerState, err := PowerStateOfVm(host, vmId)
@@ -57,12 +62,35 @@ func PowerOffVmNamed(host string, vmName string) error {
 }
 
 func GetIpAddressOfVmNamed(host string, vmName string) (string, error) {
+	vmId, err := idFromName(host, vmName)
+	if err != nil {
+		return "", err
+	}
+
+	output, err := ssh.GetSSH(host, "vim-cmd", "vmsvc/get.guest", vmId)
+	if err != nil {
+		return "", err
+	}
+
+	cleanedOutput := VimCmdParseOutput(output)
+
+	var outputObj vimCmdGetGuestOutput
+	if err := json.Unmarshal([]byte(cleanedOutput), &outputObj); err != nil {
+		return "", err
+	}
+
+	// Core VM information worked.
+	if outputObj.IpAddress != "" {
+		return outputObj.IpAddress, nil
+	}
+
+	// Guest OS may have tools installed, fall-back to using esxcli.
 	vmWorldId, err := worldIdFromName(host, vmName)
 	if err != nil {
 		return "", err
 	}
 
-	output, err := ssh.GetSSH(host, "esxcli", "--formatter", "csv", "--format-param", "fields=IPAddress", "network", "vm", "port", "list", "-w", vmWorldId)
+	output, err = ssh.GetSSH(host, "esxcli", "--formatter", "csv", "--format-param", "fields=IPAddress", "network", "vm", "port", "list", "-w", vmWorldId)
 	if err != nil {
 		return "", err
 	}
