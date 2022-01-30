@@ -19,6 +19,8 @@ SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go") $(AUTOGEN_VERSI
 SRC_WITH_TESTS := $(shell find . -iname "*.go") $(AUTOGEN_VERSION_FILENAME)
 PUBLISH = publish/linux-amd64 publish/darwin-amd64
 
+DOCKER_IMAGE_NAME := hope
+
 .PHONY: all
 all: $(BIN_NAME)
 
@@ -221,3 +223,8 @@ fmt:
 .PHONY: clean
 clean:
 	rm -rf $(COVERAGE_FILE) $(BUILD_DIR)
+
+.PHONY: container
+container: $(BIN_NAME)
+	@version="$$(git describe --dirty | sed 's/^v//')"; \
+	docker build . --build-arg VERSION="$$version" -t "registry.internal.aleemhaji.com/$(DOCKER_IMAGE_NAME):$$version"
