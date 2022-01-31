@@ -1,4 +1,4 @@
-FROM golang:1.15 AS builder
+FROM golang:1.17 AS builder
 
 WORKDIR /app
 
@@ -10,9 +10,9 @@ RUN \
 
 COPY go.mod go.sum ./
 
-# Extremely imperfect means of installing packages, but helps with Docker
-#   build times
-RUN go get $(grep -zo 'require (\(.*\))' go.mod | sed '1d;$d;' | tr ' ' '@') 
+RUN go mod download
+
+ARG VERSION UnspecifiedContainerVersion
 
 COPY . .
 
