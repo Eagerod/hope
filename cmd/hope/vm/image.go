@@ -14,6 +14,7 @@ import (
 
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
+	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/packer"
 	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
@@ -79,7 +80,7 @@ var imageCmd = &cobra.Command{
 		)
 
 		log.Debugf("Copying contents of %s for parameter replacement.", vmDir)
-		tempDir, err := utils.ReplaceParametersInDirectoryCopy(vmDir, allParameters)
+		tempDir, err := hope.ReplaceParametersInDirectoryCopy(vmDir, allParameters)
 		if err != nil {
 			return err
 		}

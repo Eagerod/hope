@@ -6,6 +6,7 @@ import (
 )
 
 import (
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -14,6 +15,20 @@ import (
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/hope/hypervisors"
 )
+
+func resetViper(t *testing.T) {
+       viper.Reset()
+
+       // Assume config file in the project root.
+       // Probably bad practice, but better test than having nothing at all.
+       viper.AddConfigPath("../../../")
+       viper.SetConfigName("hope")
+       viper.AutomaticEnv()
+
+       err := viper.ReadInConfig()
+       assert.Nil(t, err)
+}
+
 
 var testNodes []hope.Node = []hope.Node{
 	{

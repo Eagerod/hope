@@ -102,7 +102,7 @@ var deployCmd = &cobra.Command{
 			switch resourceType {
 			case hope.ResourceTypeFile:
 				if len(resource.Parameters) != 0 {
-					content, err := utils.ReplaceParametersInFile(resource.File, resource.Parameters)
+					content, err := hope.ReplaceParametersInFile(resource.File, resource.Parameters)
 					if err != nil {
 						return err
 					}
@@ -124,7 +124,7 @@ var deployCmd = &cobra.Command{
 				log.Trace(inline)
 
 				if len(resource.Parameters) != 0 {
-					inline, err = utils.ReplaceParametersInString(inline, resource.Parameters)
+					inline, err = hope.ReplaceParametersInString(inline, resource.Parameters)
 					if err != nil {
 						return err
 					}

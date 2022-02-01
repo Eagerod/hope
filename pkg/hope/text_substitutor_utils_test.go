@@ -1,4 +1,4 @@
-package utils
+package hope
 
 import (
 	"os"
@@ -6,22 +6,8 @@ import (
 )
 
 import (
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
-
-func resetViper(t *testing.T) {
-	viper.Reset()
-
-	// Assume config file in the project root.
-	// Probably bad practice, but better test than having nothing at all.
-	viper.AddConfigPath("../../../")
-	viper.SetConfigName("hope")
-	viper.AutomaticEnv()
-
-	err := viper.ReadInConfig()
-	assert.Nil(t, err)
-}
 
 func TestReplaceParametersInString(t *testing.T) {
 	os.Setenv("HELLO", "Hello,")

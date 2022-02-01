@@ -66,7 +66,7 @@ var runCmd = &cobra.Command{
 		}
 
 		// TODO: Move to pkg
-		jobText, err := utils.ReplaceParametersInFile(job.File, fullArgsList)
+		jobText, err := hope.ReplaceParametersInFile(job.File, fullArgsList)
 		if err != nil {
 			return err
 		}

@@ -36,7 +36,6 @@ func VMSpec(vmName string) (*hope.VMImageSpec, error) {
 	for _, vm := range vms.Images {
 		if vm.Name == vmName {
 			return &vm, nil
-
 		}
 	}
 

@@ -2,7 +2,6 @@ package esxi
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
 )
 
@@ -54,8 +53,6 @@ type desiredRetVal struct {
 
 func TestVimCmdParseOutput(t *testing.T) {
 	o := VimCmdParseOutput(testString)
-
-	fmt.Println(o)
 
 	var retVal desiredRetVal
 	err := json.Unmarshal([]byte(o), &retVal)

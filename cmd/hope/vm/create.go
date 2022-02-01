@@ -14,6 +14,7 @@ import (
 
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
+	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/packer"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
@@ -66,7 +67,7 @@ var createCmd = &cobra.Command{
 		vmDir := path.Join(vms.Root, vm.Name)
 
 		log.Debug(fmt.Sprintf("Copying contents of %s for parameter replacement.", vmDir))
-		tempDir, err := utils.ReplaceParametersInDirectoryCopy(vmDir, vm.Parameters)
+		tempDir, err := hope.ReplaceParametersInDirectoryCopy(vmDir, vm.Parameters)
 		if err != nil {
 			return err
 		}

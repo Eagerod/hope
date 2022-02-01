@@ -5,7 +5,7 @@
 //   has a bit of nesting, it brings up some more questions.
 // It seems like golang itself does a pattern like this for `base` cmd units,
 //   so this is probably not too shabby.
-package utils
+package hope
 
 import (
 	"io/ioutil"
@@ -16,16 +16,15 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/fileutil"
-	"github.com/Eagerod/hope/pkg/hope"
 )
 
 func ReplaceParametersInString(str string, parameters []string) (string, error) {
-	t := hope.NewTextSubstitutorFromString(str)
+	t := NewTextSubstitutorFromString(str)
 	return ReplaceParametersWithSubstitutor(t, parameters)
 }
 
 func ReplaceParametersInFile(path string, parameters []string) (string, error) {
-	t, err := hope.TextSubstitutorFromFilepath(path)
+	t, err := TextSubstitutorFromFilepath(path)
 	if err != nil {
 		return "", err
 	}
@@ -33,7 +32,7 @@ func ReplaceParametersInFile(path string, parameters []string) (string, error) {
 	return ReplaceParametersWithSubstitutor(t, parameters)
 }
 
-func ReplaceParametersWithSubstitutor(t *hope.TextSubstitutor, parameters []string) (string, error) {
+func ReplaceParametersWithSubstitutor(t *TextSubstitutor, parameters []string) (string, error) {
 	envParams := []string{}
 	directParams := map[string]string{}
 	for _, value := range parameters {
