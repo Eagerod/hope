@@ -15,6 +15,9 @@ func idFromName(host string, vmName string) (string, error) {
 		return "", err
 	}
 
+	// Output has a trailing newline, so ditch that before iterating
+	output = strings.TrimSpace(output)
+
 	for _, line := range strings.Split(output, "\n") {
 		// Vmid Name File Guest_OS Version Annotation
 		fields := strings.Fields(line)
