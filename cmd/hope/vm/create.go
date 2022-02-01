@@ -1,7 +1,6 @@
 package vm
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -19,39 +18,22 @@ import (
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
-var createCmdVmName string
-var createCmdMemory string
-var createCmdCpu string
-
-func initCreateCmdFlags() {
-	createCmd.Flags().StringVarP(&createCmdVmName, "name", "n", "", "name given to the created VM.")
-	createCmd.Flags().StringVarP(&createCmdMemory, "memory", "m", "", "memory given to the created VM.")
-	createCmd.Flags().StringVarP(&createCmdCpu, "cpu", "c", "", "vCPUs given to the created VM.")
-}
-
 var createCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Creates a VM on the specified host.",
+	Short: "Creates the named node as a VM using its defined hypervisor.",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		hypervisorName := args[0]
-		vmName := args[1]
+		vmName := args[0]
+		nodeName := args[1]
 
-		if createCmdVmName == "" {
-			return errors.New("Must provide a VM name")
-		}
-
-		if !utils.HasNode(createCmdVmName) {
-			return fmt.Errorf("Node named %s not found in hope in node definitions", createCmdVmName)
-		}
-
-		hypervisor, err := utils.GetNode(hypervisorName)
+		node, err := utils.GetBareNode(nodeName)
 		if err != nil {
 			return err
 		}
 
-		if !hypervisor.IsHypervisor() {
-			return fmt.Errorf("Node %s is not a hypervisor node; cannot create a VM on it", hypervisorName)
+		hypervisor, err := utils.GetHypervisor(node.Hypervisor)
+		if err != nil {
+			return err
 		}
 
 		vms, err := utils.GetVMs()
@@ -59,9 +41,12 @@ var createCmd = &cobra.Command{
 			return err
 		}
 
-		vm, err := utils.VMSpec(vmName)
-		if err != nil {
-			return err
+		var vm hope.VMImageSpec
+		for _, aVm := range vms.Images {
+			if aVm.Name == vmName {
+				vm = aVm
+				break
+			}
 		}
 
 		vmDir := path.Join(vms.Root, vm.Name)
@@ -86,26 +71,23 @@ var createCmd = &cobra.Command{
 			return fmt.Errorf("Failed to find network definition in VM spec: %s", vmName)
 		}
 
-		datastoreRoot := path.Join("/", "vmfs", "volumes", hypervisor.Datastore)
+		hypervisorNode, err := hypervisor.UnderlyingNode()
+		if err != nil {
+			return err
+		}
+
+		datastoreRoot := path.Join("/", "vmfs", "volumes", hypervisorNode.Datastore)
 		vmOvfName := fmt.Sprintf("%s.ovf", packerSpec.Builders[0].VMName)
 		remoteOvfPath := path.Join(datastoreRoot, "ovfs", packerSpec.Builders[0].VMName, vmOvfName)
 		allArgs := []string{
-			hypervisor.ConnectionString(),
+			hypervisorNode.ConnectionString(),
 			path.Join(datastoreRoot, "bin", "ovftool", "ovftool"),
 			"--diskMode=thin",
-			fmt.Sprintf("--datastore=%s", hypervisor.Datastore),
-			fmt.Sprintf("--name=%s", createCmdVmName),
-			fmt.Sprintf("--net:'%s=%s'", sourceNetworkName, hypervisor.Network),
-		}
-
-		if createCmdCpu != "" {
-			cpuArg := fmt.Sprintf("--numberOfCpus:'*'=%s", createCmdCpu)
-			allArgs = append(allArgs, cpuArg)
-		}
-
-		if createCmdMemory != "" {
-			memoryArg := fmt.Sprintf("--memorySize:'*'=%s", createCmdMemory)
-			allArgs = append(allArgs, memoryArg)
+			fmt.Sprintf("--datastore=%s", hypervisorNode.Datastore),
+			fmt.Sprintf("--name=%s", node.Name),
+			fmt.Sprintf("--net:'%s=%s'", sourceNetworkName, hypervisorNode.Network),
+			fmt.Sprintf("--numberOfCpus:'*'=%d", node.Cpu),
+			fmt.Sprintf("--memorySize:'*'=%d", node.Memory),
 		}
 
 		allArgs = append(allArgs, remoteOvfPath, "vi://root@localhost")
