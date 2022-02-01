@@ -14,9 +14,11 @@ import (
 //   return a new &hope.Node that can be used as though it were a physical
 //   machine on the network.
 //
-// UnderlyingNode returns the base obejct used to create the hypervisor.
+// UnderlyingNode returns the base object used to create the hypervisor.
 type Hypervisor interface {
 	ListNodes() ([]string, error)
 	ResolveNode(node hope.Node) (hope.Node, error)
 	UnderlyingNode() (hope.Node, error)
+
+	CreateNode(node hope.Node, vm hope.VMs, vmImageSpec hope.VMImageSpec) error
 }
