@@ -12,19 +12,19 @@ import (
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
-func GetVMs() (*hope.VMs, error) {
+func GetVMs() (hope.VMs, error) {
 	var vms hope.VMs
 	err := viper.UnmarshalKey("vms", &vms)
 
 	nameMap := map[string]bool{}
 	for _, vm := range vms.Images {
 		if _, ok := nameMap[vm.Name]; ok {
-			return nil, fmt.Errorf("Multiple VMs found in configuration file named: %s", vm.Name)
+			return vms, fmt.Errorf("Multiple VMs found in configuration file named: %s", vm.Name)
 		}
 		nameMap[vm.Name] = true
 	}
 
-	return &vms, err
+	return vms, err
 }
 
 func VMSpec(vmName string) (*hope.VMImageSpec, error) {

@@ -1,10 +1,16 @@
 {
     "cSpell.words": [
+        "esxi",
+        "kube",
         "kubeadm",
         "kubeconfig",
         "kubectl",
         "kubelet",
         "kubernetes",
-        "kubeutil"
+        "kubeutil",
+        "ovfs",
+        "ovftool",
+        "stretchr",
+        "vmfs"
     ]
 }

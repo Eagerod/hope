@@ -55,6 +55,15 @@ func GetNodeNames(types []string) ([]string, error) {
 }
 
 func GetNode(name string) (hope.Node, error) {
+	node, err := GetBareNode(name)
+	if err != nil {
+		return hope.Node{}, err
+	}
+
+	return expandHypervisor(node)
+}
+
+func GetBareNode(name string) (hope.Node, error) {
 	nodes, err := getNodes()
 	if err != nil {
 		return hope.Node{}, err
@@ -62,7 +71,7 @@ func GetNode(name string) (hope.Node, error) {
 
 	for _, node := range nodes {
 		if node.Name == name {
-			return expandHypervisor(node)
+			return node, nil
 		}
 	}
 
