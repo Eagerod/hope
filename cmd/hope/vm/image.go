@@ -16,8 +16,6 @@ import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/packer"
-	"github.com/Eagerod/hope/pkg/scp"
-	"github.com/Eagerod/hope/pkg/ssh"
 )
 
 var imageCmdParameterSlice *[]string
@@ -166,25 +164,8 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
-		// Remove the destination file from the Hypervisor before copying,
-		//   because SCP is bad at nesting directories, or I'm bad at figuring
-		//   out the right arguments.
 		for _, hv := range hypervisors {
-			hvNode, err := hv.UnderlyingNode()
-			if err != nil {
-				return err
-			}
-
-			connectionString := hvNode.ConnectionString()
-			scpSrcDir := packerOutDir
-			remoteVmfsPath := path.Join("/", "vmfs", "volumes", hvNode.Datastore, "ovfs", packerSpec.Builders[0].VMName)
-			remoteVMPath := fmt.Sprintf("%s:%s", hvNode.ConnectionString(), remoteVmfsPath)
-
-			if err := ssh.ExecSSH(connectionString, "rm", "-rf", remoteVmfsPath); err != nil {
-				return err
-			}
-
-			if err := scp.ExecSCP("-pr", scpSrcDir, remoteVMPath); err != nil {
+			if err := hv.CopyImage(*packerSpec, vms, *vm); err != nil {
 				return err
 			}
 		}

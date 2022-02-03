@@ -11,6 +11,7 @@ import (
 	"github.com/Eagerod/hope/pkg/esxi"
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/packer"
+	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
@@ -96,4 +97,26 @@ func (hyp *EsxiHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec 
 		stdin := fmt.Sprintf("%s\n", esxiRootPassword)
 		return ssh.ExecSSHStdin(stdin, allArgs...)
 	}
+}
+
+func (hyp *EsxiHypervisor) CopyImage(packerSpec packer.JsonSpec, vm hope.VMs, vmImageSpec hope.VMImageSpec) error {
+	for _, builder := range packerSpec.Builders {
+		if builder.Type != "vmware-iso" {
+			continue
+		}
+
+		connectionString := hyp.node.ConnectionString()
+		remoteVmfsPath := path.Join("/", "vmfs", "volumes", hyp.node.Datastore, "ovfs", vmImageSpec.Name)
+		remoteVMPath := fmt.Sprintf("%s:%s", connectionString, remoteVmfsPath)
+
+		if err := ssh.ExecSSH(connectionString, "rm", "-rf", remoteVmfsPath); err != nil {
+			return err
+		}
+
+		if err := scp.ExecSCP("-pr", builder.OutputDirectory, remoteVMPath); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

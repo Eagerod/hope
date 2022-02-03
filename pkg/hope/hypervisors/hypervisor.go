@@ -2,6 +2,7 @@ package hypervisors
 
 import (
 	"github.com/Eagerod/hope/pkg/hope"
+	"github.com/Eagerod/hope/pkg/packer"
 )
 
 // Hypervisor acts as a catch-all for "an entity that exposes access to manage
@@ -20,5 +21,6 @@ type Hypervisor interface {
 	ResolveNode(node hope.Node) (hope.Node, error)
 	UnderlyingNode() (hope.Node, error)
 
-	CreateNode(node hope.Node, vm hope.VMs, vmImageSpec hope.VMImageSpec) error
+	CopyImage(packer.JsonSpec, hope.VMs, hope.VMImageSpec) error
+	CreateNode(hope.Node, hope.VMs, hope.VMImageSpec) error
 }
