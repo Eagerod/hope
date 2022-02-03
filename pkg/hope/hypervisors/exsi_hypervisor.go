@@ -2,6 +2,7 @@ package hypervisors
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -119,4 +120,111 @@ func (hyp *EsxiHypervisor) CopyImage(packerSpec packer.JsonSpec, vm hope.VMs, vm
 	}
 
 	return nil
+}
+
+func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpec, args []string, force bool) (*packer.JsonSpec, error) {
+	vmDir := path.Join(vms.Root, vmImageSpec.Name)
+	outputDir := path.Join(vms.Output, vmImageSpec.Name)
+	log.Tracef("Looking for VM definition in %s", vmDir)
+
+	// This is done in advance so that the error can show the user the
+	//   real path the file that's expected to load, rather than a path in
+	//   the temp directory everything gets copied into.
+	packerJsonPath := path.Join(vmDir, "packer.json")
+	if _, err := os.Stat(packerJsonPath); err != nil && os.IsNotExist(err) {
+		return nil, fmt.Errorf("VM packer file not found at path: %s", packerJsonPath)
+	} else if err != nil {
+		return nil, err
+	}
+
+	// Create full parameter set.
+	allParameters := append(vmImageSpec.Parameters,
+		fmt.Sprintf("ESXI_HOST=%s", hyp.node.Host),
+		fmt.Sprintf("ESXI_USERNAME=%s", hyp.node.User),
+		fmt.Sprintf("ESXI_DATASTORE=%s", hyp.node.Datastore),
+		fmt.Sprintf("OUTPUT_DIR=%s", outputDir),
+	)
+
+	log.Debugf("Copying contents of %s for parameter replacement.", vmDir)
+	tempDir, err := hope.ReplaceParametersInDirectoryCopy(vmDir, allParameters)
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Check caches to see if I even want to build this again.
+	tempPackerJsonPath := path.Join(tempDir, "packer.json")
+	packerSpec, err := packer.SpecFromPath(tempPackerJsonPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Packer runs out of temp dir, so directories have to be absolute.
+	packerOutDir := packerSpec.Builders[0].OutputDirectory
+	if !path.IsAbs(packerOutDir) {
+		return nil, fmt.Errorf("Packer output directory %s must be absolute", packerOutDir)
+	}
+
+	if !path.IsAbs(vms.Cache) {
+		return nil, fmt.Errorf("Packer cache directory %s must be absolute", vms.Cache)
+	}
+
+	if force {
+		log.Infof("Deleting %s", packerOutDir)
+		os.RemoveAll(packerOutDir)
+	} else {
+		stat, err := os.Stat(packerOutDir)
+		if err != nil && os.IsNotExist(err) {
+			log.Debugf("Will create a new directory at %s...", packerOutDir)
+		} else if err != nil {
+			return nil, err
+		} else {
+			if !stat.IsDir() {
+				return nil, fmt.Errorf("File exists at path %s", packerOutDir)
+			}
+
+			files, err := ioutil.ReadDir(packerOutDir)
+			if err != nil {
+				return nil, err
+			}
+
+			if len(files) != 0 {
+				return nil, fmt.Errorf("Directory at path %s already exists and is not empty", packerOutDir)
+			}
+		}
+	}
+
+	// Try to create a file in the same directory as the output will be.
+	// Prevents going through the whole process when the output directory
+	//   isn't writable.
+	// Seems like a no brainer for packer to do that check.
+	if err := os.MkdirAll(packerOutDir, 0755); err != nil {
+		return nil, fmt.Errorf("Directory at path %s is not writable; %w", packerOutDir, err)
+	}
+
+	allArgs := []string{"build"}
+	for _, v := range args {
+		allArgs = append(allArgs, "-var", v)
+	}
+	allArgs = append(allArgs, tempPackerJsonPath)
+
+	packerEsxiVncProbeTimeout := os.Getenv("PACKER_ESXI_VNC_PROBE_TIMEOUT")
+	if packerEsxiVncProbeTimeout == "" {
+		log.Info("PACKER_ESXI_VNC_PROBE_TIMEOUT not set, defaulting to 2s")
+		packerEsxiVncProbeTimeout = "2s"
+	}
+
+	packerEnvs := map[string]string{
+		"PACKER_CACHE_DIR":              vms.Cache,
+		"PACKER_LOG":                    "1",
+		"PACKER_ESXI_VNC_PROBE_TIMEOUT": packerEsxiVncProbeTimeout,
+	}
+
+	log.Infof("Building VM Image: %s", vmImageSpec.Name)
+
+	if err := packer.ExecPackerWdEnv(tempDir, &packerEnvs, allArgs...); err != nil {
+		return nil, err
+	}
+
+	return packerSpec, nil
 }

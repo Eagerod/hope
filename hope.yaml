@@ -61,10 +61,12 @@ vms:
   output: /var/lib/packer/images
   images:
     - name: some-image
+      hypervisors: [beast1]
       parameters:
         - ESXI_ROOT_PASSWORD
         - ESXI_NETWORK=VM Network
     - name: test-kubernetes-node
+      hypervisors: [beast1]
       parameters:
         - ESXI_ROOT_PASSWORD
         - ESXI_NETWORK=VM Network

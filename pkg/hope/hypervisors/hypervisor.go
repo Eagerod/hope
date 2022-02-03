@@ -22,5 +22,6 @@ type Hypervisor interface {
 	UnderlyingNode() (hope.Node, error)
 
 	CopyImage(packer.JsonSpec, hope.VMs, hope.VMImageSpec) error
+	CreateImage(hope.VMs, hope.VMImageSpec, []string, bool) (*packer.JsonSpec, error)
 	CreateNode(hope.Node, hope.VMs, hope.VMImageSpec) error
 }
