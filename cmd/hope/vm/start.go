@@ -1,10 +1,6 @@
 package vm
 
 import (
-	"fmt"
-)
-
-import (
 	"github.com/spf13/cobra"
 )
 
@@ -16,20 +12,25 @@ import (
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Starts a VM on the specified host.",
-	Args:  cobra.ExactArgs(2),
+	Args:  cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		hypervisorName := args[0]
-		vmName := args[1]
+		vmName := args[0]
 
-		hypervisor, err := utils.GetNode(hypervisorName)
+		node, err := utils.GetBareNode(vmName)
 		if err != nil {
 			return err
 		}
 
-		if !hypervisor.IsHypervisor() {
-			return fmt.Errorf("Node %s is not a hypervisor; cannot start a VM on it", hypervisor.Name)
+		hypervisor, err := utils.GetHypervisor(node.Hypervisor)
+		if err != nil {
+			return err
 		}
 
-		return esxi.PowerOnVmNamed(hypervisor.ConnectionString(), vmName)
+		hypervisorNode, err := hypervisor.UnderlyingNode()
+		if err != nil {
+			return err
+		}
+
+		return esxi.PowerOnVmNamed(hypervisorNode.ConnectionString(), vmName)
 	},
 }
