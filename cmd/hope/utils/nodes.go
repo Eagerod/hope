@@ -242,3 +242,13 @@ func GetLoadBalancer() (hope.Node, error) {
 	//   independently of other errors if desired.
 	return hope.Node{}, nil
 }
+
+func HypervisorForNodeNamed(name string) (*hypervisors.Hypervisor, error) {
+	node, err := GetBareNode(name)
+	if err != nil {
+		return nil, err
+	}
+
+	hypervisor, err := GetHypervisor(node.Hypervisor)
+	return &hypervisor, err
+}

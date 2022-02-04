@@ -16,17 +16,12 @@ var startCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		vmName := args[0]
 
-		node, err := utils.GetBareNode(vmName)
+		hypervisor, err := utils.HypervisorForNodeNamed(vmName)
 		if err != nil {
 			return err
 		}
 
-		hypervisor, err := utils.GetHypervisor(node.Hypervisor)
-		if err != nil {
-			return err
-		}
-
-		hypervisorNode, err := hypervisor.UnderlyingNode()
+		hypervisorNode, err := (*hypervisor).UnderlyingNode()
 		if err != nil {
 			return err
 		}
