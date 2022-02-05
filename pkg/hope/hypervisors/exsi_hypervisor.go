@@ -228,3 +228,19 @@ func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpe
 
 	return packerSpec, nil
 }
+
+func (hyp *EsxiHypervisor) DeleteVM(name string) error {
+	// If the VM is on, don't allow the user to proceed, and force them to
+	//   shut it off themselves.
+	connectionString := hyp.node.ConnectionString()
+	powerState, err := esxi.PowerStateOfVmNamed(connectionString, name)
+	if err != nil {
+		return err
+	}
+
+	if powerState != esxi.VmStatePoweredOff {
+		return fmt.Errorf("VM %s has power state: %s; cannot delete", name, powerState)
+	}
+
+	return esxi.DeleteVmNamed(connectionString, name)
+}
