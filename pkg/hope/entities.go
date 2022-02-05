@@ -110,7 +110,7 @@ type Node struct {
 	Datastore  string
 	Network    string
 	Cpu        int
-	Memory	   int
+	Memory     int
 }
 
 // VMImageSpec - Defines the structure needed to populate a Packer job to

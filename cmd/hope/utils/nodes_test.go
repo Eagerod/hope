@@ -18,18 +18,17 @@ import (
 )
 
 func resetViper(t *testing.T) {
-       viper.Reset()
+	viper.Reset()
 
-       // Assume config file in the project root.
-       // Probably bad practice, but better test than having nothing at all.
-       viper.AddConfigPath("../../../")
-       viper.SetConfigName("hope")
-       viper.AutomaticEnv()
+	// Assume config file in the project root.
+	// Probably bad practice, but better test than having nothing at all.
+	viper.AddConfigPath("../../../")
+	viper.SetConfigName("hope")
+	viper.AutomaticEnv()
 
-       err := viper.ReadInConfig()
-       assert.Nil(t, err)
+	err := viper.ReadInConfig()
+	assert.Nil(t, err)
 }
-
 
 var testNodes []hope.Node = []hope.Node{
 	{
@@ -46,40 +45,40 @@ var testNodes []hope.Node = []hope.Node{
 		Role:       hope.NodeRoleLoadBalancer.String(),
 		Hypervisor: "beast1",
 		User:       "packer",
-		Cpu:		2,
-		Memory:		256,
+		Cpu:        2,
+		Memory:     256,
 	},
 	{
 		Name:       "test-master-01",
 		Role:       hope.NodeRoleMaster.String(),
 		Hypervisor: "beast1",
 		User:       "packer",
-		Cpu:		2,
-		Memory:		2048,
+		Cpu:        2,
+		Memory:     2048,
 	},
 	{
 		Name:       "test-master-02",
 		Role:       hope.NodeRoleMaster.String(),
 		Hypervisor: "beast1",
 		User:       "packer",
-		Cpu:		2,
-		Memory:		2048,
+		Cpu:        2,
+		Memory:     2048,
 	},
 	{
 		Name:       "test-master-03",
 		Role:       hope.NodeRoleMaster.String(),
 		Hypervisor: "beast1",
 		User:       "packer",
-		Cpu:		2,
-		Memory:		2048,
+		Cpu:        2,
+		Memory:     2048,
 	},
 	{
 		Name:       "test-node-01",
 		Role:       hope.NodeRoleNode.String(),
 		Hypervisor: "beast1",
 		User:       "packer",
-		Cpu:		2,
-		Memory:		4096,
+		Cpu:        2,
+		Memory:     4096,
 	},
 }
 
@@ -179,9 +178,9 @@ func (s *NodesTestSuite) TestGetNodeNames() {
 	resetViper(t)
 
 	var tests = []struct {
-		name     string
-		roles    []string
-		nodeNames     []string
+		name      string
+		roles     []string
+		nodeNames []string
 	}{
 		{"Hypervisors", []string{hope.NodeRoleHypervisor.String()}, []string{"beast1"}},
 		{"Load Balancers", []string{hope.NodeRoleLoadBalancer.String()}, []string{"test-load-balancer"}},

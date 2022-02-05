@@ -45,8 +45,8 @@ const testString string = `Guest information:
 
 type desiredRetVal struct {
 	GuestFullName string `json:"guestFullName"`
-	IpAddress string `json:"ipAddress"`
-	Net []struct {
+	IpAddress     string `json:"ipAddress"`
+	Net           []struct {
 		IpAddress []string `json:"ipAddress"`
 	} `json:"net"`
 }
@@ -57,7 +57,7 @@ func TestVimCmdParseOutput(t *testing.T) {
 	var retVal desiredRetVal
 	err := json.Unmarshal([]byte(o), &retVal)
 	assert.Nil(t, err)
-	
+
 	assert.Equal(t, retVal.GuestFullName, "Debian GNU/Linux 10 (64-bit)")
 	assert.Equal(t, retVal.IpAddress, "192.168.200.9")
 	assert.Equal(t, retVal.Net[0].IpAddress[0], "192.168.200.9")
