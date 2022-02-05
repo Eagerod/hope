@@ -244,3 +244,17 @@ func (hyp *EsxiHypervisor) DeleteVM(name string) error {
 
 	return esxi.DeleteVmNamed(connectionString, name)
 }
+
+func (hyp *EsxiHypervisor) VMIPAddress(name string) (string, error) {
+	ip, err := esxi.GetIpAddressOfVmNamed(hyp.node.ConnectionString(), name)
+	if err != nil {
+		return "", err
+	}
+
+	ip = strings.TrimSpace(ip)
+	if ip == "0.0.0.0" {
+		return "", fmt.Errorf("VM %s hasn't bound an IP address yet.", name)
+	}
+
+	return ip, nil
+}

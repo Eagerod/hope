@@ -3,7 +3,6 @@ package vm
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 )
 
@@ -14,7 +13,6 @@ import (
 
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
-	"github.com/Eagerod/hope/pkg/esxi"
 )
 
 var ipCmdNumRetries int
@@ -38,15 +36,10 @@ var ipCmd = &cobra.Command{
 		vmName := args[0]
 
 		if ipCmdNumRetries == 0 {
-			return errors.New("Cannot make 0 attempts to fetch IP address")
+			return errors.New("cannot make 0 attempts to fetch IP address")
 		}
 
 		hypervisor, err := utils.HypervisorForNodeNamed(vmName)
-		if err != nil {
-			return err
-		}
-
-		hypervisorNode, err := (*hypervisor).UnderlyingNode()
 		if err != nil {
 			return err
 		}
@@ -58,15 +51,10 @@ var ipCmd = &cobra.Command{
 		//   per loop to look up the IP address.
 		sleepSeconds := time.Duration(1)
 		for ; ipCmdNumRetries > 0; ipCmdNumRetries-- {
-			ip, err := esxi.GetIpAddressOfVmNamed(hypervisorNode.ConnectionString(), vmName)
-			if err != nil {
-				return err
-			}
-
-			ip = strings.TrimSpace(ip)
-			if ip != "0.0.0.0" {
+			ip, err := (*hypervisor).VMIPAddress(vmName)
+			if err == nil {
 				fmt.Println(ip)
-				break
+				return nil
 			}
 
 			log.Debugf("VM hasn't bound an IP address yet. Waiting %d seconds before checking again...", sleepSeconds)
