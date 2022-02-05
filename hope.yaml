@@ -53,7 +53,7 @@ nodes:
     role: node
     hypervisor: beast1
     cpu: 2
-    memory: 8192
+    memory: 4096
     user: packer
 vms:
   root: vms
