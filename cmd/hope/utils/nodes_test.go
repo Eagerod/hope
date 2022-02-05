@@ -79,7 +79,7 @@ var testNodes []hope.Node = []hope.Node{
 		Hypervisor: "beast1",
 		User:       "packer",
 		Cpu:		2,
-		Memory:		8192,
+		Memory:		4096,
 	},
 }
 

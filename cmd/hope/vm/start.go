@@ -12,7 +12,7 @@ import (
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Starts a VM on the specified host.",
-	Args:  cobra.ExactArgs(0),
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		vmName := args[0]
 

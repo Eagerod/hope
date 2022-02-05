@@ -33,22 +33,22 @@ func minDuration(a, b time.Duration) time.Duration {
 var ipCmd = &cobra.Command{
 	Use:   "ip",
 	Short: "Get the IP address of a VM on the specified hypervisor.",
-	Args:  cobra.ExactArgs(2),
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		hypervisorName := args[0]
-		vmName := args[1]
+		vmName := args[0]
 
 		if ipCmdNumRetries == 0 {
 			return errors.New("Cannot make 0 attempts to fetch IP address")
 		}
 
-		hypervisor, err := utils.GetNode(hypervisorName)
+		hypervisor, err := utils.HypervisorForNodeNamed(vmName)
 		if err != nil {
 			return err
 		}
 
-		if !hypervisor.IsHypervisor() {
-			return fmt.Errorf("Node %s is not a hypervisor; cannot find a node's IP from it", hypervisor.Name)
+		hypervisorNode, err := (*hypervisor).UnderlyingNode()
+		if err != nil {
+			return err
 		}
 
 		log.Tracef("Will attempt to fetch IP address %d times", ipCmdNumRetries)
@@ -58,7 +58,7 @@ var ipCmd = &cobra.Command{
 		//   per loop to look up the IP address.
 		sleepSeconds := time.Duration(1)
 		for ; ipCmdNumRetries > 0; ipCmdNumRetries-- {
-			ip, err := esxi.GetIpAddressOfVmNamed(hypervisor.ConnectionString(), vmName)
+			ip, err := esxi.GetIpAddressOfVmNamed(hypervisorNode.ConnectionString(), vmName)
 			if err != nil {
 				return err
 			}
