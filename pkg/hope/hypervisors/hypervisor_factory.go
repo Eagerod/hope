@@ -10,7 +10,7 @@ import (
 
 func ToHypervisor(node hope.Node) (Hypervisor, error) {
 	if !node.IsHypervisor() {
-		return nil, fmt.Errorf("Node named %s is not a hypervisor", node.Name)
+		return nil, fmt.Errorf("node named %s is not a hypervisor", node.Name)
 	}
 
 	switch node.Engine {
@@ -18,5 +18,5 @@ func ToHypervisor(node hope.Node) (Hypervisor, error) {
 		return &EsxiHypervisor{node}, nil
 	}
 
-	return nil, fmt.Errorf("Failed to resolve hypervisor engine: %s", node.Engine)
+	return nil, fmt.Errorf("failed to resolve hypervisor engine: %s", node.Engine)
 }

@@ -25,6 +25,9 @@ type Hypervisor interface {
 	CreateImage(hope.VMs, hope.VMImageSpec, []string, bool) (*packer.JsonSpec, error)
 	CreateNode(hope.Node, hope.VMs, hope.VMImageSpec) error
 
+	StartVM(string) error
+	StopVM(string) error
+
 	// Should these interfaces also take a hope.Node, just for consistency's
 	//   sake?
 	DeleteVM(string) error

@@ -36,7 +36,7 @@ func (hyp *EsxiHypervisor) ResolveNode(node hope.Node) (hope.Node, error) {
 
 	ip = strings.TrimSpace(ip)
 	if ip == "0.0.0.0" {
-		return hope.Node{}, fmt.Errorf("Failed to find IP for vm %s on %s", node.Name, hyp.node.Name)
+		return hope.Node{}, fmt.Errorf("failed to find IP for vm %s on %s", node.Name, hyp.node.Name)
 	}
 
 	node.Hypervisor = ""
@@ -68,7 +68,7 @@ func (hyp *EsxiHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec 
 	// https://www.virtuallyghetto.com/2012/05/how-to-deploy-ovfova-in-esxi-shell.html
 	sourceNetworkName, ok := packerSpec.Builders[0].VMXData["ethernet0.networkName"]
 	if !ok {
-		return fmt.Errorf("Failed to find network definition in VM spec: %s", node.Name)
+		return fmt.Errorf("failed to find network definition in VM spec: %s", node.Name)
 	}
 
 	datastoreRoot := path.Join("/", "vmfs", "volumes", hyp.node.Datastore)
@@ -162,11 +162,11 @@ func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpe
 	// Packer runs out of temp dir, so directories have to be absolute.
 	packerOutDir := packerSpec.Builders[0].OutputDirectory
 	if !path.IsAbs(packerOutDir) {
-		return nil, fmt.Errorf("Packer output directory %s must be absolute", packerOutDir)
+		return nil, fmt.Errorf("packer output directory %s must be absolute", packerOutDir)
 	}
 
 	if !path.IsAbs(vms.Cache) {
-		return nil, fmt.Errorf("Packer cache directory %s must be absolute", vms.Cache)
+		return nil, fmt.Errorf("packer cache directory %s must be absolute", vms.Cache)
 	}
 
 	if force {
@@ -180,7 +180,7 @@ func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpe
 			return nil, err
 		} else {
 			if !stat.IsDir() {
-				return nil, fmt.Errorf("File exists at path %s", packerOutDir)
+				return nil, fmt.Errorf("file exists at path %s", packerOutDir)
 			}
 
 			files, err := ioutil.ReadDir(packerOutDir)
@@ -189,7 +189,7 @@ func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpe
 			}
 
 			if len(files) != 0 {
-				return nil, fmt.Errorf("Directory at path %s already exists and is not empty", packerOutDir)
+				return nil, fmt.Errorf("directory at path %s already exists and is not empty", packerOutDir)
 			}
 		}
 	}
@@ -199,7 +199,7 @@ func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpe
 	//   isn't writable.
 	// Seems like a no brainer for packer to do that check.
 	if err := os.MkdirAll(packerOutDir, 0755); err != nil {
-		return nil, fmt.Errorf("Directory at path %s is not writable; %w", packerOutDir, err)
+		return nil, fmt.Errorf("directory at path %s is not writable; %w", packerOutDir, err)
 	}
 
 	allArgs := []string{"build"}
@@ -253,8 +253,17 @@ func (hyp *EsxiHypervisor) VMIPAddress(name string) (string, error) {
 
 	ip = strings.TrimSpace(ip)
 	if ip == "0.0.0.0" {
-		return "", fmt.Errorf("VM %s hasn't bound an IP address yet.", name)
+		return "", fmt.Errorf("VM %s hasn't bound an IP address yet", name)
 	}
 
 	return ip, nil
+}
+
+func (hyp *EsxiHypervisor) StartVM(name string) error {
+	return esxi.PowerOnVmNamed(hyp.node.ConnectionString(), name)
+
+}
+
+func (hyp *EsxiHypervisor) StopVM(name string) error {
+	return esxi.PowerOffVmNamed(hyp.node.ConnectionString(), name)
 }

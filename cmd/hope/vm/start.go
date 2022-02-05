@@ -6,7 +6,6 @@ import (
 
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
-	"github.com/Eagerod/hope/pkg/esxi"
 )
 
 var startCmd = &cobra.Command{
@@ -21,11 +20,6 @@ var startCmd = &cobra.Command{
 			return err
 		}
 
-		hypervisorNode, err := (*hypervisor).UnderlyingNode()
-		if err != nil {
-			return err
-		}
-
-		return esxi.PowerOnVmNamed(hypervisorNode.ConnectionString(), vmName)
+		return (*hypervisor).StartVM(vmName)
 	},
 }

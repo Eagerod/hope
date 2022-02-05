@@ -121,6 +121,22 @@ func (m *MockHypervisor) CreateNode(a hope.Node, b hope.VMs, c hope.VMImageSpec)
 	return nil
 }
 
+func (m *MockHypervisor) StartVM(string) error {
+	return nil
+}
+
+func (m *MockHypervisor) StopVM(string) error {
+	return nil
+}
+
+func (m *MockHypervisor) DeleteVM(string) error {
+	return nil
+}
+
+func (m *MockHypervisor) VMIPAddress(string) (string, error) {
+	return "192.168.1.5", nil
+}
+
 func toHypervisorStub(node hope.Node) (hypervisors.Hypervisor, error) {
 	if !node.IsHypervisor() {
 		return nil, fmt.Errorf("Not a hypervisor")

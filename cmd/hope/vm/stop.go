@@ -6,7 +6,6 @@ import (
 
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
-	"github.com/Eagerod/hope/pkg/esxi"
 )
 
 var stopCmd = &cobra.Command{
@@ -21,11 +20,6 @@ var stopCmd = &cobra.Command{
 			return err
 		}
 
-		hypervisorNode, err := (*hypervisor).UnderlyingNode()
-		if err != nil {
-			return err
-		}
-
-		return esxi.PowerOffVmNamed(hypervisorNode.ConnectionString(), vmName)
+		return (*hypervisor).StopVM(vmName)
 	},
 }
