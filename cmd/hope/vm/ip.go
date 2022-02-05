@@ -35,7 +35,7 @@ var ipCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		vmName := args[0]
 
-		if ipCmdNumRetries == 0 {
+		if ipCmdNumRetries <= 0 {
 			return errors.New("cannot make 0 attempts to fetch IP address")
 		}
 
