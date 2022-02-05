@@ -6,6 +6,7 @@ import (
 )
 
 import (
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -13,7 +14,21 @@ import (
 import (
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/hope/hypervisors"
+	"github.com/Eagerod/hope/pkg/packer"
 )
+
+func resetViper(t *testing.T) {
+	viper.Reset()
+
+	// Assume config file in the project root.
+	// Probably bad practice, but better test than having nothing at all.
+	viper.AddConfigPath("../../../")
+	viper.SetConfigName("hope")
+	viper.AutomaticEnv()
+
+	err := viper.ReadInConfig()
+	assert.Nil(t, err)
+}
 
 var testNodes []hope.Node = []hope.Node{
 	{
@@ -30,30 +45,40 @@ var testNodes []hope.Node = []hope.Node{
 		Role:       hope.NodeRoleLoadBalancer.String(),
 		Hypervisor: "beast1",
 		User:       "packer",
+		Cpu:        2,
+		Memory:     256,
 	},
 	{
 		Name:       "test-master-01",
 		Role:       hope.NodeRoleMaster.String(),
 		Hypervisor: "beast1",
 		User:       "packer",
+		Cpu:        2,
+		Memory:     2048,
 	},
 	{
 		Name:       "test-master-02",
 		Role:       hope.NodeRoleMaster.String(),
 		Hypervisor: "beast1",
 		User:       "packer",
+		Cpu:        2,
+		Memory:     2048,
 	},
 	{
 		Name:       "test-master-03",
 		Role:       hope.NodeRoleMaster.String(),
 		Hypervisor: "beast1",
 		User:       "packer",
+		Cpu:        2,
+		Memory:     2048,
 	},
 	{
 		Name:       "test-node-01",
 		Role:       hope.NodeRoleNode.String(),
 		Hypervisor: "beast1",
 		User:       "packer",
+		Cpu:        2,
+		Memory:     4096,
 	},
 }
 
@@ -81,6 +106,34 @@ func (m *MockHypervisor) ResolveNode(node hope.Node) (hope.Node, error) {
 
 func (m *MockHypervisor) UnderlyingNode() (hope.Node, error) {
 	return m.node, nil
+}
+
+func (m *MockHypervisor) CopyImage(a packer.JsonSpec, b hope.VMs, c hope.VMImageSpec) error {
+	return nil
+}
+
+func (m *MockHypervisor) CreateImage(a hope.VMs, b hope.VMImageSpec, c []string, d bool) (*packer.JsonSpec, error) {
+	return nil, nil
+}
+
+func (m *MockHypervisor) CreateNode(a hope.Node, b hope.VMs, c hope.VMImageSpec) error {
+	return nil
+}
+
+func (m *MockHypervisor) StartVM(string) error {
+	return nil
+}
+
+func (m *MockHypervisor) StopVM(string) error {
+	return nil
+}
+
+func (m *MockHypervisor) DeleteVM(string) error {
+	return nil
+}
+
+func (m *MockHypervisor) VMIPAddress(string) (string, error) {
+	return "192.168.1.5", nil
 }
 
 func toHypervisorStub(node hope.Node) (hypervisors.Hypervisor, error) {
@@ -125,9 +178,9 @@ func (s *NodesTestSuite) TestGetNodeNames() {
 	resetViper(t)
 
 	var tests = []struct {
-		name     string
-		roles    []string
-		nodeNames     []string
+		name      string
+		roles     []string
+		nodeNames []string
 	}{
 		{"Hypervisors", []string{hope.NodeRoleHypervisor.String()}, []string{"beast1"}},
 		{"Load Balancers", []string{hope.NodeRoleLoadBalancer.String()}, []string{"test-load-balancer"}},

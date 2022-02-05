@@ -14,6 +14,7 @@ type ExecPackerWdEnvFunc func(workDir string, env *map[string]string, args ...st
 
 // JsonBuilder - A few pieces of the Packer JSON builders list.
 type JsonBuilder struct {
+	Type            string            `json:"type"`
 	VMName          string            `json:"vm_name"`
 	OutputDirectory string            `json:"output_directory"`
 	VMXData         map[string]string `json:"vmx_data"`

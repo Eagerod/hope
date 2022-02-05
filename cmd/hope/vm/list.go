@@ -10,7 +10,6 @@ import (
 
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
-	"github.com/Eagerod/hope/pkg/esxi"
 )
 
 var listCmd = &cobra.Command{
@@ -20,21 +19,17 @@ var listCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		hypervisorName := args[0]
 
-		hypervisor, err := utils.GetNode(hypervisorName)
+		hypervisor, err := utils.GetHypervisor(hypervisorName)
 		if err != nil {
 			return err
 		}
 
-		if !hypervisor.IsHypervisor() {
-			return fmt.Errorf("Node %s is not a hypervisor; cannot list VMs on it", hypervisor.Name)
-		}
-
-		list, err := esxi.ListVms(hypervisor.ConnectionString())
+		list, err := hypervisor.ListNodes()
 		if err != nil {
 			return err
 		}
 
-		for _, l := range *list {
+		for _, l := range list {
 			fmt.Println(l)
 		}
 

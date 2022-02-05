@@ -109,13 +109,16 @@ type Node struct {
 	User       string
 	Datastore  string
 	Network    string
+	Cpu        int
+	Memory     int
 }
 
 // VMImageSpec - Defines the structure needed to populate a Packer job to
 //   build a VM Image.
 type VMImageSpec struct {
-	Name       string
-	Parameters []string
+	Name        string
+	Hypervisors []string
+	Parameters  []string
 }
 
 // VMs - Object defining path information for building any VMs.

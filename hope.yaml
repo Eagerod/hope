@@ -19,6 +19,8 @@ nodes:
   - name: test-load-balancer
     role: load-balancer
     hypervisor: beast1
+    cpu: 2
+    memory: 256
     user: packer
   # Masters
   # There should be three of these.
@@ -27,14 +29,20 @@ nodes:
   - name: test-master-01
     role: master
     hypervisor: beast1
+    cpu: 2
+    memory: 2048
     user: packer
   - name: test-master-02
     role: master
     hypervisor: beast1
+    cpu: 2
+    memory: 2048
     user: packer
   - name: test-master-03
     role: master
     hypervisor: beast1
+    cpu: 2
+    memory: 2048
     user: packer
   # Nodes
   # There should be any number of these, primarily dependent on the amount of
@@ -44,6 +52,8 @@ nodes:
   - name: test-node-01
     role: node
     hypervisor: beast1
+    cpu: 2
+    memory: 4096
     user: packer
 vms:
   root: vms
@@ -51,10 +61,12 @@ vms:
   output: /var/lib/packer/images
   images:
     - name: some-image
+      hypervisors: [beast1]
       parameters:
         - ESXI_ROOT_PASSWORD
         - ESXI_NETWORK=VM Network
     - name: test-kubernetes-node
+      hypervisors: [beast1]
       parameters:
         - ESXI_ROOT_PASSWORD
         - ESXI_NETWORK=VM Network

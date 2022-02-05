@@ -55,6 +55,15 @@ func GetNodeNames(types []string) ([]string, error) {
 }
 
 func GetNode(name string) (hope.Node, error) {
+	node, err := GetBareNode(name)
+	if err != nil {
+		return hope.Node{}, err
+	}
+
+	return expandHypervisor(node)
+}
+
+func GetBareNode(name string) (hope.Node, error) {
 	nodes, err := getNodes()
 	if err != nil {
 		return hope.Node{}, err
@@ -62,7 +71,7 @@ func GetNode(name string) (hope.Node, error) {
 
 	for _, node := range nodes {
 		if node.Name == name {
-			return expandHypervisor(node)
+			return node, nil
 		}
 	}
 
@@ -232,4 +241,14 @@ func GetLoadBalancer() (hope.Node, error) {
 	// Maybe need a dedicated NodeNotFound kind of error that can be handled
 	//   independently of other errors if desired.
 	return hope.Node{}, nil
+}
+
+func HypervisorForNodeNamed(name string) (*hypervisors.Hypervisor, error) {
+	node, err := GetBareNode(name)
+	if err != nil {
+		return nil, err
+	}
+
+	hypervisor, err := GetHypervisor(node.Hypervisor)
+	return &hypervisor, err
 }
