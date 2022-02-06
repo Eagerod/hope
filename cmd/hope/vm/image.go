@@ -1,6 +1,7 @@
 package vm
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -41,6 +42,7 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
+		log.Debugf("Creating VM %s using %d hypervisors", vm.Name, len(vm.Hypervisors))
 		for _, hypervisorName := range vm.Hypervisors {
 			hypervisor, err := utils.GetHypervisor(hypervisorName)
 			if err != nil {
