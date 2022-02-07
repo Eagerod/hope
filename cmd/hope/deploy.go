@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -102,13 +103,28 @@ var deployCmd = &cobra.Command{
 			switch resourceType {
 			case hope.ResourceTypeFile:
 				if len(resource.Parameters) != 0 {
-					content, err := hope.ReplaceParametersInFile(resource.File, resource.Parameters)
-					if err != nil {
+					if info, err := os.Stat(resource.File); err != nil {
 						return err
-					}
+					} else if info.IsDir() {
+						log.Trace("Deploying directory with parameters; creating copy for parameter substitution.")
+						tempDir, err := hope.ReplaceParametersInDirectoryCopy(resource.File, resource.Parameters)
+						if err != nil {
+							return err
+						}
+						defer os.RemoveAll(tempDir)
 
-					if err := hope.KubectlApplyStdIn(kubectl, content); err != nil {
-						return err
+						if err := hope.KubectlApplyF(kubectl, tempDir); err != nil {
+							return err
+						}
+					} else {
+						content, err := hope.ReplaceParametersInFile(resource.File, resource.Parameters)
+						if err != nil {
+							return err
+						}
+
+						if err := hope.KubectlApplyStdIn(kubectl, content); err != nil {
+							return err
+						}
 					}
 				} else {
 					log.Trace(resource.Name, " does not have any parameters. Skipping population and applying file directly")
