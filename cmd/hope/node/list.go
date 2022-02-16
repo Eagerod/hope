@@ -1,7 +1,8 @@
 package node
 
 import (
-	"fmt"
+	"text/template"
+	"os"
 )
 
 import (
@@ -14,9 +15,11 @@ import (
 )
 
 var listCmdTypeSlice *[]string
+var listCmdTemplate *string
 
 func initListCmd() {
 	listCmdTypeSlice = listCmd.Flags().StringArrayP("type", "t", []string{}, "list nodes of this type")
+	listCmdTemplate = listCmd.Flags().StringP("template", "", "{{.Name}}\n", "Format the output using this go-template")
 }
 
 var listCmd = &cobra.Command{
@@ -33,13 +36,18 @@ var listCmd = &cobra.Command{
 			}
 		}
 
-		nodeNames, err := utils.GetNodeNames(*listCmdTypeSlice)
+		nodeNames, err := utils.GetBareNodeTypes(*listCmdTypeSlice)
+		if err != nil {
+			return err
+		}
+
+		tmpl, err := template.New("").Parse(*listCmdTemplate)
 		if err != nil {
 			return err
 		}
 
 		for _, node := range nodeNames {
-			fmt.Println(node)
+			tmpl.Execute(os.Stdout, node)
 		}
 
 		return nil
