@@ -34,24 +34,17 @@ func getNodes() ([]hope.Node, error) {
 }
 
 func GetNodeNames(types []string) ([]string, error) {
-	typesMap := map[string]bool{}
-	for _, t := range types {
-		typesMap[t] = true
-	}
-
-	nodes, err := getNodes()
+	nodes, err := GetBareNodeTypes(types)
 	if err != nil {
 		return nil, err
 	}
 
-	nodeNames := make([]string, 0, len(nodes))
+	rv := make([]string, 0, len(nodes))
 	for _, node := range nodes {
-		if _, ok := typesMap[node.Role]; ok {
-			nodeNames = append(nodeNames, node.Name)
-		}
+		rv = append(rv, node.Name)
 	}
 
-	return nodeNames, nil
+	return rv, nil
 }
 
 func GetNode(name string) (hope.Node, error) {
@@ -76,6 +69,27 @@ func GetBareNode(name string) (hope.Node, error) {
 	}
 
 	return hope.Node{}, fmt.Errorf("Failed to find a node named %s", name)
+}
+
+func GetBareNodeTypes(types []string) ([]hope.Node, error) {
+	nodes, err := getNodes()
+	if err != nil {
+		return nil, err
+	}
+
+	typesMap := map[string]bool{}
+	for _, t := range types {
+		typesMap[t] = true
+	}
+
+	rv := make([]hope.Node, 0, len(nodes))
+	for _, node := range nodes {
+		if _, ok := typesMap[node.Role]; ok {
+			rv = append(rv, node)
+		}
+	}
+
+	return rv, nil
 }
 
 // HasNode -- Check whether a node has been defined in the hope file, even if
