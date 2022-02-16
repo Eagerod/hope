@@ -41,7 +41,7 @@ var listCmd = &cobra.Command{
 			return err
 		}
 
-		tmpl, err := template.New("").Parse(*listCmdTemplate)
+		tmpl, err := template.New("list-command-template").Parse(*listCmdTemplate)
 		if err != nil {
 			return err
 		}
