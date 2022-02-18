@@ -64,6 +64,34 @@ func (hyp *EsxiHypervisor) ValidateNodes(nodes []hope.Node) error {
 		}
 	}
 
+	for _, node := range nodes {
+		resolvedNode, err := hyp.ResolveNode(node)
+		if err != nil {
+			return err
+		}
+
+		switch node.Role {
+		case hope.NodeRoleLoadBalancer.String():
+			cmd := []string{
+				resolvedNode.ConnectionString(),
+				"sudo",
+				"docker",
+				"ps",
+				"--filter",
+				"publish=6443",
+				"--quiet",
+			}
+			output, err := ssh.GetSSH(cmd...)
+			if err != nil {
+				return err
+			}
+
+			if output == "" {
+				return fmt.Errorf("failed to find a running API proxy on load balancer %s", node.Name)
+			}
+		}
+	}
+
 	return nil
 }
 
