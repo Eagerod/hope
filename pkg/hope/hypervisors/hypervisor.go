@@ -19,6 +19,7 @@ import (
 type Hypervisor interface {
 	ListNodes() ([]string, error)
 	ResolveNode(node hope.Node) (hope.Node, error)
+	ValidateNodes(nodes []hope.Node) error
 	UnderlyingNode() (hope.Node, error)
 
 	CopyImage(packer.JsonSpec, hope.VMs, hope.VMImageSpec) error

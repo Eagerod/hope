@@ -16,9 +16,11 @@ func InitNodeCommand() {
 	RootCommand.AddCommand(listCmd)
 	RootCommand.AddCommand(resetCmd)
 	RootCommand.AddCommand(sshCmd)
+	RootCommand.AddCommand(validateCmd)
 
 	initHostnameCmdFlags()
 	initInitCmd()
 	initListCmd()
 	initResetCmd()
+	initValidateCmd()
 }
