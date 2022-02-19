@@ -68,31 +68,13 @@ var statusCmd = &cobra.Command{
 
 			switch node.Role {
 			case hope.NodeRoleLoadBalancer.String():
-				hypervisor, err := utils.GetHypervisor(node.Hypervisor)
+				var status hope.NodeStatus
+				status, err = loadBalancerNodeStatus(node)
 				if err != nil {
 					return err
 				}
 
-				resolvedNode, err := hypervisor.ResolveNode(node)
-				if err != nil {
-					nodeStatuses[node.Name] = hope.NodeStatusDoesNotExist
-				} else {
-					cmd := []string{
-						resolvedNode.ConnectionString(),
-						"sudo",
-						"docker",
-						"ps",
-						"--filter",
-						"publish=6443",
-						"--quiet",
-					}
-					output, err := ssh.GetSSH(cmd...)
-					if err != nil || output == "" {
-						nodeStatuses[node.Name] = hope.NodeStatusUnavailable
-					} else {
-						nodeStatuses[node.Name] = hope.NodeStatusHealthy
-					}
-				}
+				nodeStatuses[node.Name] = status
 			case hope.NodeRoleMaster.String(),
 					hope.NodeRoleMasterAndNode.String(),
 					hope.NodeRoleNode.String():
@@ -104,14 +86,13 @@ var statusCmd = &cobra.Command{
 
 				nodeStatuses[node.Name] = status
 			case hope.NodeRoleHypervisor.String():
-				// There isn't _really_ much that can be done here AFAIK,
-				//   other than just SSH in and... that's it?
-				err := ssh.ExecSSH(node.ConnectionString(), "exit")
+				var status hope.NodeStatus
+				status, err = hypervisorNodeStatus(node)
 				if err != nil {
-					nodeStatuses[node.Name] = hope.NodeStatusUnavailable
-				} else {
-					nodeStatuses[node.Name] = hope.NodeStatusHealthy
+					return err
 				}
+
+				nodeStatuses[node.Name] = status
 			default:
 				return fmt.Errorf("unknown node type: %s", node.Role)
 			}
@@ -152,4 +133,41 @@ func kubernetesNodeStatus(kubectl *kubeutil.Kubectl, node hope.Node) (hope.NodeS
 
 	log.Debugf("VM %s exists with an IP address, but isn't a Kubernetes node.", node.Name)
 	return hope.NodeStatusUnavailable, nil	
+}
+
+func loadBalancerNodeStatus(node hope.Node) (hope.NodeStatus, error) {
+	hypervisor, err := utils.GetHypervisor(node.Hypervisor)
+	if err != nil {
+		return hope.NodeStatusUnavailable, err
+	}
+
+	resolvedNode, err := hypervisor.ResolveNode(node)
+	if err != nil {
+		return hope.NodeStatusDoesNotExist, nil
+	} else {
+		cmd := []string{
+			resolvedNode.ConnectionString(),
+			"sudo",
+			"docker",
+			"ps",
+			"--filter",
+			"publish=6443",
+			"--quiet",
+		}
+		output, err := ssh.GetSSH(cmd...)
+		if err != nil || output == "" {
+			return hope.NodeStatusUnavailable, nil
+		} else {
+			return hope.NodeStatusHealthy, nil
+		}
+	}
+}
+
+func hypervisorNodeStatus(node hope.Node) (hope.NodeStatus, error) {
+	err := ssh.ExecSSH(node.ConnectionString(), "exit")
+	if err != nil {
+		return hope.NodeStatusUnavailable, nil
+	}
+
+	return hope.NodeStatusHealthy, nil
 }
