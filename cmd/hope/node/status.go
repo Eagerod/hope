@@ -3,6 +3,8 @@ package node
 import (
 	"errors"
 	"fmt"
+	"os"
+	"text/tabwriter"
 )
 
 import (
@@ -102,9 +104,14 @@ var statusCmd = &cobra.Command{
 			}
 		}
 
-		for k, v := range nodeStatuses {
-			fmt.Printf("%s %s\n", k, v)
+		// Order output by the order in the yaml file, rather than iterating
+		//   over the map.
+		writer := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
+		fmt.Fprintln(writer, "Node\tStatus")
+		for _, node := range nodes {
+			fmt.Fprintf(writer, "%s\t%s\t\n", node.Name, nodeStatuses[node.Name])
 		}
+		writer.Flush()
 
 		if shouldFail {
 			return errors.New("error with nodes; see output for more details")
