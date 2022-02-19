@@ -56,6 +56,23 @@ const (
 	NodeRoleNode
 )
 
+type NodeStatus int
+
+const (
+	// NodeStatusUnavailable - Something probably went wrong, and it couldn't
+	//   be determined what the state of this node is.
+	// Maybe the node exists, but it isn't serving properly, but in general,
+	//   the node was found, but isn't but isn't doing what it's supposed to.
+	NodeStatusUnavailable NodeStatus = iota
+
+	// NodeStatusHealthy - Node is doing exactly what it should be doing.
+	NodeStatusHealthy
+
+	// NodeStatusDoesNotExist - Node is not available on Kubernetes, and not
+	//   visible on its hypervisor.
+	NodeStatusDoesNotExist
+)
+
 // BuildSpec - Properties of a ResourceTypeDockerBuild
 type BuildSpec struct {
 	Path   string
@@ -163,6 +180,19 @@ func (nr NodeRole) String() string {
 	}
 
 	return fmt.Sprintf("%%!NodeRole(%d)", nr)
+}
+
+func (ns NodeStatus) String() string {
+	switch ns {
+	case NodeStatusUnavailable:
+		return "Unavailable"
+	case NodeStatusHealthy:
+		return "Healthy"
+	case NodeStatusDoesNotExist:
+		return "DoesNotExist"
+	}
+
+	return fmt.Sprintf("%%!NodeStatus(%d)", ns)
 }
 
 // GetType - Scan through defined properties, and return the resource type

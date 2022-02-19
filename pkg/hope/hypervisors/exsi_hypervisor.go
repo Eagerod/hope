@@ -44,57 +44,6 @@ func (hyp *EsxiHypervisor) ResolveNode(node hope.Node) (hope.Node, error) {
 	return node, nil
 }
 
-func (hyp *EsxiHypervisor) ValidateNodes(nodes []hope.Node) error {
-	// Need to iterate through a few times in the interest of keeping the
-	//   lowest impact checks before getting into the more network-bound/heavy
-	//   resource utilization checks.
-	nodesList, err := hyp.ListNodes()
-	if err != nil {
-		return err
-	}
-
-	namesMap := map[string]bool{}
-	for _, n := range nodesList {
-		namesMap[n] = true
-	}
-
-	for _, node := range nodes {
-		if _, ok := namesMap[node.Name]; !ok {
-			return fmt.Errorf("failed to find node %s on hypervisor %s", node.Name, hyp.node.Name)
-		}
-	}
-
-	for _, node := range nodes {
-		resolvedNode, err := hyp.ResolveNode(node)
-		if err != nil {
-			return err
-		}
-
-		switch node.Role {
-		case hope.NodeRoleLoadBalancer.String():
-			cmd := []string{
-				resolvedNode.ConnectionString(),
-				"sudo",
-				"docker",
-				"ps",
-				"--filter",
-				"publish=6443",
-				"--quiet",
-			}
-			output, err := ssh.GetSSH(cmd...)
-			if err != nil {
-				return err
-			}
-
-			if output == "" {
-				return fmt.Errorf("failed to find a running API proxy on load balancer %s", node.Name)
-			}
-		}
-	}
-
-	return nil
-}
-
 func (hyp *EsxiHypervisor) UnderlyingNode() (hope.Node, error) {
 	return hyp.node, nil
 }
