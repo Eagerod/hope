@@ -95,8 +95,8 @@ var statusCmd = &cobra.Command{
 
 				nodeStatuses[node.Name] = status
 			case hope.NodeRoleMaster.String(),
-					hope.NodeRoleMasterAndNode.String(),
-					hope.NodeRoleNode.String():
+				hope.NodeRoleMasterAndNode.String(),
+				hope.NodeRoleNode.String():
 				var status hope.NodeStatus
 				status, err = kubernetesNodeStatus(kubectl, node)
 				if err != nil {
@@ -138,7 +138,7 @@ var statusCmd = &cobra.Command{
 	},
 }
 
-func kubernetesNodeStatus(kubectl *kubeutil.Kubectl, node hope.Node) (hope.NodeStatus, error) { 
+func kubernetesNodeStatus(kubectl *kubeutil.Kubectl, node hope.Node) (hope.NodeStatus, error) {
 	status, err := kubeutil.GetKubectl(
 		kubectl, "get", "node", node.Name,
 		"-o", "template={{range .status.conditions}}{{if eq .reason \"KubeletReady\"}}{{.status}}{{end}}{{end}}")
@@ -159,7 +159,7 @@ func kubernetesNodeStatus(kubectl *kubeutil.Kubectl, node hope.Node) (hope.NodeS
 	}
 
 	log.Debugf("VM %s exists with an IP address, but isn't a Kubernetes node.", node.Name)
-	return hope.NodeStatusUnavailable, nil	
+	return hope.NodeStatusUnavailable, nil
 }
 
 func loadBalancerNodeStatus(node hope.Node) (hope.NodeStatus, error) {
