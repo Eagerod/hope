@@ -122,10 +122,13 @@ var statusCmd = &cobra.Command{
 }
 
 func kubernetesNodeStatus(kubectl *kubeutil.Kubectl, node hope.Node) (hope.NodeStatus, error) { 
-	// GetKubectl and ignore output to avoid output to console.
-	_, err := kubeutil.GetKubectl(kubectl, "get", "node", node.Name)
-	if err == nil {
+	status, err := kubeutil.GetKubectl(
+		kubectl, "get", "node", node.Name,
+		"-o", "template={{range .status.conditions}}{{if eq .reason \"KubeletReady\"}}{{.status}}{{end}}{{end}}")
+	if err == nil && status == "True" {
 		return hope.NodeStatusHealthy, nil
+	} else if err == nil {
+		return hope.NodeStatusUnavailable, nil
 	}
 
 	hypervisor, err := utils.GetHypervisor(node.Hypervisor)
