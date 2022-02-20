@@ -16,7 +16,6 @@ import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
-	"github.com/Eagerod/hope/pkg/sliceutil"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
@@ -29,20 +28,37 @@ func initStatusCmd() {
 var statusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Checks every node in the manifest, and prints its name, along with its status.",
+	Args:  cobra.RangeArgs(0, 1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(*statusCmdTypeSlice) == 0 {
-			*statusCmdTypeSlice = []string{
-				hope.NodeRoleHypervisor.String(),
-				hope.NodeRoleLoadBalancer.String(),
-				hope.NodeRoleMaster.String(),
-				hope.NodeRoleMasterAndNode.String(),
-				hope.NodeRoleNode.String(),
+		var nodes []hope.Node
+		var err error
+		if len(args) == 1 {
+			if len(*statusCmdTypeSlice) != 0 {
+				return fmt.Errorf("cannot provide a node and a type")
 			}
-		}
 
-		nodes, err := utils.GetBareNodeTypes(*statusCmdTypeSlice)
-		if err != nil {
-			return err
+			nodeName := args[0]
+			node, err := utils.GetBareNode(nodeName)
+			if err != nil {
+				return err
+			}
+
+			nodes = []hope.Node{node}
+		} else {
+			if len(*statusCmdTypeSlice) == 0 {
+				*statusCmdTypeSlice = []string{
+					hope.NodeRoleHypervisor.String(),
+					hope.NodeRoleLoadBalancer.String(),
+					hope.NodeRoleMaster.String(),
+					hope.NodeRoleMasterAndNode.String(),
+					hope.NodeRoleNode.String(),
+				}
+			}
+
+			nodes, err = utils.GetBareNodeTypes(*statusCmdTypeSlice)
+			if err != nil {
+				return err
+			}
 		}
 
 		// If there are any Kubernetes nodes to be checked, cache a kubectl
@@ -53,14 +69,14 @@ var statusCmd = &cobra.Command{
 				kubectl.Destroy()
 			}
 		}()
-		if sliceutil.StringInSlice(hope.NodeRoleMaster.String(), *statusCmdTypeSlice) ||
-			sliceutil.StringInSlice(hope.NodeRoleNode.String(), *statusCmdTypeSlice) ||
-			sliceutil.StringInSlice(hope.NodeRoleMasterAndNode.String(), *statusCmdTypeSlice) {
-				var err error
+
+		for _, node := range nodes {
+			if node.IsKubernetesNode() {
 				kubectl, err = utils.KubectlFromAnyMaster()
 				if err != nil {
 					return err
 				}
+			}
 		}
 
 		nodeStatuses := map[string]hope.NodeStatus{}
