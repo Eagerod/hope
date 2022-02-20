@@ -23,7 +23,7 @@ import (
 var statusCmdTypeSlice *[]string
 
 func initStatusCmd() {
-	statusCmdTypeSlice = statusCmd.Flags().StringArrayP("type", "t", []string{}, "validate nodes of this type")
+	statusCmdTypeSlice = statusCmd.Flags().StringArrayP("type", "t", []string{}, "fetch status of nodes of this type")
 }
 
 var statusCmd = &cobra.Command{
