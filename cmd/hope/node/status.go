@@ -76,6 +76,7 @@ var statusCmd = &cobra.Command{
 				if err != nil {
 					return err
 				}
+				break
 			}
 		}
 
