@@ -124,7 +124,7 @@ var statusCmd = &cobra.Command{
 		// Order output by the order in the yaml file, rather than iterating
 		//   over the map.
 		writer := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
-		fmt.Fprintln(writer, "Node\tStatus")
+		fmt.Fprintln(writer, "Node\tStatus\t")
 		for _, node := range nodes {
 			fmt.Fprintf(writer, "%s\t%s\t\n", node.Name, nodeStatuses[node.Name])
 		}
