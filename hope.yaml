@@ -181,6 +181,25 @@ resources:
         - -e
         - select * from abc;
     tags: [database]
+  # Sometimes, ConfigMaps contain keys that are really not fun to embed in a
+  #   yaml file using multi-line strings
+  # This parameter substitution mechanism lets you pull base64 data out of a
+  #   file.
+  - name: configmap-with-file-keys
+    inline: |
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: file-keys
+      binaryData:
+        script.sh: ${SCRIPT_SH_FILE}
+      data:
+        something_else: ${SOME_OTHER_KEY}
+    parameters:
+      - SOME_OTHER_KEY=abc
+    fileParameters:
+      - SCRIPT_SH_FILE=test/script.sh
+    tags: [another-tag]
 # Jobs contains a collection of specifications of templated jobs that can be
 #   run on demand in the cluster.
 # These jobs shouldn't be associated to the deployment of any particular
