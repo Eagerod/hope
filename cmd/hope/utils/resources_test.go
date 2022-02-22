@@ -111,3 +111,24 @@ func TestGetIdentifiableResources(t *testing.T) {
 		})
 	}
 }
+
+func TestRenderParameters(t *testing.T) {
+	var tests = []struct {
+		name       string
+		params     []string
+		fileParams []string
+		expected   []string
+	}{
+		{"Nothing", []string{}, []string{}, []string{}},
+		{"Only param", []string{"A=B"}, []string{}, []string{"A=B"}},
+		{"Only file", []string{}, []string{"A=../../../test/small"}, []string{"A=Q29udGVudAo="}},
+		{"Both", []string{"A=B"}, []string{"B=../../../test/small"}, []string{"A=B", "B=Q29udGVudAo="}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parameters, err := RenderParameters(tt.params, tt.fileParams)
+			assert.Nil(t, err)
+			assert.Equal(t, tt.expected, parameters)
+		})
+	}
+}
