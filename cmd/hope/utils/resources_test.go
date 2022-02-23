@@ -63,6 +63,13 @@ var testResources []hope.Resource = []hope.Resource{
 		},
 		Tags: []string{"database"},
 	},
+	{
+		Name: "configmap-with-file-keys",
+		Inline: "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: file-keys\nbinaryData:\n  script.sh: ${SCRIPT_SH_FILE}\ndata:\n  something_else: ${SOME_OTHER_KEY}\n",
+		Parameters: []string{"SOME_OTHER_KEY=abc"},
+		FileParameters: []string{"SCRIPT_SH_FILE=test/script.sh"},
+		Tags: []string{"another-tag"},
+	},
 }
 
 // Basically a smoke test, don't want to define a ton of yaml blocks to test
@@ -123,6 +130,7 @@ func TestRenderParameters(t *testing.T) {
 		{"Only param", []string{"A=B"}, []string{}, []string{"A=B"}},
 		{"Only file", []string{}, []string{"A=../../../test/small"}, []string{"A=Q29udGVudAo="}},
 		{"Both", []string{"A=B"}, []string{"B=../../../test/small"}, []string{"A=B", "B=Q29udGVudAo="}},
+		{"Duplicate Keys", []string{"A=B"}, []string{"A=../../../test/small"}, []string{"A=B", "A=Q29udGVudAo="}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
