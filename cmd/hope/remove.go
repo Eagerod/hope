@@ -56,13 +56,18 @@ var removeCmd = &cobra.Command{
 				return err
 			}
 
+			parameters, err := utils.RenderParameters(resource.Parameters, resource.FileParameters)
+			if err != nil {
+				return err
+			}
+
 			// It is possible that names of resources are created using
 			//   templated values, so still do the environment substitution
 			//   process.
 			switch resourceType {
 			case hope.ResourceTypeFile:
-				if len(resource.Parameters) != 0 {
-					content, err := hope.ReplaceParametersInFile(resource.File, resource.Parameters)
+				if len(parameters) != 0 {
+					content, err := hope.ReplaceParametersInFile(resource.File, parameters)
 					if err != nil {
 						return err
 					}
@@ -83,8 +88,8 @@ var removeCmd = &cobra.Command{
 				//   are likely being populated.
 				log.Trace(inline)
 
-				if len(resource.Parameters) != 0 {
-					inline, err = hope.ReplaceParametersInString(inline, resource.Parameters)
+				if len(parameters) != 0 {
+					inline, err = hope.ReplaceParametersInString(inline, parameters)
 					if err != nil {
 						return err
 					}
