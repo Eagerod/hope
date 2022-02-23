@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
 )
 
 import (
@@ -62,16 +63,31 @@ var removeCmd = &cobra.Command{
 			switch resourceType {
 			case hope.ResourceTypeFile:
 				if len(resource.Parameters) != 0 {
-					content, err := hope.ReplaceParametersInFile(resource.File, resource.Parameters)
-					if err != nil {
+					if info, err := os.Stat(resource.File); err != nil {
 						return err
-					}
+					} else if info.IsDir() {
+						log.Trace("Deleting directory with parameters; creating copy for parameter substitution.")
+						tempDir, err := hope.ReplaceParametersInDirectoryCopy(resource.File, resource.Parameters)
+						if err != nil {
+							return err
+						}
+						defer os.RemoveAll(tempDir)
 
-					if err := hope.KubectlDeleteStdIn(kubectl, content); err != nil {
-						return err
+						if err := hope.KubectlDeleteF(kubectl, tempDir); err != nil {
+							return err
+						}
+					} else {
+						content, err := hope.ReplaceParametersInFile(resource.File, resource.Parameters)
+						if err != nil {
+							return err
+						}
+
+						if err := hope.KubectlDeleteStdIn(kubectl, content); err != nil {
+							return err
+						}
 					}
 				} else {
-					log.Trace(resource.Name, " does not have any parameters. Skipping population and applying file directly")
+					log.Trace(resource.Name, " does not have any parameters. Skipping population and deleting file directly")
 					if err := hope.KubectlDeleteF(kubectl, resource.File); err != nil {
 						return err
 					}
