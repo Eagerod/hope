@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -83,14 +84,27 @@ func FlattenParameters(directParameters, fileParameters []string) ([]string, err
 	rv := directParameters
 
 	for _, param := range fileParameters {
+		if param == "" {
+			return nil, errors.New("file parameter must be in the form PARAM=<file path>")
+		}
+
 		paramComponents := strings.SplitAfterN(param, "=", 2)
+
+		if len(paramComponents) != 2 {
+			return nil, fmt.Errorf("file parameter %s must provide file path", param)
+		}
+
 		paramName := strings.TrimRight(paramComponents[0], "=")
 		paramPath := paramComponents[1]
+
+		if paramName == "" {
+			return nil, errors.New("file parameter must include a name")
+		}
 
 		if stat, err := os.Stat(paramPath); err != nil {
 			return nil, err
 		} else if stat.IsDir() {
-			return nil, fmt.Errorf("cannot resolve parameter contents from directory: %s", paramPath)
+			return nil, fmt.Errorf("cannot resolve parameter %s contents from directory: %s", paramName, paramPath)
 		}
 
 		contents, err := hope.ReplaceParametersInFile(paramPath, directParameters)

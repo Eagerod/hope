@@ -143,6 +143,27 @@ func TestFlattenParameters(t *testing.T) {
 }
 
 func TestFlattenParametersSelfReferential(t *testing.T) {
-	_, err := FlattenParameters([]string{"WORLD"}, []string{"WORLD=../../../test/small", "A=../../../test/small-recursive"})
+	params, err := FlattenParameters([]string{"WORLD"}, []string{"WORLD=../../../test/small", "A=../../../test/small-recursive"})
 	assert.Equal(t, "Failed to find WORLD in environment.", err.Error())
+	assert.Nil(t, params)
+}
+
+func TestFlattenParametersIncomplete(t *testing.T) {
+	params, err := FlattenParameters([]string{}, []string{""})
+	assert.Equal(t, "file parameter must be in the form PARAM=<file path>", err.Error())
+	assert.Nil(t, params)
+
+	params, err = FlattenParameters([]string{}, []string{"WORLD"})
+	assert.Equal(t, "file parameter WORLD must provide file path", err.Error())
+	assert.Nil(t, params)
+
+	params, err = FlattenParameters([]string{}, []string{"=test/small"})
+	assert.Equal(t, "file parameter must include a name", err.Error())
+	assert.Nil(t, params)
+}
+
+func TestFlattenParametersDirectory(t *testing.T) {
+	params, err := FlattenParameters([]string{}, []string{"A=../../../test"})
+	assert.Equal(t, "cannot resolve parameter A contents from directory: ../../../test", err.Error())
+	assert.Nil(t, params)
 }
