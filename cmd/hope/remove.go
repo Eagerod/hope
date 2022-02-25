@@ -57,7 +57,7 @@ var removeCmd = &cobra.Command{
 				return err
 			}
 
-			parameters, err := utils.RenderParameters(resource.Parameters, resource.FileParameters)
+			parameters, err := utils.FlattenParameters(resource.Parameters, resource.FileParameters)
 			if err != nil {
 				return err
 			}

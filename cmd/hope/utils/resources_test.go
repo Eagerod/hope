@@ -119,7 +119,7 @@ func TestGetIdentifiableResources(t *testing.T) {
 	}
 }
 
-func TestRenderParameters(t *testing.T) {
+func TestFlattenParameters(t *testing.T) {
 	var tests = []struct {
 		name       string
 		params     []string
@@ -135,14 +135,14 @@ func TestRenderParameters(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			parameters, err := RenderParameters(tt.params, tt.fileParams)
+			parameters, err := FlattenParameters(tt.params, tt.fileParams)
 			assert.Nil(t, err)
 			assert.Equal(t, tt.expected, parameters)
 		})
 	}
 }
 
-func TestRenderParametersSelfReferential(t *testing.T) {
-	_, err := RenderParameters([]string{"WORLD"}, []string{"WORLD=../../../test/small", "A=../../../test/small-recursive"})
+func TestFlattenParametersSelfReferential(t *testing.T) {
+	_, err := FlattenParameters([]string{"WORLD"}, []string{"WORLD=../../../test/small", "A=../../../test/small-recursive"})
 	assert.Equal(t, "Failed to find WORLD in environment.", err.Error())
 }
