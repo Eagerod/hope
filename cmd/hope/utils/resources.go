@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -94,13 +93,13 @@ func RenderParameters(directParameters, fileParameters []string) ([]string, erro
 			return nil, fmt.Errorf("cannot resolve parameter contents from directory: %s", paramPath)
 		}
 
-		srcFile, err := ioutil.ReadFile(paramPath)
+		contents, err := hope.ReplaceParametersInFile(paramPath, directParameters)
 		if err != nil {
 			return nil, err
 		}
 
 		log.Tracef("Writing base64ed contents of file %s to parameter %s", paramPath, paramName)
-		b64Content := base64.StdEncoding.EncodeToString(srcFile)
+		b64Content := base64.StdEncoding.EncodeToString([]byte(contents))
 
 		expandedParam := fmt.Sprintf("%s=%s", paramName, b64Content)
 		rv = append(rv, expandedParam)

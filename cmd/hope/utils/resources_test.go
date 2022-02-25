@@ -131,6 +131,7 @@ func TestRenderParameters(t *testing.T) {
 		{"Only file", []string{}, []string{"A=../../../test/small"}, []string{"A=Q29udGVudAo="}},
 		{"Both", []string{"A=B"}, []string{"B=../../../test/small"}, []string{"A=B", "B=Q29udGVudAo="}},
 		{"Duplicate Keys", []string{"A=B"}, []string{"A=../../../test/small"}, []string{"A=B", "A=Q29udGVudAo="}},
+		{"Recursive Substitution", []string{"WORLD=Hope"}, []string{"A=../../../test/small-recursive"}, []string{"WORLD=Hope", "A=SGVsbG8sIEhvcGUhCg=="}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -139,4 +140,9 @@ func TestRenderParameters(t *testing.T) {
 			assert.Equal(t, tt.expected, parameters)
 		})
 	}
+}
+
+func TestRenderParametersSelfReferential(t *testing.T) {
+	_, err := RenderParameters([]string{"WORLD"}, []string{"WORLD=../../../test/small", "A=../../../test/small-recursive"})
+	assert.Equal(t, "Failed to find WORLD in environment.", err.Error())
 }
