@@ -63,6 +63,13 @@ var testResources []hope.Resource = []hope.Resource{
 		},
 		Tags: []string{"database"},
 	},
+	{
+		Name: "configmap-with-file-keys",
+		Inline: "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: file-keys\nbinaryData:\n  script.sh: ${SCRIPT_SH_FILE}\ndata:\n  something_else: ${SOME_OTHER_KEY}\n",
+		Parameters: []string{"SOME_OTHER_KEY=abc"},
+		FileParameters: []string{"SCRIPT_SH_FILE=test/script.sh"},
+		Tags: []string{"another-tag"},
+	},
 }
 
 // Basically a smoke test, don't want to define a ton of yaml blocks to test
@@ -110,4 +117,53 @@ func TestGetIdentifiableResources(t *testing.T) {
 			assert.Equal(t, tt.expected, *resources)
 		})
 	}
+}
+
+func TestFlattenParameters(t *testing.T) {
+	var tests = []struct {
+		name       string
+		params     []string
+		fileParams []string
+		expected   []string
+	}{
+		{"Nothing", []string{}, []string{}, []string{}},
+		{"Only param", []string{"A=B"}, []string{}, []string{"A=B"}},
+		{"Only file", []string{}, []string{"A=../../../test/small"}, []string{"A=Q29udGVudAo="}},
+		{"Both", []string{"A=B"}, []string{"B=../../../test/small"}, []string{"A=B", "B=Q29udGVudAo="}},
+		{"Duplicate Keys", []string{"A=B"}, []string{"A=../../../test/small"}, []string{"A=B", "A=Q29udGVudAo="}},
+		{"Recursive Substitution", []string{"WORLD=Hope"}, []string{"A=../../../test/small-recursive"}, []string{"WORLD=Hope", "A=SGVsbG8sIEhvcGUhCg=="}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			parameters, err := FlattenParameters(tt.params, tt.fileParams)
+			assert.Nil(t, err)
+			assert.Equal(t, tt.expected, parameters)
+		})
+	}
+}
+
+func TestFlattenParametersSelfReferential(t *testing.T) {
+	params, err := FlattenParameters([]string{"WORLD"}, []string{"WORLD=../../../test/small", "A=../../../test/small-recursive"})
+	assert.Equal(t, "Failed to find WORLD in environment.", err.Error())
+	assert.Nil(t, params)
+}
+
+func TestFlattenParametersIncomplete(t *testing.T) {
+	params, err := FlattenParameters([]string{}, []string{""})
+	assert.Equal(t, "file parameter must be in the form PARAM=<file path>", err.Error())
+	assert.Nil(t, params)
+
+	params, err = FlattenParameters([]string{}, []string{"WORLD"})
+	assert.Equal(t, "file parameter WORLD must provide file path", err.Error())
+	assert.Nil(t, params)
+
+	params, err = FlattenParameters([]string{}, []string{"=test/small"})
+	assert.Equal(t, "file parameter must include a name", err.Error())
+	assert.Nil(t, params)
+}
+
+func TestFlattenParametersDirectory(t *testing.T) {
+	params, err := FlattenParameters([]string{}, []string{"A=../../../test"})
+	assert.Equal(t, "cannot resolve parameter A contents from directory: ../../../test", err.Error())
+	assert.Nil(t, params)
 }

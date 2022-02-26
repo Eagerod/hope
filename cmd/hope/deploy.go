@@ -100,14 +100,19 @@ var deployCmd = &cobra.Command{
 				return err
 			}
 
+			parameters, err := utils.FlattenParameters(resource.Parameters, resource.FileParameters)
+			if err != nil {
+				return err
+			}
+
 			switch resourceType {
 			case hope.ResourceTypeFile:
-				if len(resource.Parameters) != 0 {
+				if len(parameters) != 0 {
 					if info, err := os.Stat(resource.File); err != nil {
 						return err
 					} else if info.IsDir() {
 						log.Trace("Deploying directory with parameters; creating copy for parameter substitution.")
-						tempDir, err := hope.ReplaceParametersInDirectoryCopy(resource.File, resource.Parameters)
+						tempDir, err := hope.ReplaceParametersInDirectoryCopy(resource.File, parameters)
 						if err != nil {
 							return err
 						}
@@ -117,7 +122,7 @@ var deployCmd = &cobra.Command{
 							return err
 						}
 					} else {
-						content, err := hope.ReplaceParametersInFile(resource.File, resource.Parameters)
+						content, err := hope.ReplaceParametersInFile(resource.File, parameters)
 						if err != nil {
 							return err
 						}
@@ -139,8 +144,8 @@ var deployCmd = &cobra.Command{
 				//   are likely being populated.
 				log.Trace(inline)
 
-				if len(resource.Parameters) != 0 {
-					inline, err = hope.ReplaceParametersInString(inline, resource.Parameters)
+				if len(parameters) != 0 {
+					inline, err = hope.ReplaceParametersInString(inline, parameters)
 					if err != nil {
 						return err
 					}

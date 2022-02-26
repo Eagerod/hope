@@ -92,14 +92,15 @@ type ExecSpec struct {
 // There may be a better way of doing this, but with a pretty generic list of
 //   items appearing in a yaml file, maybe not.
 type Resource struct {
-	Name       string
-	File       string
-	Inline     string
-	Parameters []string
-	Build      BuildSpec
-	Job        string
-	Exec       ExecSpec
-	Tags       []string
+	Name           string
+	File           string
+	Inline         string
+	Parameters     []string
+	FileParameters []string
+	Build          BuildSpec
+	Job            string
+	Exec           ExecSpec
+	Tags           []string
 }
 
 // Job - Properties that can appear in any ephemeral job definition.
