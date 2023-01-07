@@ -83,6 +83,7 @@ func (hyp *EsxiHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec 
 		fmt.Sprintf("--net:'%s=%s'", sourceNetworkName, hyp.node.Network),
 		fmt.Sprintf("--numberOfCpus:'*'=%d", node.Cpu),
 		fmt.Sprintf("--memorySize:'*'=%d", node.Memory),
+		"--noSSLVerify",
 		remoteOvfPath,
 		"vi://root@localhost",
 	}
