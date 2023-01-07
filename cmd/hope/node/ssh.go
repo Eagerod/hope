@@ -17,24 +17,13 @@ import (
 var sshCmd = &cobra.Command{
 	Use:   "ssh",
 	Short: "Initializes SSH for the given host",
-	Args:  cobra.RangeArgs(1, 2),
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		nodeName := args[0]
 
 		node, err := utils.GetNode(nodeName)
 		if err != nil {
 			return err
-		}
-
-		// If a second argument is given, instead of trying to verify
-		//   that the current host can SSH in without password, assume
-		//   that it can, and just try to copy the SSH key provided by
-		//   path to the remote.
-		hasKeyArg := len(args) == 2
-
-		if hasKeyArg {
-			localKeyPath := args[1]
-			return hope.CopySSHKeyToAuthorizedKeys(log.WithFields(log.Fields{}), localKeyPath, &node)
 		}
 
 		if _, err := net.LookupHost(node.Host); err != nil {
