@@ -3,13 +3,12 @@ package hope
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
+	"os/exec"
 	"strings"
 )
 
 import (
-	"github.com/mitchellh/go-homedir"
 	"github.com/sirupsen/logrus"
 )
 
@@ -114,15 +113,7 @@ func TryConfigureSSH(log *logrus.Entry, node *Node) error {
 			fmt.Fprintln(os.Stderr, "Attempting to configure SSH on the remote machine")
 			fmt.Fprintln(os.Stderr, "You will be asked for the password for", connectionString, "several times")
 
-			privateKey := strings.Replace(s, "identityfile ", "", 1)
-			privateKey, err = homedir.Expand(privateKey)
-			if err != nil {
-				return err
-			}
-
-			publicKey := fmt.Sprintf("%s.pub", privateKey)
-
-			if err := CopySSHKeyToAuthorizedKeys(log, publicKey, node); err != nil {
+			if err := CopySSHKeyToAuthorizedKeys(log, node); err != nil {
 				return err
 			}
 
@@ -134,36 +125,11 @@ func TryConfigureSSH(log *logrus.Entry, node *Node) error {
 	return err
 }
 
-func CopySSHKeyToAuthorizedKeys(log *logrus.Entry, keyPath string, node *Node) error {
-	if _, err := os.Stat(keyPath); err != nil && os.IsNotExist(err) {
-		return errors.New(fmt.Sprintf("Failed to find public key to set up authorized_keys from %s", keyPath))
-	}
-
+func CopySSHKeyToAuthorizedKeys(log *logrus.Entry, node *Node) error {
 	connectionString := node.ConnectionString()
-
-	// TODO: Maybe confirm that this actually is a public key, and if it looks
-	//   like a private key, try to add .pub and see if there's a file there.
-	sshPubKey, err := ioutil.ReadFile(keyPath)
-	if err != nil {
-		return err
-	}
-
-	// TODO: This should check to see if the given key already exists in the
-	//   authorized keys.
-	// TODO: Create a function in ssh pkg that allows for running
-	//   multi-statement commands on the target without needing to manually
-	//   construct the string.
-	commands := []string{
-		"mkdir -p $HOME/.ssh",
-		"chmod 700 $HOME/.ssh",
-		fmt.Sprintf("printf \"%s\n\" >> $HOME/.ssh/authorized_keys", strings.TrimSpace(string(sshPubKey))),
-		"chmod 600 $HOME/.ssh/authorized_keys",
-	}
-	commandString := fmt.Sprintf("'%s'", strings.Join(commands, " && "))
-
-	if err := ssh.ExecSSH(connectionString, "sh", "-c", commandString); err != nil {
-		return err
-	}
-
-	return nil
+	osCmd := exec.Command("ssh-copy-id", connectionString, "-o", "StrictHostKeyChecking=no")
+	osCmd.Stdin = os.Stdin
+	osCmd.Stdout = os.Stdout
+	osCmd.Stderr = os.Stderr
+	return osCmd.Run()
 }
