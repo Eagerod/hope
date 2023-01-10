@@ -136,7 +136,9 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, l
 		lbMasters = append(lbMasters, aMaster)
 	}
 
-	SetLoadBalancerHosts(log, loadBalancer, &lbMasters)
+	if err := SetLoadBalancerHosts(log, loadBalancer, &lbMasters); err != nil {
+		return err
+	}
 
 	// If no other defined masters existed, or no other masters were
 	//   configured to use the defined load balancer, set up this node as the
