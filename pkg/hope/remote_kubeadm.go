@@ -70,7 +70,16 @@ func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, node *Node
 }
 
 func KubeadmGetClusterCertificateKey(log *logrus.Entry, node *Node) (string, error) {
-	output, err := ssh.GetSSH(node.ConnectionString(), "sudo", "kubeadm", "init", "phase", "upload-certs", "--upload-certs")
+	certsCommand := []string{
+		node.ConnectionString(),
+		"sudo",
+		"kubeadm",
+		"init",
+		"phase",
+		"upload-certs",
+		"--upload-certs",
+	}
+	output, err := ssh.GetSSH(certsCommand...)
 	if err != nil {
 		return "", err
 	}
