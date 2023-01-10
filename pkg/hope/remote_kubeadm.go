@@ -1,6 +1,7 @@
 package hope
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -97,4 +98,32 @@ func KubeadmGetClusterCertificateKey(log *logrus.Entry, node *Node) (string, err
 	}
 
 	return "", fmt.Errorf("Failed to find cert key from existing master node: %s", node.Host)
+}
+
+// Attempt to pull a token from a master within the list of masters.
+// Accept the first one that succeeds.
+func KubeadmGetClusterJoinCommandFromAnyMaster(masters *[]Node) (string, error) {
+	var joinCommand string
+	joinCommandConstantArgs := []string{
+		"sudo",
+		"kubeadm",
+		"token",
+		"create",
+		"--print-join-command",
+	}
+
+	for _, master := range *masters {
+		var err error
+		joinCommandArgs := append([]string{master.ConnectionString()}, joinCommandConstantArgs...)
+		joinCommand, err = ssh.GetSSH(joinCommandArgs...)
+		if err == nil {
+			break
+		}
+	}
+
+	if joinCommand == "" {
+		return "", errors.New("failed to get a join token from cluster masters")
+	}
+
+	return joinCommand, nil
 }

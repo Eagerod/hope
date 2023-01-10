@@ -191,19 +191,9 @@ func CreateClusterNode(log *logrus.Entry, node *Node, masters *[]Node, force boo
 		}
 	}
 
-	// Attempt to pull a token from a master within the list of masters.
-	// Accept the first one that succeeds.
-	var joinCommand string
-	for _, master := range *masters {
-		var err error
-		joinCommand, err = ssh.GetSSH(master.ConnectionString(), "sudo", "kubeadm", "token", "create", "--print-join-command")
-		if err == nil {
-			break
-		}
-	}
-
-	if joinCommand == "" {
-		return errors.New("Failed to get a join token from cluster masters")
+	joinCommand, err := KubeadmGetClusterJoinCommandFromAnyMaster(masters)
+	if err != nil {
+		return err
 	}
 
 	joinComponents := strings.Split(joinCommand, " ")
