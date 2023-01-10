@@ -74,6 +74,7 @@ func KubeadmGetClusterCertificateKey(log *logrus.Entry, node *Node) (string, err
 	certsCommand := []string{
 		node.ConnectionString(),
 		"sudo",
+		"KUBECONFIG=/etc/kubernetes/admin.conf",
 		"kubeadm",
 		"init",
 		"phase",
@@ -106,6 +107,7 @@ func KubeadmGetClusterJoinCommandFromAnyMaster(masters *[]Node) (string, error) 
 	var joinCommand string
 	joinCommandConstantArgs := []string{
 		"sudo",
+		"KUBECONFIG=/etc/kubernetes/admin.conf",
 		"kubeadm",
 		"token",
 		"create",
