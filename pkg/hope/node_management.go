@@ -2,7 +2,6 @@ package hope
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -142,7 +141,7 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, l
 
 	// If no other defined masters existed, or no other masters were
 	//   configured to use the defined load balancer, set up this node as the
-	//   first node in the load balanced group.make clean
+	//   first node in the load balanced group.
 	if len(lbMasters) == 1 {
 		podNetworkCidrArg := fmt.Sprintf("--pod-network-cidr=%s", podNetworkCidr)
 		allArgs := []string{connectionString, "sudo", "kubeadm", "init", podNetworkCidrArg}
@@ -158,7 +157,8 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, l
 		return err
 	}
 
-	joinCommand, err := ssh.GetSSH(otherMaster.ConnectionString(), "sudo", "kubeadm", "token", "create", "--print-join-command")
+	existingMasters := (*masters)[1:]
+	joinCommand, err := KubeadmGetClusterJoinCommandFromAnyMaster(&existingMasters)
 	if err != nil {
 		return err
 	}
