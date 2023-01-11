@@ -64,11 +64,11 @@ var testResources []hope.Resource = []hope.Resource{
 		Tags: []string{"database"},
 	},
 	{
-		Name: "configmap-with-file-keys",
-		Inline: "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: file-keys\nbinaryData:\n  script.sh: ${SCRIPT_SH_FILE}\ndata:\n  something_else: ${SOME_OTHER_KEY}\n",
-		Parameters: []string{"SOME_OTHER_KEY=abc"},
+		Name:           "configmap-with-file-keys",
+		Inline:         "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: file-keys\nbinaryData:\n  script.sh: ${SCRIPT_SH_FILE}\ndata:\n  something_else: ${SOME_OTHER_KEY}\n",
+		Parameters:     []string{"SOME_OTHER_KEY=abc"},
 		FileParameters: []string{"SCRIPT_SH_FILE=test/script.sh"},
-		Tags: []string{"another-tag"},
+		Tags:           []string{"another-tag"},
 	},
 }
 
