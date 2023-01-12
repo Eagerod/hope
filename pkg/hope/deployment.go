@@ -16,8 +16,11 @@ func KubectlCreateStdIn(kubectl *kubeutil.Kubectl, stdin string) error {
 	return kubeutil.InKubectl(kubectl, stdin, "create", "-f", "-")
 }
 
-func KubectlGetCreateStdIn(kubectl *kubeutil.Kubectl, stdin string) (string, error) {
-	return kubeutil.GetInKubectl(kubectl, stdin, "create", "-f", "-")
+func KubectlGetCreateStdIn(kubectl *kubeutil.Kubectl, stdin string, args ...string) (string, error) {
+	allArgs := []string{"create"}
+	allArgs = append(allArgs, args...)
+	allArgs = append(allArgs, "-f", "-")
+	return kubeutil.GetInKubectl(kubectl, stdin, allArgs...)
 }
 
 func KubectlDeleteF(kubectl *kubeutil.Kubectl, path string) error {

@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"strings"
 )
 
@@ -78,24 +77,11 @@ var runCmd = &cobra.Command{
 
 		defer kubectl.Destroy()
 
-		output, err := hope.KubectlGetCreateStdIn(kubectl, jobText)
+		output, err := hope.KubectlGetCreateStdIn(kubectl, jobText, "-o", "template={{.metadata.name}}")
 		if err != nil {
 			return err
 		}
 
-		// Grab the job name from the output
-		re, err := regexp.Compile("job\\.batch/([^\\s]+)")
-		if err != nil {
-			return err
-		}
-
-		kubeJobNameMatches := re.FindStringSubmatch(output)
-		if len(kubeJobNameMatches) != 2 {
-			return errors.New(fmt.Sprintf("Failed to parse job name from output: %s", output))
-		}
-
-		kubeJobName := kubeJobNameMatches[1]
-
-		return hope.FollowLogsAndPollUntilJobComplete(log.WithFields(log.Fields{}), kubectl, kubeJobName, 10, 12)
+		return hope.FollowLogsAndPollUntilJobComplete(log.WithFields(log.Fields{}), kubectl, output, 10, 12)
 	},
 }
