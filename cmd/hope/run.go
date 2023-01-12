@@ -77,7 +77,7 @@ var runCmd = &cobra.Command{
 
 		defer kubectl.Destroy()
 
-		output, err := hope.KubectlGetCreateStdIn(kubectl, jobText, "-o", "template={{.metadata.name}}")
+		output, err := hope.KubectlGetCreateStdIn(kubectl, jobText, "-o", "template={{.metadata.namespace}}/{{.metadata.name}}")
 		if err != nil {
 			return err
 		}

@@ -26,8 +26,8 @@ const (
 )
 
 // Check to see if the provided job has completed, or is still running.
-func GetJobStatus(log *logrus.Entry, kubectl *kubeutil.Kubectl, job string) (JobStatus, error) {
-	output, err := kubeutil.GetKubectl(kubectl, "get", "job", job, "-o", "template={{range .status.conditions}}{{.type}}{{end}}")
+func GetJobStatus(log *logrus.Entry, kubectl *kubeutil.Kubectl, namespace, job string) (JobStatus, error) {
+	output, err := kubeutil.GetKubectl(kubectl, "get", "-n", namespace, "job", job, "-o", "template={{range .status.conditions}}{{.type}}{{end}}")
 	if err != nil {
 		return JobStatusUnknown, err
 	}
@@ -42,14 +42,14 @@ func GetJobStatus(log *logrus.Entry, kubectl *kubeutil.Kubectl, job string) (Job
 	}
 }
 
-func FollowLogsIfContainersRunning(kubectl *kubeutil.Kubectl, job string) error {
+func FollowLogsIfContainersRunning(kubectl *kubeutil.Kubectl, namespace, job string) error {
 	jobSelector := fmt.Sprintf("job-name=%s", job)
-	return kubeutil.ExecKubectl(kubectl, "logs", "-f", "-l", jobSelector)
+	return kubeutil.ExecKubectl(kubectl, "logs", "-n", namespace, "-f", "-l", jobSelector)
 }
 
-func GetPodsForJob(kubectl *kubeutil.Kubectl, job string) (*[]string, error) {
+func GetPodsForJob(kubectl *kubeutil.Kubectl, namespace, job string) (*[]string, error) {
 	jobSelector := fmt.Sprintf("job-name=%s", job)
-	output, err := kubeutil.GetKubectl(kubectl, "get", "pods", "-l", jobSelector, "-o", "template={{range .items}}{{.metadata.name}} {{end}}")
+	output, err := kubeutil.GetKubectl(kubectl, "get", "-n", namespace, "pods", "-l", jobSelector, "-o", "template={{range .items}}{{.metadata.name}} {{end}}")
 	if err != nil {
 		return nil, err
 	}
@@ -58,12 +58,21 @@ func GetPodsForJob(kubectl *kubeutil.Kubectl, job string) (*[]string, error) {
 	return &pods, nil
 }
 
-func FollowLogsAndPollUntilJobComplete(log *logrus.Entry, kubectl *kubeutil.Kubectl, job string, maxAttempts int, failedPollDelayMaxSeconds int) error {
+func FollowLogsAndPollUntilJobComplete(log *logrus.Entry, kubectl *kubeutil.Kubectl, nsJob string, maxAttempts int, failedPollDelayMaxSeconds int) error {
+	namespace := "default"
+	job := nsJob
+
+	components := strings.Split(nsJob, "/")
+	if len(components) == 2 {
+		namespace = components[0]
+		job = components[1]
+	}
+
 	// Check the job status before anything.
 	// It's possible that the job ran long ago, and pods have been cleaned up.
 	// If that's the case, attempting to attach to logs will fail; and that
 	//   won't be straight-forward to recover from.
-	status, err := GetJobStatus(log, kubectl, job)
+	status, err := GetJobStatus(log, kubectl, namespace, job)
 	if err != nil {
 		return err
 	}
@@ -72,7 +81,7 @@ func FollowLogsAndPollUntilJobComplete(log *logrus.Entry, kubectl *kubeutil.Kube
 	case JobStatusFailed:
 		return errors.New(fmt.Sprintf("Job %s failed.", job))
 	case JobStatusComplete:
-		log.Debug("Job ", job, " successful.")
+		log.Debug("Job ", nsJob, " successful.")
 		return nil
 	}
 
@@ -80,7 +89,7 @@ func FollowLogsAndPollUntilJobComplete(log *logrus.Entry, kubectl *kubeutil.Kube
 		attemptsDuration := math.Pow(2, float64(attempt))
 		onFailureSleepSeconds := int(math.Min(attemptsDuration, float64(failedPollDelayMaxSeconds)))
 
-		logsErr := FollowLogsIfContainersRunning(kubectl, job)
+		logsErr := FollowLogsIfContainersRunning(kubectl, namespace, job)
 		if logsErr != nil {
 			log.Warn(logsErr)
 		}
@@ -88,7 +97,7 @@ func FollowLogsAndPollUntilJobComplete(log *logrus.Entry, kubectl *kubeutil.Kube
 		// Logs may have successfully attached and printed for failed
 		//   containers, so just because the log function succeeded, we
 		//   can't assume success.
-		status, err := GetJobStatus(log, kubectl, job)
+		status, err := GetJobStatus(log, kubectl, namespace, job)
 		if err != nil {
 			return err
 		}
@@ -105,7 +114,7 @@ func FollowLogsAndPollUntilJobComplete(log *logrus.Entry, kubectl *kubeutil.Kube
 			log.Debug("Checking pod events for details...")
 			// Check the event log for the pods associated with this job.
 			// There may be something useful in there.
-			pods, err := GetPodsForJob(kubectl, job)
+			pods, err := GetPodsForJob(kubectl, namespace, job)
 			if err != nil {
 				log.Warn(err)
 			} else {
