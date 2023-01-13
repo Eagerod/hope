@@ -27,6 +27,8 @@ func SetLoadBalancerHosts(log *logrus.Entry, node *Node, masters *[]Node) error 
 		log.Warn("Setting empty load balancer hosts.")
 	}
 
+	connectionString := node.ConnectionString()
+
 	// In the case where there are no masters yet, send traffic to a black
 	//   hole.
 	// Prevents Nginx from crash looping; upstream servers need at least one
@@ -36,16 +38,10 @@ func SetLoadBalancerHosts(log *logrus.Entry, node *Node, masters *[]Node) error 
 		masterUpstreamContents = "server 0.0.0.0:6443;"
 	} else {
 		for _, master := range *masters {
-			masterUpstreamContents = fmt.Sprintf("%s\nserver %s:6443;", masterUpstreamContents, master.Host)
+			masterUpstreamContents = fmt.Sprintf("%s\n        server %s:6443;", masterUpstreamContents, master.Host)
 		}
 	}
 	populatedConfig := fmt.Sprintf(NginxConfig, masterUpstreamContents)
-
-	// Because this string ends up being an escaping nightmare when attempting
-	//   to write it out directly in a set of statements, copy the file into
-	//   the authenticated user's home directory, then copy with root to where
-	//   nginx wants it.
-	connectionString := node.ConnectionString()
 	configTempFilename := uuid.New().String()
 	dest := fmt.Sprintf("%s:%s", connectionString, configTempFilename)
 	if err := scp.ExecSCPBytes([]byte(populatedConfig), dest); err != nil {
