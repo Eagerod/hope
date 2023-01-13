@@ -9,9 +9,9 @@ import (
 
 var testJobs []hope.Job = []hope.Job{
 	{
-		Name:       "some-unscheduled-job",
-		File:       "/path/to/some/job.yaml",
-		Parameters: []string{"SOMETHING_TO_POPULATE"},
+		Name:       "test-job",
+		File:       "test/job.yaml",
+		Parameters: []string{"LOG_LINE=I did the thing"},
 	},
 }
 
@@ -28,7 +28,7 @@ func TestGetJobs(t *testing.T) {
 func TestGetJob(t *testing.T) {
 	resetViper(t)
 
-	job, err := GetJob("some-unscheduled-job")
+	job, err := GetJob("test-job")
 	assert.Nil(t, err)
 	assert.Equal(t, testJobs[0], *job)
 }
