@@ -214,7 +214,7 @@ resources:
 #   spec.
 # Jobs will be started, and logs will be streamed to the client.
 jobs:
-  - name: some-unscheduled-job
-    file: /path/to/some/job.yaml
+  - name: test-job
+    file: test/job.yaml
     parameters:
-      - SOMETHING_TO_POPULATE
+      - LOG_LINE=I did the thing

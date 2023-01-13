@@ -1,0 +1,27 @@
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: super-legit-job-
+  namespace: dev
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: super-legit-job
+    spec:
+      restartPolicy: Never
+      imagePullSecrets:
+        - name: registry.internal.aleemhaji.com
+      containers:
+        - name: rotate-node
+          # image: busybox:1.35.0
+          image: registry.internal.aleemhaji.com/busybox:1.35.0
+          command:
+            - sh
+            - -xeufc
+            - |
+              echo "I'm a super important job. Watch me do 5 minutes of hard work."
+              sleep 300
+              echo "${LOG_LINE}!"
