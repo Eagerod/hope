@@ -2,7 +2,6 @@ package hope
 
 import (
 	"fmt"
-	"path"
 	"strings"
 )
 
@@ -46,7 +45,6 @@ func SetLoadBalancerHosts(log *logrus.Entry, node *Node, masters *[]Node) error 
 	//   to write it out directly in a set of statements, copy the file into
 	//   the authenticated user's home directory, then copy with root to where
 	//   nginx wants it.
-	// Pretty sketchy building up the path in the way it is.
 	connectionString := node.ConnectionString()
 	configTempFilename := uuid.New().String()
 	dest := fmt.Sprintf("%s:%s", connectionString, configTempFilename)
@@ -54,20 +52,34 @@ func SetLoadBalancerHosts(log *logrus.Entry, node *Node, masters *[]Node) error 
 		return err
 	}
 
-	output, err := ssh.GetSSH(connectionString, "pwd")
+	// Check to see if a container is already running.
+	// If one is, lots of steps have already been done already, and can just
+	//   update the configuration in the already-running container.
+	// If not, will have to do some work to get the container up.
+	runningContainer, err := ssh.GetSSH(connectionString, "sudo", "docker", "ps", "-f", "expose=6443", "-q")
 	if err != nil {
 		return err
 	}
 
-	configTempPath := path.Join(strings.TrimSpace(output), configTempFilename)
+	runningContainer = strings.TrimSpace(runningContainer)
 
 	// TODO: Parameterize nginx version?
-	statements := []string{
-		"mkdir -p /etc/nginx",
-		fmt.Sprintf("mv %s /etc/nginx/nginx.conf", configTempPath),
-		"chown root:root /etc/nginx/nginx.conf",
-		"docker kill $(docker ps -f expose=6443 -q) || true",
-		"docker run -d -v /etc/nginx/nginx.conf:/etc/nginx/nginx.conf -p 6443:6443 --restart unless-stopped nginx:1.19.4",
+	var statements []string
+	if runningContainer == "" {
+		statements = []string{
+			"mkdir -p /etc/nginx",
+			fmt.Sprintf("mv %s /etc/nginx/nginx.conf", configTempFilename),
+			"chown root:root /etc/nginx/nginx.conf",
+			"docker run -d -v /etc/nginx/nginx.conf:/etc/nginx/nginx.conf -p 6443:6443 --restart unless-stopped nginx:1.19.4",
+		}
+	} else {
+		// Volume needs to keep the same inode, so have to trunc
+		//   and append.
+		statements = []string{
+			fmt.Sprintf("cat %s > /etc/nginx/nginx.conf", configTempFilename),
+			fmt.Sprintf("docker exec -i %s nginx -s reload", runningContainer),
+			fmt.Sprintf("rm %s", configTempFilename),
+		}
 	}
 
 	script := fmt.Sprintf("'%s'", strings.Join(statements, ";\n"))
