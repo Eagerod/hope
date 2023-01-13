@@ -48,10 +48,6 @@ func SetLoadBalancerHosts(log *logrus.Entry, node *Node, masters *[]Node) error 
 		return err
 	}
 
-	// Check to see if a container is already running.
-	// If one is, lots of steps have already been done already, and can just
-	//   update the configuration in the already-running container.
-	// If not, will have to do some work to get the container up.
 	runningContainer, err := ssh.GetSSH(connectionString, "sudo", "docker", "ps", "-f", "expose=6443", "-q")
 	if err != nil {
 		return err
@@ -60,6 +56,8 @@ func SetLoadBalancerHosts(log *logrus.Entry, node *Node, masters *[]Node) error 
 	runningContainer = strings.TrimSpace(runningContainer)
 
 	// TODO: Parameterize nginx version?
+	// If a container is already running, just update its config.
+	// If not, create the initial config + create the container.
 	var statements []string
 	if runningContainer == "" {
 		statements = []string{
