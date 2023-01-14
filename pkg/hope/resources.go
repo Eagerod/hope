@@ -38,8 +38,7 @@ stream {
                      '$protocol $status $bytes_sent $bytes_received '
                      '$session_time';
 
-    upstream backend {
-        %s
+    upstream backend {%s
     }
 
     server {
