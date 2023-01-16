@@ -13,7 +13,6 @@ import (
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/hope/hypervisors"
 	"github.com/Eagerod/hope/pkg/kubeutil"
-	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
 var toHypervisor func(hope.Node) (hypervisors.Hypervisor, error) = hypervisors.ToHypervisor
@@ -188,23 +187,11 @@ func GetAvailableMasters() ([]hope.Node, error) {
 
 	for _, node := range nodes {
 		if node.IsMaster() {
-			hv, err := GetHypervisor(node.Hypervisor)
+			exNode, err := expandHypervisor(node)
 			if err != nil {
 				return nil, err
 			}
-
-			hvNodes, err := hv.ListNodes()
-			if err != nil {
-				return nil, err
-			}
-
-			if sliceutil.StringInSlice(node.Name, hvNodes) {
-				exNode, err := expandHypervisor(node)
-				if err != nil {
-					return nil, err
-				}
-				retVal = append(retVal, exNode)
-			}
+			retVal = append(retVal, exNode)
 		}
 	}
 
