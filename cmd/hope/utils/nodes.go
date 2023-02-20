@@ -93,7 +93,7 @@ func GetBareNodeTypes(types []string) ([]hope.Node, error) {
 }
 
 // HasNode -- Check whether a node has been defined in the hope file, even if
-//   the node doesn't exist on its hypervisor yet.
+// the node doesn't exist on its hypervisor yet.
 func HasNode(name string) bool {
 	nodes, err := getNodes()
 	if err != nil {
@@ -176,9 +176,9 @@ func GetHypervisor(name string) (hypervisors.Hypervisor, error) {
 }
 
 // GetAvailableMasters -- Returns the list of master nodes that can be reached
-//   in one way or another.
+// in one way or another.
 // Doesn't confirm if the masters are configured, or are in the load balanced
-//   set of masters; only that the node exists on its defined hypervisor.
+// set of masters; only that the node exists on its defined hypervisor.
 func GetAvailableMasters() ([]hope.Node, error) {
 	retVal := []hope.Node{}
 	nodes, err := getNodes()

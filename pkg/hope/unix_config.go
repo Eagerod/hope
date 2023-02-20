@@ -95,13 +95,13 @@ func EnsureSSHWithoutPassword(log *logrus.Entry, node *Node) error {
 
 // Attempt to SSH into a machine without allowing password authentication.
 // Also disables strict host checking to prevent the unattended nature of the
-//   execution from causing the script to fail.
+// execution from causing the script to fail.
 func TestCanSSHWithoutPassword(node *Node) error {
 	return ssh.ExecSSH("-o", "Batchmode=yes", "-o", "StrictHostKeyChecking=no", "-o", "PasswordAuthentication=no", node.ConnectionString(), "exit")
 }
 
 // See what SSH key this host is trying to use, and try copying it over to the
-//   appropriate place using password auth.
+// appropriate place using password auth.
 func TryConfigureSSH(log *logrus.Entry, node *Node) error {
 	connectionString := node.ConnectionString()
 	output, err := ssh.GetSSH("-G", connectionString)

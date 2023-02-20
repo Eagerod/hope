@@ -1,10 +1,10 @@
 // Package utils -- Utility functions to be used throughout cmd.
 // Kind of decided that this was a pretty decent way of doing shared logic for
-//   cmd.
+// cmd.
 // Basically the same as for pkg, so nothing too special there, but since cmd
-//   has a bit of nesting, it brings up some more questions.
+// has a bit of nesting, it brings up some more questions.
 // It seems like golang itself does a pattern like this for `base` cmd units,
-//   so this is probably not too shabby.
+// so this is probably not too shabby.
 package hope
 
 import (
@@ -75,9 +75,9 @@ func replaceParametersInDirectory(dir string, parameters []string) error {
 }
 
 // ReplaceParametersInDirectoryCopy - Copy the provided directory, and replace
-//   parameters in the files.
+// parameters in the files.
 // Returns the temp path to the copied directory, and the caller must clean up
-//   that directory itself, unless an error occurs.
+// that directory itself, unless an error occurs.
 func ReplaceParametersInDirectoryCopy(dir string, parameters []string) (string, error) {
 	tempDir, err := ioutil.TempDir("", "*")
 	if err != nil {

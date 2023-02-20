@@ -144,7 +144,7 @@ func toHypervisorStub(node hope.Node) (hypervisors.Hypervisor, error) {
 }
 
 // Implemented as a suite to allow manipulating the hypervisor factory
-//   function.
+// function.
 type NodesTestSuite struct {
 	suite.Suite
 }
@@ -163,7 +163,7 @@ func TestNodes(t *testing.T) {
 }
 
 // Basically a smoke test, don't want to define a ton of yaml blocks to test
-//   this extensively quite yet.
+// this extensively quite yet.
 func (s *NodesTestSuite) TestGetNodes() {
 	t := s.T()
 	resetViper(t)

@@ -77,7 +77,8 @@ func GetIdentifiableResources(names *[]string, tags *[]string) (*[]hope.Resource
 }
 
 // For each parameter from a file, load the file and populate the base64
-//   values of the files into the properties.
+// values of the files into the properties.
+//
 // Does nothing to deduplicate keys.
 // All plain parameters will exist in the list before file parameters.
 func FlattenParameters(directParameters, fileParameters []string) ([]string, error) {

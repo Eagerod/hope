@@ -6,7 +6,7 @@ import (
 )
 
 // Super sketchy function that attempts to convert the vim-cmd structured
-//  output into a JSON-looking string.
+// output into a JSON-looking string.
 // From there, it can be fed into json.Unmarshal.
 func VimCmdParseOutput(input string) string {
 	outputLines := []string{}

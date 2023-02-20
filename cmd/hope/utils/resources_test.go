@@ -73,7 +73,7 @@ var testResources []hope.Resource = []hope.Resource{
 }
 
 // Basically a smoke test, don't want to define a ton of yaml blocks to test
-//   this extensively quite yet.
+// this extensively quite yet.
 func TestGetResources(t *testing.T) {
 	resetViper(t)
 

@@ -6,7 +6,7 @@ import (
 )
 
 // ResourceType enum to differentiate the types of resource definitions that
-//   can appear in the hope yaml file.
+// can appear in the hope yaml file.
 type ResourceType int
 
 const (
@@ -90,7 +90,7 @@ type ExecSpec struct {
 
 // Resource - Properties that can appear in any resources.
 // There may be a better way of doing this, but with a pretty generic list of
-//   items appearing in a yaml file, maybe not.
+// items appearing in a yaml file, maybe not.
 type Resource struct {
 	Name           string
 	File           string
@@ -105,7 +105,7 @@ type Resource struct {
 
 // Job - Properties that can appear in any ephemeral job definition.
 // TODO: Allow jobs to define max retry parameters, or accept them on the
-//   command line.
+// command line.
 type Job struct {
 	Name       string
 	File       string
@@ -113,11 +113,11 @@ type Job struct {
 }
 
 // Node - Defines a networked resource on which operations will typically be
-//   executed.
+// executed.
 // Datastore is really only used for Hypervisors, but whatever; it's not
-//   incredibly intuitive how to have non-homogenous types in viper lists.
+// incredibly intuitive how to have non-homogenous types in viper lists.
 // If a more concrete type is eventually used, the Role property should become
-//   an enum/bitfield.
+// an enum/bitfield.
 type Node struct {
 	Name       string
 	Role       string
@@ -132,7 +132,7 @@ type Node struct {
 }
 
 // VMImageSpec - Defines the structure needed to populate a Packer job to
-//   build a VM Image.
+// build a VM Image.
 type VMImageSpec struct {
 	Name        string
 	Hypervisors []string
@@ -197,7 +197,7 @@ func (ns NodeStatus) String() string {
 }
 
 // GetType - Scan through defined properties, and return the resource type
-//   that the resource appears to implement.
+// that the resource appears to implement.
 func (resource *Resource) GetType() (ResourceType, error) {
 	detectedTypes := []ResourceType{}
 	if len(resource.File) != 0 {
@@ -240,7 +240,7 @@ func (node *Node) ConnectionString() string {
 }
 
 // IsMasterAndNode - Whether or not this node plays the roles of both control
-//   plane and worker node.
+// plane and worker node.
 func (node *Node) IsMasterAndNode() bool {
 	return node.Role == NodeRoleMasterAndNode.String()
 }
@@ -266,7 +266,7 @@ func (node *Node) IsLoadBalancer() bool {
 }
 
 // IsKubernetesNode - Whether or not this node has one of the Kubernetes
-//   roles.
+// roles.
 func (node *Node) IsKubernetesNode() bool {
 	return node.IsMaster() || node.IsNode()
 }

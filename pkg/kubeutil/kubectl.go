@@ -10,9 +10,9 @@ import (
 )
 
 // Kubectl struct allows for execution of a kubectl command with a
-//   non-environment set kubeconfig path.
+// non-environment set kubeconfig path.
 // TODO: Move more uses of kubeutil.ExecKubectl/GetKubectl/etc to use this
-//   structure.
+// structure.
 type Kubectl struct {
 	KubeconfigPath string
 }
