@@ -46,7 +46,7 @@ var initCmd = &cobra.Command{
 		}
 
 		loadBalancer, err := utils.GetLoadBalancer()
-		if err != nil && loadBalancer != (hope.Node{}) {
+		if err != nil && loadBalancer.Name != "" {
 			return err
 		}
 		loadBalancerHost := viper.GetString("load_balancer_host")

@@ -10,12 +10,20 @@ import (
 
 import (
 	"github.com/sirupsen/logrus"
+	kubeletconfigv1betal "k8s.io/kubelet/config/v1beta1"
+	corev1 "k8s.io/api/core/v1"
+	kubernetesyaml "k8s.io/apimachinery/pkg/util/yaml"
+	"gopkg.in/yaml.v2"
+	"github.com/google/uuid"
 )
 
 import (
 	"github.com/Eagerod/hope/pkg/kubeutil"
+	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
+
+const kubeletConfigPath string = "/var/lib/kubelet/config.yaml"
 
 func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 	if !node.IsKubernetesNode() {
@@ -106,6 +114,10 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, l
 		}
 	}
 
+	if err := applyNodeRegistrationTaints(node); err != nil {
+		return err
+	}
+
 	if loadBalancer == nil {
 		return createClusterMasterStandalone(log, node, podNetworkCidr)
 	}
@@ -189,6 +201,10 @@ func CreateClusterNode(log *logrus.Entry, node *Node, masters *[]Node, force boo
 		if err := forceUserToEnterHostnameToContinue(node); err != nil {
 			return err
 		}
+	}
+
+	if err := applyNodeRegistrationTaints(node); err != nil {
+		return err
 	}
 
 	joinCommand, err := KubeadmGetClusterJoinCommandFromAnyMaster(masters)
@@ -303,4 +319,48 @@ func forceUserToEnterHostnameToContinue(node *Node) error {
 	}
 
 	return nil
+}
+
+func applyNodeRegistrationTaints(node *Node) error {
+	if len(node.Taints) == 0 {
+		return nil
+	}
+
+	yamlContent, err := ssh.GetSSH(node.ConnectionString(), "sudo", "cat", kubeletConfigPath) 
+	if err != nil {
+		return err
+	}
+
+	yamlReader := strings.NewReader(yamlContent)
+	var kubeletConfig kubeletconfigv1betal.KubeletConfiguration
+	kubernetesyaml.NewYAMLOrJSONDecoder(yamlReader, 1000).Decode(&kubeletConfig)
+
+	for _, t := range node.Taints {
+		taint := corev1.Taint{
+			Key: t.Key,
+			Value: t.Value,
+			Effect: corev1.TaintEffect(t.Effect),
+		}
+
+		kubeletConfig.RegisterWithTaints = append(kubeletConfig.RegisterWithTaints, taint)
+	}
+
+	kubeletConfigBytes, err := yaml.Marshal(&kubeletConfig)
+	if err != nil {
+		return err
+	}
+
+	configTempFilename := uuid.New().String()
+	dest := fmt.Sprintf("%s:%s", node.ConnectionString(), configTempFilename)
+	if err := scp.ExecSCPBytes(kubeletConfigBytes, dest); err != nil {
+		return err
+	}
+
+	statements := []string{
+		fmt.Sprintf("mv %s %s", configTempFilename, kubeletConfigPath),
+		fmt.Sprintf("chown root:root %s", kubeletConfigPath),
+	}
+
+	script := fmt.Sprintf("'%s'", strings.Join(statements, ";\n"))
+	return ssh.ExecSSH(node.ConnectionString(), "sudo", "sh", "-ec", script)
 }

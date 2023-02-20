@@ -55,6 +55,16 @@ nodes:
     cpu: 2
     memory: 4096
     user: packer
+  - name: test-node-02
+    role: node
+    hypervisor: beast1
+    cpu: 2
+    memory: 4096
+    user: packer
+    taints:
+      - key: something
+        value: else
+        effect: NoSchedule
 vms:
   root: vms
   cache: /var/lib/packer/cache
