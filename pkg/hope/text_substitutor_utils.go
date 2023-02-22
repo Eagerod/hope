@@ -8,7 +8,6 @@
 package hope
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -79,7 +78,7 @@ func replaceParametersInDirectory(dir string, parameters []string) error {
 // Returns the temp path to the copied directory, and the caller must clean up
 // that directory itself, unless an error occurs.
 func ReplaceParametersInDirectoryCopy(dir string, parameters []string) (string, error) {
-	tempDir, err := ioutil.TempDir("", "*")
+	tempDir, err := os.MkdirTemp("", "*")
 	if err != nil {
 		return "", err
 	}

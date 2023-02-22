@@ -2,7 +2,6 @@ package hope
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path"
 )
@@ -66,7 +65,7 @@ func FetchKubeconfig(log *logrus.Entry, node *Node, merge bool) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(kubeconfigFile, []byte(kubeconfigContents), 0600)
+	err = os.WriteFile(kubeconfigFile, []byte(kubeconfigContents), 0600)
 	if err != nil {
 		return err
 	}

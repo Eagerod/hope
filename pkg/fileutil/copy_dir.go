@@ -4,14 +4,13 @@ package fileutil
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"syscall"
 )
 
 func CopyDirectory(scrDir, dest string) error {
-	entries, err := ioutil.ReadDir(scrDir)
+	entries, err := os.ReadDir(scrDir)
 	if err != nil {
 		return err
 	}
@@ -51,9 +50,14 @@ func CopyDirectory(scrDir, dest string) error {
 			return err
 		}
 
-		isSymlink := entry.Mode()&os.ModeSymlink != 0
+		dirInfo, err := entry.Info()
+		if err != nil {
+			return err
+		}
+
+		isSymlink := dirInfo.Mode()&os.ModeSymlink != 0
 		if !isSymlink {
-			if err := os.Chmod(destPath, entry.Mode()); err != nil {
+			if err := os.Chmod(destPath, dirInfo.Mode()); err != nil {
 				return err
 			}
 		}

@@ -2,7 +2,6 @@ package hypervisors
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -184,7 +183,7 @@ func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpe
 				return nil, fmt.Errorf("file exists at path %s", packerOutDir)
 			}
 
-			files, err := ioutil.ReadDir(packerOutDir)
+			files, err := os.ReadDir(packerOutDir)
 			if err != nil {
 				return nil, err
 			}

@@ -1,7 +1,6 @@
 package kubeutil
 
 import (
-	"io/ioutil"
 	"os"
 )
 
@@ -24,7 +23,7 @@ func NewKubectl(kubeconfigPath string) *Kubectl {
 func NewKubectlFromNode(host string) (*Kubectl, error) {
 	// Do not delete.
 	// Leave deletion up to destroying the kubectl instance.
-	tempFile, err := ioutil.TempFile("", "")
+	tempFile, err := os.CreateTemp("", "")
 	if err != nil {
 		return nil, err
 	}

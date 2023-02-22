@@ -1,7 +1,7 @@
 package hope
 
 import (
-	"io/ioutil"
+	"os"
 )
 
 import (
@@ -22,7 +22,7 @@ func NewTextSubstitutorFromString(str string) *TextSubstitutor {
 }
 
 func TextSubstitutorFromFilepath(filepath string) (*TextSubstitutor, error) {
-	fileContents, err := ioutil.ReadFile(filepath)
+	fileContents, err := os.ReadFile(filepath)
 	if err != nil {
 		return nil, err
 	}
