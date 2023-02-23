@@ -18,10 +18,10 @@ import (
 type JobStatus int
 
 const (
-	JobStatusUnknown  JobStatus = 0
-	JobStatusRunning            = 1
-	JobStatusComplete           = 2
-	JobStatusFailed             = 3
+	JobStatusUnknown JobStatus = iota
+	JobStatusRunning
+	JobStatusComplete
+	JobStatusFailed
 )
 
 // Check to see if the provided job has completed, or is still running.
