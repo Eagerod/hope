@@ -215,7 +215,7 @@ func patchInvocations() {
 	oldEnvsubstBytesArgs := envsubst.GetEnvsubstBytesArgs
 	envsubst.GetEnvsubstBytesArgs = func(args map[string]string, contents []byte) ([]byte, error) {
 		argsKeys := []string{}
-		for key, _ := range args {
+		for key := range args {
 			argsKeys = append(argsKeys, fmt.Sprintf("$%s", key))
 		}
 

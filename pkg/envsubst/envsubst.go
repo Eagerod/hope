@@ -35,7 +35,7 @@ var GetEnvsubstBytes GetEnvsubstBytesArgsFromEnvFunc = func(args []string, conte
 
 var GetEnvsubstBytesArgs GetEnvsubstBytesArgsFunc = func(args map[string]string, contents []byte) ([]byte, error) {
 	argsKeys := []string{}
-	for key, _ := range args {
+	for key := range args {
 		argsKeys = append(argsKeys, fmt.Sprintf("$%s", key))
 	}
 

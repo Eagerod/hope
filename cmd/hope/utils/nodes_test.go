@@ -246,6 +246,7 @@ func (s *NodesTestSuite) TestGetHypervisors() {
 	assert.Equal(t, 1, len(hypervisors))
 
 	node, err := hypervisors[0].UnderlyingNode()
+	assert.NoError(t, err)
 	assert.Equal(t, testNodes[0], node)
 }
 

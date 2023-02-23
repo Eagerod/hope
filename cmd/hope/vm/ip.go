@@ -49,7 +49,7 @@ var ipCmd = &cobra.Command{
 		// This currently makes two calls over SSH per loop, rather than a
 		//   single request to grab the VM's world id, and then only one call
 		//   per loop to look up the IP address.
-		sleepSeconds := time.Duration(1)
+		sleepDuration := time.Duration(1)
 		for ; ipCmdNumRetries > 0; ipCmdNumRetries-- {
 			ip, err := (*hypervisor).VMIPAddress(vmName)
 			if err == nil {
@@ -57,9 +57,9 @@ var ipCmd = &cobra.Command{
 				return nil
 			}
 
-			log.Debugf("VM hasn't bound an IP address yet. Waiting %d seconds before checking again...", sleepSeconds)
-			time.Sleep(sleepSeconds * time.Second)
-			sleepSeconds = minDuration(sleepSeconds*2, 10)
+			log.Debugf("VM hasn't bound an IP address yet. Waiting %d seconds before checking again...", sleepDuration)
+			time.Sleep(sleepDuration * time.Second)
+			sleepDuration = minDuration(sleepDuration*2, 10)
 		}
 
 		return nil
