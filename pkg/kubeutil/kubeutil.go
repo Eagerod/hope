@@ -67,7 +67,7 @@ func NodeNameFromHost(kubectl *Kubectl, host string) (string, error) {
 
 	outputRows := strings.Split(nodesOutput, "\n")
 	if len(outputRows) < 2 {
-		return "", errors.New("No nodes found in this cluster")
+		return "", errors.New("no nodes found in this cluster")
 	}
 
 	nodeRows := outputRows[1:]
@@ -78,7 +78,7 @@ func NodeNameFromHost(kubectl *Kubectl, host string) (string, error) {
 		}
 	}
 
-	return "", errors.New(fmt.Sprintf("Host: %s not found in this cluster", host))
+	return "", fmt.Errorf("host: %s not found in this cluster", host)
 }
 
 func GetKubeConfigPath() (string, error) {

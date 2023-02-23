@@ -2,7 +2,6 @@ package fileutil
 
 import (
 	"crypto/md5"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -10,7 +9,7 @@ import (
 
 func CopyFileMode(src string, dst string, fileMode os.FileMode) error {
 	if _, err := os.Stat(dst); !os.IsNotExist(err) {
-		return errors.New(fmt.Sprintf("Refusing to overwrite existing file (%s)", dst))
+		return fmt.Errorf("refusing to overwrite existing file (%s)", dst)
 	}
 
 	srcFile, err := os.ReadFile(src)

@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -161,7 +160,7 @@ var deployCmd = &cobra.Command{
 				isBuildCommand := len(resource.Build.Path) != 0
 
 				if isCacheCommand && isBuildCommand {
-					return errors.New(fmt.Sprintf("Docker build step %s cannot have a path and a source", resource.Name))
+					return fmt.Errorf("docker build step %s cannot have a path and a source", resource.Name)
 				}
 
 				// TODO: Move these to constants somewhere
@@ -169,7 +168,7 @@ var deployCmd = &cobra.Command{
 				pullConstraintIfNotPresent := resource.Build.Pull == "if-not-present" || resource.Build.Pull == ""
 
 				if !pullConstraintAlways && !pullConstraintIfNotPresent {
-					return errors.New(fmt.Sprintf("Unknown Docker image pull constraint: %s", resource.Build.Pull))
+					return fmt.Errorf("unknown Docker image pull constraint: %s", resource.Build.Pull)
 				}
 
 				pullImage := ""
@@ -188,7 +187,7 @@ var deployCmd = &cobra.Command{
 
 					outputLines := strings.Split(output, "\n")
 					if len(outputLines) == 0 {
-						log.Info(fmt.Sprintf("No Docker images like %s not found locally, must pull from upstream.", pullImage))
+						log.Infof("No Docker images like %s not found locally, must pull from upstream.", pullImage)
 						ifNotPresentShouldPull = true
 					} else {
 						// Figure out if the latest tag needs to be defaulted
@@ -200,19 +199,19 @@ var deployCmd = &cobra.Command{
 							searchTag = fmt.Sprintf("%s:latest", searchTag)
 						}
 
-						log.Trace(fmt.Sprintf("Searching for local copy of tag: %s", searchTag))
+						log.Tracef("Searching for local copy of tag: %s", searchTag)
 
 						imageFound := false
 						for _, imageTag := range outputLines {
 							if imageTag == searchTag {
-								log.Debug(fmt.Sprintf("Docker image matching %s found, skipping upstream pull", searchTag))
+								log.Debugf("Docker image matching %s found, skipping upstream pull", searchTag)
 								imageFound = true
 								break
 							}
 						}
 
 						if !imageFound {
-							log.Info(fmt.Sprintf("Docker image %s not found among candidates, must pull from upstream", searchTag))
+							log.Infof("Docker image %s not found among candidates, must pull from upstream", searchTag)
 							ifNotPresentShouldPull = true
 						}
 					}
@@ -220,7 +219,7 @@ var deployCmd = &cobra.Command{
 
 				if ifNotPresentShouldPull || pullConstraintAlways {
 					if err := docker.ExecDocker("pull", pullImage); err != nil {
-						return errors.New(fmt.Sprintf("Failed to find image named %s", pullImage))
+						return fmt.Errorf("failed to find image named %s", pullImage)
 					}
 				}
 
@@ -254,7 +253,7 @@ var deployCmd = &cobra.Command{
 					return err
 				}
 			default:
-				return errors.New(fmt.Sprintf("Resource type (%s) not implemented.", resourceType))
+				return fmt.Errorf("resource type (%s) not implemented", resourceType)
 			}
 		}
 

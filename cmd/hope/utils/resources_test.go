@@ -144,7 +144,7 @@ func TestFlattenParameters(t *testing.T) {
 
 func TestFlattenParametersSelfReferential(t *testing.T) {
 	params, err := FlattenParameters([]string{"WORLD"}, []string{"WORLD=../../../test/small", "A=../../../test/small-recursive"})
-	assert.Equal(t, "Failed to find WORLD in environment.", err.Error())
+	assert.Equal(t, "failed to find WORLD in environment", err.Error())
 	assert.Nil(t, params)
 }
 

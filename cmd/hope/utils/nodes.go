@@ -25,7 +25,7 @@ func getNodes() ([]hope.Node, error) {
 	nameMap := map[string]bool{}
 	for _, node := range nodes {
 		if _, ok := nameMap[node.Name]; ok {
-			return nil, fmt.Errorf("Multiple nodes found in configuration file named: %s", node.Name)
+			return nil, fmt.Errorf("multiple nodes found in configuration file named: %s", node.Name)
 		}
 		nameMap[node.Name] = true
 	}
@@ -68,7 +68,7 @@ func GetBareNode(name string) (hope.Node, error) {
 		}
 	}
 
-	return hope.Node{}, fmt.Errorf("Failed to find a node named %s", name)
+	return hope.Node{}, fmt.Errorf("failed to find a node named %s", name)
 }
 
 func GetBareNodeTypes(types []string) ([]hope.Node, error) {
@@ -121,7 +121,7 @@ func GetAnyMaster() (hope.Node, error) {
 		}
 	}
 
-	return hope.Node{}, errors.New("Failed to find any master in nodes config")
+	return hope.Node{}, errors.New("failed to find any master in nodes config")
 }
 
 func GetHypervisors() ([]hypervisors.Hypervisor, error) {
@@ -172,7 +172,7 @@ func GetHypervisor(name string) (hypervisors.Hypervisor, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("Failed to find a hypervisor named %s", name)
+	return nil, fmt.Errorf("failed to find a hypervisor named %s", name)
 }
 
 // GetAvailableMasters -- Returns the list of master nodes that can be reached
@@ -236,7 +236,7 @@ func KubectlFromAnyMaster() (*kubeutil.Kubectl, error) {
 		}
 	}
 
-	return nil, errors.New("Failed to find a kubeconfig file in any of the master nodes")
+	return nil, errors.New("failed to find a kubeconfig file in any of the master nodes")
 }
 
 func GetLoadBalancer() (hope.Node, error) {

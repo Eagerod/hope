@@ -99,7 +99,7 @@ func GetIpAddressOfVmNamed(host string, vmName string) (string, error) {
 
 	// "Couldn't find VM with given world ID"
 	if len(lines) == 1 {
-		return "", fmt.Errorf("Failed to find IP Address of VM %s on %s", vmName, host)
+		return "", fmt.Errorf("failed to find IP Address of VM %s on %s", vmName, host)
 	}
 
 	ip := strings.TrimSpace(strings.Split(lines[1], ",")[0])
@@ -145,7 +145,7 @@ func PowerStateOfVm(host string, vmId string) (string, error) {
 
 	outputLines := strings.Split(output, "\n")
 	if len(outputLines) < 2 {
-		return "", fmt.Errorf("Failed to parse power state from: %s", output)
+		return "", fmt.Errorf("failed to parse power state from: %s", output)
 	}
 
 	switch outputLines[1] {
@@ -153,7 +153,7 @@ func PowerStateOfVm(host string, vmId string) (string, error) {
 		return outputLines[1], nil
 	}
 
-	return "", fmt.Errorf("Unknown power state: %s", output)
+	return "", fmt.Errorf("unknown power state: %s", output)
 }
 
 func PowerStateOfVmNamed(host string, vmName string) (string, error) {

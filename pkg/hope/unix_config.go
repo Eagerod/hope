@@ -90,7 +90,7 @@ func EnsureSSHWithoutPassword(log *logrus.Entry, node *Node) error {
 		}
 	}
 
-	return errors.New("Failed to set up passwordless SSH because SSH key not present on remote, and password auth is disabled.")
+	return errors.New("failed to set up passwordless SSH because SSH key not present on remote, and password auth is disabled")
 }
 
 // Attempt to SSH into a machine without allowing password authentication.

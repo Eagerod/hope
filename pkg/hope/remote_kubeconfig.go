@@ -40,7 +40,7 @@ func FetchKubeconfig(log *logrus.Entry, node *Node, merge bool) error {
 		}
 
 		if !merge {
-			return errors.New("Refusing to overwrite existing kubeconfig file.")
+			return errors.New("refusing to overwrite existing kubeconfig file")
 		}
 	} else if os.IsNotExist(err) {
 		if err := os.MkdirAll(path.Dir(kubeconfigFile), 0700); err != nil {

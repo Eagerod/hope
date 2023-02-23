@@ -2,7 +2,6 @@ package envsubst
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -22,7 +21,7 @@ var GetEnvsubstBytes GetEnvsubstBytesArgsFromEnvFunc = func(args []string, conte
 	for _, key := range args {
 		_, exists := os.LookupEnv(key)
 		if !exists {
-			return []byte{}, errors.New(fmt.Sprintf("Failed to find %s in environment.", key))
+			return []byte{}, fmt.Errorf("failed to find %s in environment", key)
 		}
 		argsKeys = append(argsKeys, fmt.Sprintf("$%s", key))
 	}

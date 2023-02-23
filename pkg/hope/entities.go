@@ -218,7 +218,7 @@ func (resource *Resource) GetType() (ResourceType, error) {
 
 	switch len(detectedTypes) {
 	case 0:
-		return ResourceTypeUnknown, fmt.Errorf("Failed to find type of resource '%s'", resource.Name)
+		return ResourceTypeUnknown, fmt.Errorf("failed to find type of resource '%s'", resource.Name)
 	case 1:
 		return detectedTypes[0], nil
 	default:
@@ -226,7 +226,7 @@ func (resource *Resource) GetType() (ResourceType, error) {
 		for _, i := range detectedTypes {
 			detectedTypeStrings = append(detectedTypeStrings, i.String())
 		}
-		return ResourceTypeUnknown, fmt.Errorf("Detected multiple types for resource '%s': %s", resource.Name, strings.Join(detectedTypeStrings, ", "))
+		return ResourceTypeUnknown, fmt.Errorf("detected multiple types for resource '%s': %s", resource.Name, strings.Join(detectedTypeStrings, ", "))
 	}
 }
 

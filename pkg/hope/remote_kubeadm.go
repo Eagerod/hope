@@ -98,7 +98,7 @@ func KubeadmGetClusterCertificateKey(log *logrus.Entry, node *Node) (string, err
 		}
 	}
 
-	return "", fmt.Errorf("Failed to find cert key from existing master node: %s", node.Host)
+	return "", fmt.Errorf("failed to find cert key from existing master node: %s", node.Host)
 }
 
 // Attempt to pull a token from a master within the list of masters.

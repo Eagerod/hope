@@ -28,7 +28,7 @@ var removeCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Why not?
 		if len(args) == 0 && len(*removeCmdTagSlice) == 0 {
-			return errors.New("Cannot remove all resources at once")
+			return errors.New("cannot remove all resources at once")
 		}
 
 		resources, err := utils.GetIdentifiableResources(&args, removeCmdTagSlice)
@@ -123,7 +123,7 @@ var removeCmd = &cobra.Command{
 			case hope.ResourceTypeExec:
 				log.Debug("Skipping removal of exec resource type.")
 			default:
-				return errors.New(fmt.Sprintf("Resource type (%s) not implemented.", resourceType))
+				return fmt.Errorf("resource type (%s) not implemented", resourceType)
 			}
 		}
 

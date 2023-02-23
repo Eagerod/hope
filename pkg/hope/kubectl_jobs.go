@@ -1,7 +1,6 @@
 package hope
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"strings"
@@ -79,7 +78,7 @@ func FollowLogsAndPollUntilJobComplete(log *logrus.Entry, kubectl *kubeutil.Kube
 
 	switch status {
 	case JobStatusFailed:
-		return errors.New(fmt.Sprintf("Job %s failed.", job))
+		return fmt.Errorf("job %s failed", job)
 	case JobStatusComplete:
 		log.Debug("Job ", nsJob, " successful.")
 		return nil
@@ -104,7 +103,7 @@ func FollowLogsAndPollUntilJobComplete(log *logrus.Entry, kubectl *kubeutil.Kube
 
 		switch status {
 		case JobStatusFailed:
-			return errors.New(fmt.Sprintf("Job %s failed.", job))
+			return fmt.Errorf("job %s failed", job)
 		case JobStatusComplete:
 			log.Debug("Job ", job, " successful.")
 			return nil
@@ -135,5 +134,5 @@ func FollowLogsAndPollUntilJobComplete(log *logrus.Entry, kubectl *kubeutil.Kube
 		time.Sleep(time.Second * time.Duration(onFailureSleepSeconds))
 	}
 
-	return errors.New(fmt.Sprintf("Job did not finish within %d attempts. The job may still be running.", maxAttempts))
+	return fmt.Errorf("job did not finish within %d attempts. The job may still be running", maxAttempts)
 }

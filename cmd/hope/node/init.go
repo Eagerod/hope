@@ -71,7 +71,7 @@ var initCmd = &cobra.Command{
 		} else if node.IsNode() {
 			return hope.CreateClusterNode(log.WithFields(log.Fields{}), &node, &masters, initCmdForce)
 		} else {
-			return fmt.Errorf("Failed to find node %s in config", nodeName)
+			return fmt.Errorf("failed to find node %s in config", nodeName)
 		}
 	},
 }

@@ -50,7 +50,7 @@ func (hyp *EsxiHypervisor) UnderlyingNode() (hope.Node, error) {
 func (hyp *EsxiHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec hope.VMImageSpec) error {
 	vmDir := path.Join(vms.Root, vmImageSpec.Name)
 
-	log.Debug(fmt.Sprintf("Copying contents of %s for parameter replacement.", vmDir))
+	log.Debugf("Copying contents of %s for parameter replacement.", vmDir)
 	tempDir, err := hope.ReplaceParametersInDirectoryCopy(vmDir, vmImageSpec.Parameters)
 	if err != nil {
 		return err
