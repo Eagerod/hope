@@ -73,7 +73,5 @@ var initCmd = &cobra.Command{
 		} else {
 			return fmt.Errorf("Failed to find node %s in config", nodeName)
 		}
-
-		return fmt.Errorf("Failed to find node %s in config", node.ConnectionString())
 	},
 }
