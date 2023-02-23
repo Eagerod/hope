@@ -34,7 +34,7 @@ var hostnameCmd = &cobra.Command{
 		}
 
 		if !node.IsRoleValid() {
-			return fmt.Errorf("Node %s has invalid role %s", node.Name, node.Role)
+			return fmt.Errorf("node %s has invalid role %s", node.Name, node.Role)
 		}
 
 		log.Info("Setting hostname on node ", node.Name, "(", node.Host, ")", " to ", hostname)

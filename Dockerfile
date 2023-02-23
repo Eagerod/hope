@@ -1,4 +1,4 @@
-FROM golang:1.17 AS builder
+FROM golang:1.19 AS builder
 
 WORKDIR /app
 
@@ -7,6 +7,8 @@ RUN \
     apt-get install -y \
         gettext-base && \
     apt-get clean
+
+RUN go install honnef.co/go/tools/cmd/staticcheck@v0.4.2
 
 COPY go.mod go.sum ./
 

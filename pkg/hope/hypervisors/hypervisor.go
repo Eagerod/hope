@@ -6,14 +6,14 @@ import (
 )
 
 // Hypervisor acts as a catch-all for "an entity that exposes access to manage
-//   a virtual machine".
+// a virtual machine".
 //
 // ListNodes returns a list of identifiers for the nodes present on the
-//   hypervisor.
+// hypervisor.
 //
 // ResolveNode will use the contents of the provided &hope.Node, and will
-//   return a new &hope.Node that can be used as though it were a physical
-//   machine on the network.
+// return a new &hope.Node that can be used as though it were a physical
+// machine on the network.
 //
 // UnderlyingNode returns the base object used to create the hypervisor.
 type Hypervisor interface {

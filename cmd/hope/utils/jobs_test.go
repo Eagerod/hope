@@ -16,7 +16,7 @@ var testJobs []hope.Job = []hope.Job{
 }
 
 // Basically a smoke test, don't want to define a ton of yaml blocks to test
-//   this extensively quite yet.
+// this extensively quite yet.
 func TestGetJobs(t *testing.T) {
 	resetViper(t)
 

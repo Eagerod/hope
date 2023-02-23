@@ -41,7 +41,7 @@ func TestSubstituteTextFromEnvMissingEnv(t *testing.T) {
 	//   this error message.
 	ts := NewTextSubstitutorFromString("${HELLO} $WORLD")
 	err := ts.SubstituteTextFromEnv([]string{"HELLO"})
-	assert.Equal(t, err.Error(), "Failed to find HELLO in environment.")
+	assert.Equal(t, err.Error(), "failed to find HELLO in environment")
 }
 
 func TestSubstituteTextFromVars(t *testing.T) {

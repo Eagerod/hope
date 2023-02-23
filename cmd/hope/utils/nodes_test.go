@@ -144,7 +144,7 @@ func toHypervisorStub(node hope.Node) (hypervisors.Hypervisor, error) {
 }
 
 // Implemented as a suite to allow manipulating the hypervisor factory
-//   function.
+// function.
 type NodesTestSuite struct {
 	suite.Suite
 }
@@ -163,7 +163,7 @@ func TestNodes(t *testing.T) {
 }
 
 // Basically a smoke test, don't want to define a ton of yaml blocks to test
-//   this extensively quite yet.
+// this extensively quite yet.
 func (s *NodesTestSuite) TestGetNodes() {
 	t := s.T()
 	resetViper(t)
@@ -210,8 +210,8 @@ func (s *NodesTestSuite) TestGetNode() {
 
 	assert.Equal(t, expected, node)
 
-	node, err = GetNode("sets-node-01")
-	assert.Equal(t, "Failed to find a node named sets-node-01", err.Error())
+	_, err = GetNode("sets-node-01")
+	assert.Equal(t, "failed to find a node named sets-node-01", err.Error())
 }
 
 func (s *NodesTestSuite) TestHasNode() {
@@ -246,6 +246,7 @@ func (s *NodesTestSuite) TestGetHypervisors() {
 	assert.Equal(t, 1, len(hypervisors))
 
 	node, err := hypervisors[0].UnderlyingNode()
+	assert.NoError(t, err)
 	assert.Equal(t, testNodes[0], node)
 }
 
@@ -268,7 +269,7 @@ func (s *NodesTestSuite) TestGetHypervisor() {
 
 	hypervisor, err = GetHypervisor("sets-node-01")
 	assert.Nil(t, hypervisor)
-	assert.Equal(t, "Failed to find a hypervisor named sets-node-01", err.Error())
+	assert.Equal(t, "failed to find a hypervisor named sets-node-01", err.Error())
 }
 
 func (s *NodesTestSuite) TestGetAvailableMasters() {

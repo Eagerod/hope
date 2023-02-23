@@ -73,7 +73,7 @@ var testResources []hope.Resource = []hope.Resource{
 }
 
 // Basically a smoke test, don't want to define a ton of yaml blocks to test
-//   this extensively quite yet.
+// this extensively quite yet.
 func TestGetResources(t *testing.T) {
 	resetViper(t)
 
@@ -144,7 +144,7 @@ func TestFlattenParameters(t *testing.T) {
 
 func TestFlattenParametersSelfReferential(t *testing.T) {
 	params, err := FlattenParameters([]string{"WORLD"}, []string{"WORLD=../../../test/small", "A=../../../test/small-recursive"})
-	assert.Equal(t, "Failed to find WORLD in environment.", err.Error())
+	assert.Equal(t, "failed to find WORLD in environment", err.Error())
 	assert.Nil(t, params)
 }
 

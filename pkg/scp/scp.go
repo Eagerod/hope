@@ -1,7 +1,6 @@
 package scp
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 )
@@ -21,7 +20,7 @@ var ExecSCP ExecSCPFunc = func(args ...string) error {
 }
 
 var ExecSCPBytes ExecSCPBytesFunc = func(bytes []byte, dest string) error {
-	tmpfile, err := ioutil.TempFile("", "")
+	tmpfile, err := os.CreateTemp("", "")
 	if err != nil {
 		return err
 	}

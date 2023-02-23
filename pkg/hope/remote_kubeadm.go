@@ -16,6 +16,8 @@ import (
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
+var kubeadmTokenRegexp *regexp.Regexp = regexp.MustCompile("[0-9a-f]{64}")
+
 func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, node *Node, deleteLocalData bool, force bool) error {
 	log.Debug("Searching for node name for host: ", node.Host)
 
@@ -88,17 +90,14 @@ func KubeadmGetClusterCertificateKey(log *logrus.Entry, node *Node) (string, err
 
 	for _, line := range strings.Split(output, "\n") {
 		line = strings.TrimSpace(line)
-		match, err := regexp.MatchString("[0-9a-f]{64}", line)
-		if err != nil {
-			return "", err
-		}
+		match := kubeadmTokenRegexp.MatchString(line)
 
 		if match {
 			return line, nil
 		}
 	}
 
-	return "", fmt.Errorf("Failed to find cert key from existing master node: %s", node.Host)
+	return "", fmt.Errorf("failed to find cert key from existing master node: %s", node.Host)
 }
 
 // Attempt to pull a token from a master within the list of masters.

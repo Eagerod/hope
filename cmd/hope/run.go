@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -51,7 +50,7 @@ var runCmd = &cobra.Command{
 			paramName := components[0]
 
 			if _, ok := remainingParams[paramName]; !ok {
-				return errors.New(fmt.Sprintf("Parameter: %s not recognized", paramName))
+				return fmt.Errorf("parameter: %s not recognized", paramName)
 			}
 
 			remainingParams[paramName] = false

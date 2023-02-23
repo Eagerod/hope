@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var VersionBuild string = "unstable-dev"
+
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Prints the version number and exits",
