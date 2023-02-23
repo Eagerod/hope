@@ -11,12 +11,11 @@ CMD_PACKAGE_DIR := ./cmd/hope $(dir $(wildcard ./cmd/hope/*/))
 PKG_PACKAGE_DIR := ./pkg/*
 PACKAGE_PATHS := $(CMD_PACKAGE_DIR) $(PKG_PACKAGE_DIR)
 
-AUTOGEN_VERSION_FILENAME=./cmd/hope/version-temp.go
 COVERAGE_FILE=./coverage.out
 
 ALL_GO_DIRS = $(shell find . -iname "*.go" -exec dirname {} \; | sort | uniq)
-SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go") $(AUTOGEN_VERSION_FILENAME)
-SRC_WITH_TESTS := $(shell find . -iname "*.go") $(AUTOGEN_VERSION_FILENAME)
+SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go")
+SRC_WITH_TESTS := $(shell find . -iname "*.go")
 
 # Publish targets are treated as phony to force rebuilds.
 PUBLISH_DIR=publish
@@ -37,7 +36,8 @@ all: $(BIN_NAME)
 
 $(BIN_NAME): $(SRC)
 	@mkdir -p $(BUILD_DIR)
-	$(GO) build -o $(BIN_NAME) $(MAIN_FILE)
+	version="$${VERSION:-$$(git describe --dirty)}"; \
+	$(GO) build -o $(BIN_NAME) -ldflags="-X github.com/Eagerod/hope/cmd/hope.VersionBuild=$$version" $(MAIN_FILE)
 
 
 .PHONY: publish
@@ -214,11 +214,6 @@ coverage: $(COVERAGE_FILE)
 pretty-coverage: $(COVERAGE_FILE)
 	$(GO) tool cover -html=$(COVERAGE_FILE)
 
-.INTERMEDIATE: $(AUTOGEN_VERSION_FILENAME)
-$(AUTOGEN_VERSION_FILENAME):
-	@version="$${VERSION:-$$(git describe --dirty)}"; \
-	printf "package cmd\n\nconst VersionBuild = \"%s\"" "$$version" > $@
-
 .PHONY: fmt
 fmt:
 	@$(GO) fmt ./...
@@ -230,4 +225,4 @@ clean:
 .PHONY: container
 container: $(BIN_NAME)
 	@version="$$(git describe --dirty | sed 's/^v//')"; \
-	docker build . --build-arg VERSION="$$version" -t "registry.internal.aleemhaji.com/$(DOCKER_IMAGE_NAME):$$version"
+	docker build . --build-arg VERSION="v$$version" -t "registry.internal.aleemhaji.com/$(DOCKER_IMAGE_NAME):$$version"
