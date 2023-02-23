@@ -5,16 +5,16 @@ import (
 	"strings"
 )
 
+var typeNameAfterKeyRegex *regexp.Regexp = regexp.MustCompile(`^(\s*\w+) = \([^\)]+\)`)
+var typeNameNoKeyRegex *regexp.Regexp = regexp.MustCompile(`^\s*\([^\)]+\)`)
+var keyNameRegex *regexp.Regexp = regexp.MustCompile(`^(\s+)(\w+) =`)
+
 // Super sketchy function that attempts to convert the vim-cmd structured
 // output into a JSON-looking string.
 // From there, it can be fed into json.Unmarshal.
 func VimCmdParseOutput(input string) string {
 	outputLines := []string{}
 	inputLines := strings.Split(input, "\n")
-
-	typeNameAfterKeyRegex := regexp.MustCompile("^(\\s*\\w+) = \\([^\\)]+\\)")
-	typeNameNoKeyRegex := regexp.MustCompile("^\\s*\\([^\\)]+\\)")
-	keyNameRegex := regexp.MustCompile("^(\\s+)(\\w+) =")
 
 	outputStarted := false
 	for _, l := range inputLines {
