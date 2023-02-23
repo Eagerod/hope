@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -47,7 +46,7 @@ var kubeconfigCmd = &cobra.Command{
 		}
 
 		if !master.IsMaster() {
-			return errors.New(fmt.Sprintf("Node: %s is not a master node", master.Host))
+			return fmt.Errorf("node: %s is not a master node", master.Host)
 		}
 
 		log.Debug("Fetching admin kubeconfig file from ", master.Host)

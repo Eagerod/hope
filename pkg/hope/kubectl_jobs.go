@@ -1,7 +1,6 @@
 package hope
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"strings"
@@ -19,10 +18,10 @@ import (
 type JobStatus int
 
 const (
-	JobStatusUnknown  JobStatus = 0
-	JobStatusRunning            = 1
-	JobStatusComplete           = 2
-	JobStatusFailed             = 3
+	JobStatusUnknown JobStatus = iota
+	JobStatusRunning
+	JobStatusComplete
+	JobStatusFailed
 )
 
 // Check to see if the provided job has completed, or is still running.
@@ -79,7 +78,7 @@ func FollowLogsAndPollUntilJobComplete(log *logrus.Entry, kubectl *kubeutil.Kube
 
 	switch status {
 	case JobStatusFailed:
-		return errors.New(fmt.Sprintf("Job %s failed.", job))
+		return fmt.Errorf("job %s failed", job)
 	case JobStatusComplete:
 		log.Debug("Job ", nsJob, " successful.")
 		return nil
@@ -104,7 +103,7 @@ func FollowLogsAndPollUntilJobComplete(log *logrus.Entry, kubectl *kubeutil.Kube
 
 		switch status {
 		case JobStatusFailed:
-			return errors.New(fmt.Sprintf("Job %s failed.", job))
+			return fmt.Errorf("job %s failed", job)
 		case JobStatusComplete:
 			log.Debug("Job ", job, " successful.")
 			return nil
@@ -135,5 +134,5 @@ func FollowLogsAndPollUntilJobComplete(log *logrus.Entry, kubectl *kubeutil.Kube
 		time.Sleep(time.Second * time.Duration(onFailureSleepSeconds))
 	}
 
-	return errors.New(fmt.Sprintf("Job did not finish within %d attempts. The job may still be running.", maxAttempts))
+	return fmt.Errorf("job did not finish within %d attempts. The job may still be running", maxAttempts)
 }

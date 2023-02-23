@@ -8,6 +8,8 @@ RUN \
         gettext-base && \
     apt-get clean
 
+RUN go install honnef.co/go/tools/cmd/staticcheck@v0.4.2
+
 COPY go.mod go.sum ./
 
 RUN go mod download

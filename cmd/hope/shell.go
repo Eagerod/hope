@@ -31,7 +31,7 @@ var shellCmd = &cobra.Command{
 		//   pod name, and the remainder make up the command.
 		// If no command arguments are given, start an interactive shell.
 		if len(args) == 0 && shellCmdLabelsString == "" {
-			return errors.New("Nothing to run against")
+			return errors.New("nothing to run against")
 		}
 
 		kubectl, err := utils.KubectlFromAnyMaster()

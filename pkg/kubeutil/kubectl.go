@@ -1,7 +1,6 @@
 package kubeutil
 
 import (
-	"io/ioutil"
 	"os"
 )
 
@@ -10,9 +9,9 @@ import (
 )
 
 // Kubectl struct allows for execution of a kubectl command with a
-//   non-environment set kubeconfig path.
+// non-environment set kubeconfig path.
 // TODO: Move more uses of kubeutil.ExecKubectl/GetKubectl/etc to use this
-//   structure.
+// structure.
 type Kubectl struct {
 	KubeconfigPath string
 }
@@ -24,7 +23,7 @@ func NewKubectl(kubeconfigPath string) *Kubectl {
 func NewKubectlFromNode(host string) (*Kubectl, error) {
 	// Do not delete.
 	// Leave deletion up to destroying the kubectl instance.
-	tempFile, err := ioutil.TempFile("", "")
+	tempFile, err := os.CreateTemp("", "")
 	if err != nil {
 		return nil, err
 	}

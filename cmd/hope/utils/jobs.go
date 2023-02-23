@@ -19,7 +19,7 @@ func GetJobs() (*[]hope.Job, error) {
 	nameMap := map[string]bool{}
 	for _, job := range jobs {
 		if _, ok := nameMap[job.Name]; ok {
-			return nil, fmt.Errorf("Multiple jobs found in configuration file named: %s", job.Name)
+			return nil, fmt.Errorf("multiple jobs found in configuration file named: %s", job.Name)
 		}
 		nameMap[job.Name] = true
 	}
@@ -39,5 +39,5 @@ func GetJob(jobName string) (*hope.Job, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("Failed to find a job named %s", jobName)
+	return nil, fmt.Errorf("failed to find a job named %s", jobName)
 }

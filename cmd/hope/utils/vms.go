@@ -19,7 +19,7 @@ func GetVMs() (hope.VMs, error) {
 	nameMap := map[string]bool{}
 	for _, vm := range vms.Images {
 		if _, ok := nameMap[vm.Name]; ok {
-			return vms, fmt.Errorf("Multiple VMs found in configuration file named: %s", vm.Name)
+			return vms, fmt.Errorf("multiple VMs found in configuration file named: %s", vm.Name)
 		}
 		nameMap[vm.Name] = true
 	}
@@ -39,5 +39,5 @@ func VMSpec(vmName string) (*hope.VMImageSpec, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("No VM named %s found in image definitions", vmName)
+	return nil, fmt.Errorf("no VM named %s found in image definitions", vmName)
 }

@@ -52,7 +52,7 @@ var rootCmd = &cobra.Command{
 	Args: cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) == 0 {
-			return fmt.Errorf("Subcommand must be provided; additional options: %s", strings.Join(proxySubcommands, ", "))
+			return fmt.Errorf("subcommand must be provided; additional options: %s", strings.Join(proxySubcommands, ", "))
 		}
 
 		possibleSubcommand := args[0]
@@ -215,7 +215,7 @@ func patchInvocations() {
 	oldEnvsubstBytesArgs := envsubst.GetEnvsubstBytesArgs
 	envsubst.GetEnvsubstBytesArgs = func(args map[string]string, contents []byte) ([]byte, error) {
 		argsKeys := []string{}
-		for key, _ := range args {
+		for key := range args {
 			argsKeys = append(argsKeys, fmt.Sprintf("$%s", key))
 		}
 

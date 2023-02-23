@@ -3,7 +3,6 @@ package packer
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 )
@@ -60,7 +59,7 @@ var ExecPackerWdEnv ExecPackerWdEnvFunc = func(workDir string, env *map[string]s
 }
 
 func SpecFromPath(path string) (*JsonSpec, error) {
-	bytes, err := ioutil.ReadFile(path)
+	bytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

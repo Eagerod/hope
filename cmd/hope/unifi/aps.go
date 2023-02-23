@@ -1,7 +1,6 @@
 package unifi
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 )
@@ -26,7 +25,7 @@ var apsCmd = &cobra.Command{
 		aps := viper.GetStringSlice("access_points")
 
 		if !sliceutil.StringInSlice(apIp, aps) {
-			return errors.New(fmt.Sprintf("Failed to find %s in access points list.", apIp))
+			return fmt.Errorf("failed to find %s in access points list", apIp)
 		}
 
 		apController := viper.GetString("access_point_controller")
@@ -47,12 +46,12 @@ var apsCmd = &cobra.Command{
 
 		currentInformAddress := informAddressRegexp.FindStringSubmatch(output)
 		if len(currentInformAddress) < 2 {
-			log.Info(fmt.Sprintf("Access point %s is current not connected to a controller.", apIp))
+			log.Infof("Access point %s is current not connected to a controller.", apIp)
 		} else if currentInformAddress[1] == informAddress {
-			log.Info(fmt.Sprintf("Access point %s already configured correctly to inform at %s", apIp, informAddress))
+			log.Infof("Access point %s already configured correctly to inform at %s", apIp, informAddress)
 			return nil
 		} else {
-			log.Info(fmt.Sprintf("Access point %s is currently connected to %s", apIp, currentInformAddress[1]))
+			log.Infof("Access point %s is currently connected to %s", apIp, currentInformAddress[1])
 		}
 
 		allArgs := []string{apIp, "mca-cli-op", "set-inform", informAddress}

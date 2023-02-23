@@ -2,7 +2,6 @@ package hypervisors
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -51,7 +50,7 @@ func (hyp *EsxiHypervisor) UnderlyingNode() (hope.Node, error) {
 func (hyp *EsxiHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec hope.VMImageSpec) error {
 	vmDir := path.Join(vms.Root, vmImageSpec.Name)
 
-	log.Debug(fmt.Sprintf("Copying contents of %s for parameter replacement.", vmDir))
+	log.Debugf("Copying contents of %s for parameter replacement.", vmDir)
 	tempDir, err := hope.ReplaceParametersInDirectoryCopy(vmDir, vmImageSpec.Parameters)
 	if err != nil {
 		return err
@@ -184,7 +183,7 @@ func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpe
 				return nil, fmt.Errorf("file exists at path %s", packerOutDir)
 			}
 
-			files, err := ioutil.ReadDir(packerOutDir)
+			files, err := os.ReadDir(packerOutDir)
 			if err != nil {
 				return nil, err
 			}

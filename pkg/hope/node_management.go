@@ -292,8 +292,7 @@ func SetHostname(log *logrus.Entry, node *Node, hostname string, force bool) err
 	// Host _should_ come up before SSH times out.
 	log.Info("Restarting networking on ", node.Host)
 	script := "'if [ -f /etc/init.d/networking ]; then /etc/init.d/networking restart; else systemctl restart network; fi'"
-	if err := ssh.ExecSSH(connectionString, "sudo", "sh", "-c", script); err != nil {
-	}
+	ssh.ExecSSH(connectionString, "sudo", "sh", "-c", script)
 
 	return nil
 }

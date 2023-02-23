@@ -2,24 +2,22 @@ package fileutil
 
 import (
 	"crypto/md5"
-	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 )
 
 func CopyFileMode(src string, dst string, fileMode os.FileMode) error {
 	if _, err := os.Stat(dst); !os.IsNotExist(err) {
-		return errors.New(fmt.Sprintf("Refusing to overwrite existing file (%s)", dst))
+		return fmt.Errorf("refusing to overwrite existing file (%s)", dst)
 	}
 
-	srcFile, err := ioutil.ReadFile(src)
+	srcFile, err := os.ReadFile(src)
 	if err != nil {
 		return err
 	}
 
-	err = ioutil.WriteFile(dst, srcFile, fileMode)
+	err = os.WriteFile(dst, srcFile, fileMode)
 	if err != nil {
 		return err
 	}
@@ -33,7 +31,7 @@ func CopyFile(src string, dst string) error {
 
 func WriteFileMode(str string, dst string, fileMode os.FileMode) error {
 	bytes := []byte(str)
-	return ioutil.WriteFile(dst, bytes, fileMode)
+	return os.WriteFile(dst, bytes, fileMode)
 }
 
 func WriteFile(str string, dst string) error {

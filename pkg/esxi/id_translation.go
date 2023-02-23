@@ -26,7 +26,7 @@ func idFromName(host string, vmName string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("Failed to vm named %s on %s", vmName, host)
+	return "", fmt.Errorf("failed to vm named %s on %s", vmName, host)
 }
 
 func worldIdFromName(host string, vmName string) (string, error) {
@@ -44,5 +44,5 @@ func worldIdFromName(host string, vmName string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("Failed to find a VM named %s on %s", vmName, host)
+	return "", fmt.Errorf("failed to find a VM named %s on %s", vmName, host)
 }
