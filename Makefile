@@ -62,6 +62,7 @@ $(INSTALLED_NAME): $(BIN_NAME)
 .PHONY: test
 test: $(SRC) $(BIN_NAME)
 	@$(GO) vet ./...
+	@staticcheck ./...
 	@if [ -z $$T ]; then \
 		$(GO) test -v ./...; \
 	else \
