@@ -9,12 +9,12 @@ import (
 )
 
 import (
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-	kubeletconfigv1betal "k8s.io/kubelet/config/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	kubernetesyaml "k8s.io/apimachinery/pkg/util/yaml"
-	"gopkg.in/yaml.v2"
-	"github.com/google/uuid"
+	kubeletconfigv1betal "k8s.io/kubelet/config/v1beta1"
+	"sigs.k8s.io/yaml"
 )
 
 import (
@@ -325,7 +325,8 @@ func applyNodeRegistrationTaints(node *Node) error {
 		return nil
 	}
 
-	yamlContent, err := ssh.GetSSH(node.ConnectionString(), "sudo", "cat", kubeletConfigPath) 
+	// Can't just scp, because of permissions.
+	yamlContent, err := ssh.GetSSH(node.ConnectionString(), "sudo", "cat", kubeletConfigPath)
 	if err != nil {
 		return err
 	}
@@ -336,8 +337,8 @@ func applyNodeRegistrationTaints(node *Node) error {
 
 	for _, t := range node.Taints {
 		taint := corev1.Taint{
-			Key: t.Key,
-			Value: t.Value,
+			Key:    t.Key,
+			Value:  t.Value,
 			Effect: corev1.TaintEffect(t.Effect),
 		}
 

@@ -87,9 +87,9 @@ var testNodes []hope.Node = []hope.Node{
 		User:       "packer",
 		Cpu:        2,
 		Memory:     4096,
-		Taints:     []hope.NodeTaint{{
-			Key: "something",
-			Value: "else",
+		Taints: []hope.NodeTaint{{
+			Key:    "something",
+			Value:  "else",
 			Effect: "NoSchedule",
 		}},
 	},
