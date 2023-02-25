@@ -80,6 +80,19 @@ var testNodes []hope.Node = []hope.Node{
 		Cpu:        2,
 		Memory:     4096,
 	},
+	{
+		Name:       "test-node-02",
+		Role:       hope.NodeRoleNode.String(),
+		Hypervisor: "beast1",
+		User:       "packer",
+		Cpu:        2,
+		Memory:     4096,
+		Taints: []hope.NodeTaint{{
+			Key:    "something",
+			Value:  "else",
+			Effect: "NoSchedule",
+		}},
+	},
 }
 
 var oldToHypervisor func(hope.Node) (hypervisors.Hypervisor, error) = toHypervisor
@@ -185,8 +198,8 @@ func (s *NodesTestSuite) TestGetNodeNames() {
 		{"Hypervisors", []string{hope.NodeRoleHypervisor.String()}, []string{"beast1"}},
 		{"Load Balancers", []string{hope.NodeRoleLoadBalancer.String()}, []string{"test-load-balancer"}},
 		{"Masters", []string{hope.NodeRoleMaster.String()}, []string{"test-master-01", "test-master-02", "test-master-03"}},
-		{"Nodes", []string{hope.NodeRoleNode.String()}, []string{"test-node-01"}},
-		{"Masters and Nodes", []string{hope.NodeRoleMaster.String(), hope.NodeRoleNode.String()}, []string{"test-master-01", "test-master-02", "test-master-03", "test-node-01"}},
+		{"Nodes", []string{hope.NodeRoleNode.String()}, []string{"test-node-01", "test-node-02"}},
+		{"Masters and Nodes", []string{hope.NodeRoleMaster.String(), hope.NodeRoleNode.String()}, []string{"test-master-01", "test-master-02", "test-master-03", "test-node-01", "test-node-02"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -73,6 +73,12 @@ const (
 	NodeStatusDoesNotExist
 )
 
+type NodeTaint struct {
+	Key    string
+	Value  string
+	Effect string
+}
+
 // BuildSpec - Properties of a ResourceTypeDockerBuild
 type BuildSpec struct {
 	Path   string
@@ -129,6 +135,7 @@ type Node struct {
 	Network    string
 	Cpu        int
 	Memory     int
+	Taints     []NodeTaint
 }
 
 // VMImageSpec - Defines the structure needed to populate a Packer job to
