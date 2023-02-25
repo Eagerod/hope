@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
-	kubernetesyaml "k8s.io/apimachinery/pkg/util/yaml"
 	kubeletconfigv1betal "k8s.io/kubelet/config/v1beta1"
 	"sigs.k8s.io/yaml"
 )
@@ -331,9 +330,8 @@ func applyNodeRegistrationTaints(node *Node) error {
 		return err
 	}
 
-	yamlReader := strings.NewReader(yamlContent)
 	var kubeletConfig kubeletconfigv1betal.KubeletConfiguration
-	kubernetesyaml.NewYAMLOrJSONDecoder(yamlReader, 1000).Decode(&kubeletConfig)
+	yaml.Unmarshal([]byte(yamlContent), &kubeletConfig)
 
 	for _, t := range node.Taints {
 		taint := corev1.Taint{
