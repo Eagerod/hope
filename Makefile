@@ -55,7 +55,7 @@ $(INSTALLED_NAME): $(BIN_NAME)
 	cp $(BIN_NAME) $(INSTALLED_NAME)
 
 .PHONY: test
-test:
+test: $(BIN_NAME)
 	@$(GO) vet ./...
 	@staticcheck ./...
 	@if [ -z $$T ]; then \
@@ -190,14 +190,6 @@ system-test-5-clean: $(BIN_NAME)
 	$(HOPE_CONTAINER) remove -t database
 	$(HOPE_CONTAINER) remove calico
 	METALLB_SYSTEM_MEMBERLIST_SECRET_KEY="$$(openssl rand -base64 128 | tr -d '\n')" $(HOPE_CONTAINER) remove -t network
-
-.PHONY: interface-test
-interface-test: $(BIN_NAME)
-	@if [ -z $$T ]; then \
-		$(GO) test -v main_test.go; \
-	else \
-		$(GO) test -v main_test.go -run $$T; \
-	fi
 
 $(COVERAGE_FILE): $(SRC_WITH_TESTS)
 	$(GO) test -v --coverprofile=$(COVERAGE_FILE) ./...
