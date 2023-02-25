@@ -7,13 +7,8 @@ EXECUTABLE := hope
 BIN_NAME := $(BUILD_DIR)/$(EXECUTABLE)
 INSTALLED_NAME := /usr/local/bin/$(EXECUTABLE)
 
-CMD_PACKAGE_DIR := ./cmd/hope $(dir $(wildcard ./cmd/hope/*/))
-PKG_PACKAGE_DIR := ./pkg/*
-PACKAGE_PATHS := $(CMD_PACKAGE_DIR) $(PKG_PACKAGE_DIR)
-
 COVERAGE_FILE=./coverage.out
 
-ALL_GO_DIRS = $(shell find . -iname "*.go" -exec dirname {} \; | sort | uniq)
 SRC := $(shell find . -iname "*.go" -and -not -name "*_test.go")
 SRC_WITH_TESTS := $(shell find . -iname "*.go")
 
@@ -60,7 +55,7 @@ $(INSTALLED_NAME): $(BIN_NAME)
 	cp $(BIN_NAME) $(INSTALLED_NAME)
 
 .PHONY: test
-test: $(SRC) $(BIN_NAME)
+test:
 	@$(GO) vet ./...
 	@staticcheck ./...
 	@if [ -z $$T ]; then \
@@ -224,6 +219,6 @@ clean:
 	rm -rf $(COVERAGE_FILE) $(BUILD_DIR) $(PUBLISH_DIR)
 
 .PHONY: container
-container: $(BIN_NAME)
+container:
 	@version="$$(git describe --dirty | sed 's/^v//')"; \
 	docker build . --build-arg VERSION="v$$version" -t "registry.internal.aleemhaji.com/$(DOCKER_IMAGE_NAME):$$version"
