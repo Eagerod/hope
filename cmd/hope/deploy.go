@@ -14,6 +14,7 @@ import (
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/docker"
+	"github.com/Eagerod/hope/pkg/helm"
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
@@ -253,7 +254,31 @@ var deployCmd = &cobra.Command{
 					return err
 				}
 			case hope.ResourceTypeHelm:
-				log.Info("I want to be implemented")
+				if err := helm.ExecHelm("repo", "add", resource.Helm.Repo, resource.Helm.Path); err != nil {
+					return err
+				}
+
+				if err := helm.ExecHelm("repo", "update", resource.Helm.Repo); err != nil {
+					return err
+				}
+
+				allArgs := []string{"upgrade", "--install"}
+				if len(resource.Helm.Namespace) != 0 {
+					allArgs = append(allArgs, "--namespace", resource.Helm.Namespace, "--create-namespace")
+				}
+
+				if len(resource.Helm.ValuesFile) != 0 {
+					allArgs = append(allArgs, "--values", resource.Helm.ValuesFile)
+				}
+
+				if len(resource.Helm.Version) != 0 {
+					allArgs = append(allArgs, "--version", resource.Helm.Version)
+				}
+
+				allArgs = append(allArgs, resource.Helm.Name, resource.Helm.Chart)
+				if err := helm.ExecHelm(allArgs...); err != nil {
+					return err
+				}
 			default:
 				return fmt.Errorf("resource type (%s) not implemented", resourceType)
 			}

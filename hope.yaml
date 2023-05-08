@@ -202,10 +202,13 @@ resources:
     tags: [another-tag]
   - name: helm-repo
     helm:
+      namespace: storage-system
       repo: democratic-csi
+      name: freenas-iscsi
       path: https://democratic-csi.github.io/charts/
       chart: democratic-csi/democratic-csi
-      version: "1"
+      version: "0.13.7"
+      valuesFile: ./freenas-values.yaml
 # Jobs contains a collection of specifications of templated jobs that can be
 #   run on demand in the cluster.
 # These jobs shouldn't be associated to the deployment of any particular

@@ -93,10 +93,13 @@ type ExecSpec struct {
 }
 
 type HelmSpec struct {
-	Repo    string
-	Path    string
-	Chart   string
-	Version string
+	Namespace  string
+	Name       string
+	Repo       string
+	Path       string
+	Chart      string
+	Version    string
+	ValuesFile string
 }
 
 // Resource - Properties that can appear in any resources.
@@ -229,7 +232,7 @@ func (resource *Resource) GetType() (ResourceType, error) {
 	if len(resource.Exec.Selector) != 0 && len(resource.Exec.Command) != 0 {
 		detectedTypes = append(detectedTypes, ResourceTypeExec)
 	}
-	if len(resource.Helm.Repo) != 0 && len(resource.Helm.Path) != 0 && len(resource.Helm.Chart) != 0 && len(resource.Helm.Version) != 0 {
+	if len(resource.Helm.Repo) != 0 && len(resource.Helm.Path) != 0 && len(resource.Helm.Chart) != 0 {
 		detectedTypes = append(detectedTypes, ResourceTypeHelm)
 	}
 
