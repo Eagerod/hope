@@ -200,6 +200,12 @@ resources:
     fileParameters:
       - SCRIPT_SH_FILE=test/script.sh
     tags: [another-tag]
+  - name: helm-repo
+    helm:
+      repo: democratic-csi
+      path: https://democratic-csi.github.io/charts/
+      chart: democratic-csi/democratic-csi
+      version: "1"
 # Jobs contains a collection of specifications of templated jobs that can be
 #   run on demand in the cluster.
 # These jobs shouldn't be associated to the deployment of any particular

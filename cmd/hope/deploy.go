@@ -252,6 +252,8 @@ var deployCmd = &cobra.Command{
 				if err := kubeutil.ExecKubectl(kubectl, allArgs...); err != nil {
 					return err
 				}
+			case hope.ResourceTypeHelm:
+				log.Info("I want to be implemented")
 			default:
 				return fmt.Errorf("resource type (%s) not implemented", resourceType)
 			}
