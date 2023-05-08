@@ -60,6 +60,12 @@ RUN \
         packer && \
     apt-get clean
 
+# Helm
+RUN \
+    curl -fsS https://get.helm.sh/helm-v3.11.2-linux-amd64.tar.gz |\
+    tar xzf - > /usr/bin/helm && \
+    chmod 755 /usr/bin/helm
+
 COPY --from=builder /app/build/hope /usr/bin/hope
 
 VOLUME ["/src"]
