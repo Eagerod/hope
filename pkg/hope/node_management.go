@@ -54,8 +54,27 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 		return err
 	}
 
+	// Different versions of kubeabm will install their kubeadm.conf under
+	//   different paths; take the first one found from known paths.
+	possibleKubeadmConfigPaths := []string{
+		"/usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf",
+		"/etc/systemd/system/kubelet.service.d/10-kubeadm.conf",
+	}
+
+	commandStr := ""
+	for _, p := range possibleKubeadmConfigPaths {
+		commandStr = fmt.Sprintf("%s if [ -f \"%s\" ]; then echo \"%s\"; exit; fi;", commandStr, p, p)
+	}
+
+	kubeadmConfigPath, err := ssh.GetSSH(connectionString, commandStr)
+	if err != nil {
+		return err
+	}
+
+	kubeadmConfigPath = strings.TrimSpace(kubeadmConfigPath)
+
 	// Make sure the Kubelet cgroups driver is also systemd.
-	if err := ssh.ExecSSH(connectionString, "sudo", "sed", "-i", "'s#Environment=\"KUBELET_CONFIG_ARGS=.*#Environment=\"KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml --cgroup-driver=systemd\"#g'", "/etc/systemd/system/kubelet.service.d/10-kubeadm.conf"); err != nil {
+	if err := ssh.ExecSSH(connectionString, "sudo", "sed", "-i", "'s#Environment=\"KUBELET_CONFIG_ARGS=.*#Environment=\"KUBELET_CONFIG_ARGS=--config=/var/lib/kubelet/config.yaml --cgroup-driver=systemd\"#g'", kubeadmConfigPath); err != nil {
 		return err
 	}
 
