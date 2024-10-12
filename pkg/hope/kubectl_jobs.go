@@ -122,7 +122,7 @@ func FollowLogsAndPollUntilJobComplete(log *logrus.Entry, kubectl *kubeutil.Kube
 				//   time we tried to print them, don't print anything.
 				for _, pods := range *pods {
 					involvedObject := fmt.Sprintf("involvedObject.name=%s", pods)
-					kubeutil.ExecKubectl(kubectl, "get", "events", "--field-selector", involvedObject)
+					kubeutil.ExecKubectl(kubectl, "get", "events", "-n", namespace, "--field-selector", involvedObject)
 				}
 			}
 		}
