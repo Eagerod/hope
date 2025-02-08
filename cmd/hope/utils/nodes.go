@@ -188,6 +188,12 @@ func GetAvailableMasters() ([]hope.Node, error) {
 
 	for _, node := range nodes {
 		if node.IsMaster() {
+			if node.Hypervisor == "" {
+				retVal = append(retVal, node)
+				continue
+			}
+
+			// Need to get more node details from hypervisor
 			hv, err := GetHypervisor(node.Hypervisor)
 			if err != nil {
 				return nil, err
