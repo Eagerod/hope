@@ -49,12 +49,17 @@ var initCmd = &cobra.Command{
 		if err != nil && loadBalancer != (hope.Node{}) {
 			return err
 		}
+
+		var lbp *hope.Node = nil
+		if loadBalancer != (hope.Node{}){
+			lbp =  &loadBalancer
+		}
 		loadBalancerHost := viper.GetString("load_balancer_host")
 
 		if node.IsMasterAndNode() {
 			log.Info("Node ", node.Host, " appears to be both master and node. Creating master and removing NoSchedule taint...")
 
-			if err := hope.CreateClusterMaster(log.WithFields(log.Fields{}), &node, podNetworkCidr, &loadBalancer, loadBalancerHost, &masters, initCmdForce); err != nil {
+			if err := hope.CreateClusterMaster(log.WithFields(log.Fields{}), &node, podNetworkCidr, lbp, loadBalancerHost, &masters, initCmdForce); err != nil {
 				return err
 			}
 
@@ -67,7 +72,7 @@ var initCmd = &cobra.Command{
 
 			return hope.TaintNodeByHost(kubectl, &node, "node-role.kubernetes.io/master:NoSchedule-")
 		} else if node.IsMaster() {
-			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), &node, podNetworkCidr, &loadBalancer, loadBalancerHost, &masters, initCmdForce)
+			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), &node, podNetworkCidr, lbp, loadBalancerHost, &masters, initCmdForce)
 		} else if node.IsNode() {
 			return hope.CreateClusterNode(log.WithFields(log.Fields{}), &node, &masters, initCmdForce)
 		} else {
