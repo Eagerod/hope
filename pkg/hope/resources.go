@@ -15,13 +15,6 @@ var DockerDaemonJson = `{
 }
 `
 
-var K8SConf = `net.bridge.bridge-nf-call-ip6tables = 1
-net.bridge.bridge-nf-call-iptables = 1
-`
-
-var IpForward = `1
-`
-
 var NginxConfig = `user  nginx;
 worker_processes  1;
 
