@@ -37,9 +37,12 @@ func SetLoadBalancerHosts(log *logrus.Entry, node *Node, masters *[]Node) error 
 	if len(*masters) == 0 {
 		masterUpstreamContents = "server 0.0.0.0:6443;"
 	} else {
+		masterIps := []string{}
 		for _, master := range *masters {
 			masterUpstreamContents = fmt.Sprintf("%s\n        server %s:6443;", masterUpstreamContents, master.Host)
+			masterIps = append(masterIps, fmt.Sprintf("%s:6443", master.Host))
 		}
+		log.Infof("Setting load balancer upstreams to: %s", strings.Join(masterIps, ", "))
 	}
 	populatedConfig := fmt.Sprintf(NginxConfig, masterUpstreamContents)
 	configTempFilename := uuid.New().String()
