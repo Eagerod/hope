@@ -33,6 +33,8 @@ func GetJobStatus(log *logrus.Entry, kubectl *kubeutil.Kubectl, namespace, job s
 
 	switch output {
 	case "Complete":
+		fallthrough
+	case "SuccessCriteriaMetComplete":
 		return JobStatusComplete, nil
 	case "Failed":
 		return JobStatusFailed, nil
