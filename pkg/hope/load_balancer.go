@@ -17,9 +17,9 @@ import (
 
 // Just forwards to `SetLoadBalancerHosts`.
 // There may be a time where this does more.
-func InitLoadBalancer(log *logrus.Entry, node *Node) error {
+func InitLoadBalancer(log *logrus.Entry, node *Node, masters *[]Node) error {
 	log.Debug("Starting to bootstrap a simple NGINX load balancer for API Servers at ", node.Host)
-	return SetLoadBalancerHosts(log, node, &[]Node{})
+	return SetLoadBalancerHosts(log, node, masters)
 }
 
 func SetLoadBalancerHosts(log *logrus.Entry, node *Node, masters *[]Node) error {

@@ -36,7 +36,12 @@ var initCmd = &cobra.Command{
 		// Load balancer have a super lightweight init, so run its init before
 		//   fetching some potentially heavier state from the cluster.
 		if node.IsLoadBalancer() {
-			return hope.InitLoadBalancer(log.WithFields(log.Fields{}), &node)
+			masters, err := utils.GetAvailableMasters()
+			if err != nil {
+				return err
+			}
+
+			return hope.InitLoadBalancer(log.WithFields(log.Fields{}), &node, &masters)
 		}
 
 		podNetworkCidr := viper.GetString("pod_network_cidr")
