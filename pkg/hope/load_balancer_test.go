@@ -17,7 +17,7 @@ func TestLoadBalancerConfigurationFileNoMasters(t *testing.T) {
 
 func TestLoadBalancerConfigurationFileMasters(t *testing.T) {
 	masters := []Node{
-		Node { Host: "192.168.1.254" },
+		Node{Host: "192.168.1.254"},
 	}
 	config := loadBalancerConfigurationFile(log.WithFields(log.Fields{}), &masters)
 	assert.Contains(t, config, "192.168.1.254:6443")

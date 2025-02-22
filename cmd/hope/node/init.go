@@ -56,8 +56,8 @@ var initCmd = &cobra.Command{
 		}
 
 		var lbp *hope.Node = nil
-		if loadBalancer != (hope.Node{}){
-			lbp =  &loadBalancer
+		if loadBalancer != (hope.Node{}) {
+			lbp = &loadBalancer
 		}
 		loadBalancerHost := viper.GetString("load_balancer_host")
 
