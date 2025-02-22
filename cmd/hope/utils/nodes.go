@@ -187,24 +187,32 @@ func GetAvailableMasters() ([]hope.Node, error) {
 	}
 
 	for _, node := range nodes {
-		if node.IsMaster() {
-			hv, err := GetHypervisor(node.Hypervisor)
+		if !node.IsMaster() {
+			continue
+		}
+
+		if node.Hypervisor == "" {
+			retVal = append(retVal, node)
+			continue
+		}
+
+		// Need to get more node details from hypervisor
+		hv, err := GetHypervisor(node.Hypervisor)
+		if err != nil {
+			return nil, err
+		}
+
+		hvNodes, err := hv.ListNodes()
+		if err != nil {
+			return nil, err
+		}
+
+		if sliceutil.StringInSlice(node.Name, hvNodes) {
+			exNode, err := expandHypervisor(node)
 			if err != nil {
 				return nil, err
 			}
-
-			hvNodes, err := hv.ListNodes()
-			if err != nil {
-				return nil, err
-			}
-
-			if sliceutil.StringInSlice(node.Name, hvNodes) {
-				exNode, err := expandHypervisor(node)
-				if err != nil {
-					return nil, err
-				}
-				retVal = append(retVal, exNode)
-			}
+			retVal = append(retVal, exNode)
 		}
 	}
 
