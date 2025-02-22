@@ -59,8 +59,8 @@ var testNodes []hope.Node = []hope.Node{
 	{
 		Name:       "test-master-02",
 		Role:       hope.NodeRoleMaster.String(),
-		Hypervisor: "beast1",
 		User:       "packer",
+		Host:       "192.168.1.10",
 		Cpu:        2,
 		Memory:     2048,
 	},
@@ -278,8 +278,14 @@ func (s *NodesTestSuite) TestGetAvailableMasters() {
 
 	expectedOrig := testNodes[2:5]
 	expected := []hope.Node{}
+
 	for i, n := range expectedOrig {
-		n.Host = fmt.Sprintf("test-master-0%d", i+1)
+		if i == 1 {
+			n.Host = "192.168.1.10"
+		} else {
+			n.Host = fmt.Sprintf("test-master-0%d", i+1)
+		}
+
 		n.Hypervisor = ""
 		expected = append(expected, n)
 	}
