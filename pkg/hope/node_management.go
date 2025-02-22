@@ -17,6 +17,10 @@ import (
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
+// Sets up any configuration on Kubernetes nodes that are common between
+// control-plane nodes, and worker nodes.
+// TODO: Consider writing these files using file provisioners in Packer
+// instead?
 func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 	if !node.IsKubernetesNode() {
 		return fmt.Errorf("Node has role %s, should not prepare as Kubernetes node", node.Role)
