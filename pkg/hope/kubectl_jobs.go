@@ -26,19 +26,23 @@ const (
 
 // Check to see if the provided job has completed, or is still running.
 func GetJobStatus(log *logrus.Entry, kubectl *kubeutil.Kubectl, namespace, job string) (JobStatus, error) {
-	output, err := kubeutil.GetKubectl(kubectl, "get", "-n", namespace, "job", job, "-o", "template={{range .status.conditions}}{{.type}}{{end}}")
+	template := "template={{range .status.conditions}}{{.type}}\n{{end}}"
+	output, err := kubeutil.GetKubectl(kubectl, "get", "-n", namespace, "job", job, "-o", template)
 	if err != nil {
 		return JobStatusUnknown, err
 	}
 
-	switch output {
-	case "Complete":
-		return JobStatusComplete, nil
-	case "Failed":
-		return JobStatusFailed, nil
-	default:
-		return JobStatusRunning, nil
+	// Search for terminal statuses, and with none, assume running.
+	for _, status := range strings.Split(output, "\n") {
+		switch status {
+		case "Complete":
+			return JobStatusComplete, nil
+		case "Failed":
+			return JobStatusFailed, nil
+		}
 	}
+
+	return JobStatusRunning, nil
 }
 
 func FollowLogsIfContainersRunning(kubectl *kubeutil.Kubectl, namespace, job string) error {
