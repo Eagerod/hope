@@ -32,7 +32,7 @@ steps:
         path: /cache
 
   - name: test
-    image: golang:1.19
+    image: golang:1.23
     commands:
       - cp -r /go-cache/* /go/
       - make test system-test

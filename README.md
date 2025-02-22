@@ -33,8 +33,8 @@ Resources that can be managed include:
 
 ## Development
 
-Hope uses Go 1.19, and requires staticcheck to be installed to run its linting/validation recipes:
+Hope uses Go 1.23, and requires staticcheck to be installed to run its linting/validation recipes:
 
 ```
-go install honnef.co/go/tools/cmd/staticcheck@v0.4.2
+go install honnef.co/go/tools/cmd/staticcheck@v0.6.0
 ```
