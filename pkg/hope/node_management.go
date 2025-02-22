@@ -154,7 +154,7 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, l
 		return err
 	}
 
-	existingMasters := (*masters)[1:]
+	existingMasters := lbMasters[1:]
 	joinCommand, err := KubeadmGetClusterJoinCommandFromAnyMaster(&existingMasters)
 	if err != nil {
 		return err

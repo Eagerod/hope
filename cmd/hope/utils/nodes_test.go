@@ -57,12 +57,12 @@ var testNodes []hope.Node = []hope.Node{
 		Memory:     2048,
 	},
 	{
-		Name:       "test-master-02",
-		Role:       hope.NodeRoleMaster.String(),
-		User:       "packer",
-		Host:       "192.168.1.10",
-		Cpu:        2,
-		Memory:     2048,
+		Name:   "test-master-02",
+		Role:   hope.NodeRoleMaster.String(),
+		User:   "packer",
+		Host:   "192.168.1.10",
+		Cpu:    2,
+		Memory: 2048,
 	},
 	{
 		Name:       "test-master-03",
