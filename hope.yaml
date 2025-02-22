@@ -12,6 +12,13 @@ nodes:
     user: root
     datastore: Main
     network: VM Network
+  - name: beast2
+    role: hypervisor
+    engine: proxmox
+    host: 192.168.1.188
+    user: root@pam
+    datastore: Main
+    network: vmbr200
   # Master Load Balancer
   # Just one of these; manages providing a single endpoint for the set of
   #   master nodes.
