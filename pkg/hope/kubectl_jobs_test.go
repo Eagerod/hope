@@ -18,7 +18,7 @@ import (
 type KubectlJobsTestSuite struct {
 	suite.Suite
 
-	originalGetKubectl func(kubectl *kubeutil.Kubectl, args ...string) (string, error) 
+	originalGetKubectl func(kubectl *kubeutil.Kubectl, args ...string) (string, error)
 }
 
 func (s *KubectlJobsTestSuite) SetupTest() {

@@ -12,7 +12,7 @@ nodes:
     user: root
     datastore: Main
     network: VM Network
-  - name: beast2
+  - name: pve2
     role: hypervisor
     engine: proxmox
     host: 192.168.1.188

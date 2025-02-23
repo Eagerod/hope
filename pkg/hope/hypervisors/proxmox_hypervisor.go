@@ -3,6 +3,7 @@ package hypervisors
 import (
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/packer"
+	"github.com/Eagerod/hope/pkg/proxmox"
 )
 
 type ProxmoxHypervisor struct {
@@ -10,7 +11,7 @@ type ProxmoxHypervisor struct {
 }
 
 func (p *ProxmoxHypervisor) ListNodes() ([]string, error) {
-	return []string{}, nil
+	return proxmox.GetNodes(p.node.User, p.node.Name, p.node.Host)
 }
 
 func (p *ProxmoxHypervisor) ResolveNode(node hope.Node) (hope.Node, error) {
