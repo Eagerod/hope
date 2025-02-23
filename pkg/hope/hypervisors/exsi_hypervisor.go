@@ -19,7 +19,12 @@ type EsxiHypervisor struct {
 	node hope.Node
 }
 
-func (hyp EsxiHypervisor) ListNodes() ([]string, error) {
+func (hyp *EsxiHypervisor) Initialize(node hope.Node) error {
+	hyp.node = node
+	return nil
+}
+
+func (hyp *EsxiHypervisor) ListNodes() ([]string, error) {
 	v, e := esxi.ListVms(hyp.node.ConnectionString())
 	if e == nil {
 		return *v, nil
