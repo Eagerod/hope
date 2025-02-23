@@ -35,7 +35,7 @@ func (p *ProxmoxHypervisor) CreateNode(hope.Node, hope.VMs, hope.VMImageSpec) er
 }
 
 func (p *ProxmoxHypervisor) StartVM(string) error {
-	return nil
+	return proxmox.PowerOnVmNamed(p.node.User, p.node.Name, p.node.Host, vmName)
 }
 
 func (p *ProxmoxHypervisor) StopVM(string) error {

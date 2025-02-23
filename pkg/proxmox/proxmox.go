@@ -33,7 +33,7 @@ type getNetworkInterfacesResponse struct {
 
 func basicVmInformation(user, node, host string) ([]qemuApiResponse, error) {
 	endpoint := fmt.Sprintf("nodes/%s/qemu", node)
-	data, err := proxmoxRequest(user, host, endpoint, nil)
+	data, err := proxmoxGetRequest(user, host, endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func GetNodeIP(user, node, host, vmName string) (string, error) {
 	}
 
 	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/agent/network-get-interfaces", node, vm.VmId)
-	data, err := proxmoxRequest(user, host, endpoint, nil)
+	data, err := proxmoxGetRequest(user, host, endpoint)
 	if err != nil {
 		return "", err
 	}
@@ -124,7 +124,22 @@ func GetNodeIP(user, node, host, vmName string) (string, error) {
 	return "", fmt.Errorf("found multiple possible IPs for %s", vmName)
 }
 
-func proxmoxRequest(user, host, endpoint string, params map[string]string) ([]byte, error) {
+func PowerOnVmNamed(user, node, host, vmName string) error {
+	vm, err := getVm(user, node, host, vmName)
+	if err != nil {
+		return err
+	}
+
+	if vm.Status == "running" {
+		return nil
+	}
+
+	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/status/start", node, vm.VmId)
+	_, err = proxmoxPostRequest(user, host, endpoint, nil)
+	return err
+}
+
+func proxmoxGetRequest(user, host, endpoint string) ([]byte, error) {
 	url := fmt.Sprintf("https://%s:8006/api2/json/%s", host, endpoint)
 	log.Trace(url)
 
@@ -133,6 +148,22 @@ func proxmoxRequest(user, host, endpoint string, params map[string]string) ([]by
 		return nil, err
 	}
 
+	return proxmoxDoRequest(user, req)
+}
+
+func proxmoxPostRequest(user, host, endpoint string, params map[string]string) ([]byte, error) {
+	url := fmt.Sprintf("https://%s:8006/api2/json/%s", host, endpoint)
+	log.Trace(url)
+
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return proxmoxDoRequest(user, req)
+}
+
+func proxmoxDoRequest(user string, req *http.Request) ([]byte, error) {
 	token := os.Getenv("PROXMOX_API_TOKEN")
 	req.Header.Set("Authorization", fmt.Sprintf("PVEAPIToken=%s!%s", user, token))
 
@@ -152,7 +183,7 @@ func proxmoxRequest(user, host, endpoint string, params map[string]string) ([]by
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("response error from %s, %d: %s", host, resp.StatusCode, body)
+		return nil, fmt.Errorf("response error from %s, %d: %s", req.Host, resp.StatusCode, body)
 	}
 
 	return body, nil
