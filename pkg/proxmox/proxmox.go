@@ -30,15 +30,15 @@ type getNetworkInterfacesResponse struct {
 	IPAddresses []ipAddressResponse `json:"ip-addresses"`
 }
 
-type ProxmoxApiClient struct {
+type ApiClient struct {
 	User   string
 	Host   string
 	Token  string
 	Client *http.Client
 }
 
-func NewProxmoxApiClient(user, host string) *ProxmoxApiClient {
-	return &ProxmoxApiClient{
+func NewApiClient(user, host string) *ApiClient {
+	return &ApiClient{
 		User:  user,
 		Host:  host,
 		Token: os.Getenv("PROXMOX_API_TOKEN"),
@@ -50,7 +50,7 @@ func NewProxmoxApiClient(user, host string) *ProxmoxApiClient {
 	}
 }
 
-func (p *ProxmoxApiClient) listVMs(node string) ([]qemuApiResponse, error) {
+func (p *ApiClient) listVMs(node string) ([]qemuApiResponse, error) {
 	data, err := p.request("GET", fmt.Sprintf("nodes/%s/qemu", node), nil)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (p *ProxmoxApiClient) listVMs(node string) ([]qemuApiResponse, error) {
 	return response.Data, nil
 }
 
-func (p *ProxmoxApiClient) getVm(node, vmName string) (qemuApiResponse, error) {
+func (p *ApiClient) getVm(node, vmName string) (qemuApiResponse, error) {
 	response, err := p.listVMs(node)
 	if err != nil {
 		return qemuApiResponse{}, err
@@ -81,9 +81,8 @@ func (p *ProxmoxApiClient) getVm(node, vmName string) (qemuApiResponse, error) {
 	return qemuApiResponse{}, fmt.Errorf("failed to find a node named: %s", vmName)
 }
 
-func GetNodes(user, node, host string) ([]string, error) {
-	pc := NewProxmoxApiClient(user, host)
-	response, err := pc.listVMs(node)
+func (p *ApiClient) GetVmNames(node string) ([]string, error) {
+	response, err := p.listVMs(node)
 	if err != nil {
 		return nil, err
 	}
@@ -96,9 +95,8 @@ func GetNodes(user, node, host string) ([]string, error) {
 	return retVal, nil
 }
 
-func CreateNodeFromTemplate(user, node, host, vmName, templateName string) error {
-	pc := NewProxmoxApiClient(user, host)
-	vm, err := pc.getVm(node, templateName)
+func (p *ApiClient) CreateNodeFromTemplate(node, vmName, templateName string) error {
+	vm, err := p.getVm(node, templateName)
 	if err != nil {
 		return err
 	}
@@ -107,31 +105,29 @@ func CreateNodeFromTemplate(user, node, host, vmName, templateName string) error
 	params := map[string]interface{}{}
 	params["full"] = true
 	params["name"] = vmName
-	_, err = pc.request("POST", endpoint, params)
+	_, err = p.request("POST", endpoint, params)
 	return err
 }
 
-func ConfigureNode(user, node, host, vmName string, params map[string]interface{}) error {
-	pc := NewProxmoxApiClient(user, host)
-	vm, err := pc.getVm(node, vmName)
+func (p *ApiClient) ConfigureNode(node, vmName string, params map[string]interface{}) error {
+	vm, err := p.getVm(node, vmName)
 	if err != nil {
 		return err
 	}
 
 	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/config", node, vm.VmId)
-	_, err = pc.request("PUT", endpoint, params)
+	_, err = p.request("PUT", endpoint, params)
 	return err
 }
 
-func GetNodeIP(user, node, host, vmName string) (string, error) {
-	pc := NewProxmoxApiClient(user, host)
-	vm, err := pc.getVm(node, vmName)
+func (p *ApiClient) GetNodeIP(node, vmName string) (string, error) {
+	vm, err := p.getVm(node, vmName)
 	if err != nil {
 		return "", err
 	}
 
 	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/agent/network-get-interfaces", node, vm.VmId)
-	data, err := pc.request("GET", endpoint, nil)
+	data, err := p.request("GET", endpoint, nil)
 	if err != nil {
 		return "", err
 	}
@@ -170,9 +166,8 @@ func GetNodeIP(user, node, host, vmName string) (string, error) {
 	return "", fmt.Errorf("found multiple possible IPs for %s", vmName)
 }
 
-func PowerOnVmNamed(user, node, host, vmName string) error {
-	pc := NewProxmoxApiClient(user, host)
-	vm, err := pc.getVm(node, vmName)
+func (p *ApiClient) PowerOnVmNamed(node, vmName string) error {
+	vm, err := p.getVm(node, vmName)
 	if err != nil {
 		return err
 	}
@@ -182,13 +177,12 @@ func PowerOnVmNamed(user, node, host, vmName string) error {
 	}
 
 	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/status/start", node, vm.VmId)
-	_, err = pc.request("POST", endpoint, nil)
+	_, err = p.request("POST", endpoint, nil)
 	return err
 }
 
-func PowerOffVmNamed(user, node, host, vmName string) error {
-	pc := NewProxmoxApiClient(user, host)
-	vm, err := pc.getVm(node, vmName)
+func (p *ApiClient) PowerOffVmNamed(node, vmName string) error {
+	vm, err := p.getVm(node, vmName)
 	if err != nil {
 		return err
 	}
@@ -198,23 +192,22 @@ func PowerOffVmNamed(user, node, host, vmName string) error {
 	}
 
 	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/status/stop", node, vm.VmId)
-	_, err = pc.request("POST", endpoint, nil)
+	_, err = p.request("POST", endpoint, nil)
 	return err
 }
 
-func DeleteVmNamed(user, node, host, vmName string) error {
-	pc := NewProxmoxApiClient(user, host)
-	vm, err := pc.getVm(node, vmName)
+func (p *ApiClient) DeleteVmNamed(node, vmName string) error {
+	vm, err := p.getVm(node, vmName)
 	if err != nil {
 		return err
 	}
 
 	endpoint := fmt.Sprintf("nodes/%s/qemu/%d", node, vm.VmId)
-	_, err = pc.request("DELETE", endpoint, nil)
+	_, err = p.request("DELETE", endpoint, nil)
 	return err
 }
 
-func (p *ProxmoxApiClient) request(method, endpoint string, params interface{}) ([]byte, error) {
+func (p *ApiClient) request(method, endpoint string, params interface{}) ([]byte, error) {
 	url := fmt.Sprintf("https://%s:8006/api2/json/%s", p.Host, endpoint)
 	log.Trace(url)
 
@@ -249,30 +242,4 @@ func (p *ProxmoxApiClient) request(method, endpoint string, params interface{}) 
 	}
 
 	return data, nil
-}
-
-func proxmoxDoRequest(user string, req *http.Request) ([]byte, error) {
-	token := os.Getenv("PROXMOX_API_TOKEN")
-	req.Header.Set("Authorization", fmt.Sprintf("PVEAPIToken=%s!%s", user, token))
-
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("response error from %s, %d: %s", req.Host, resp.StatusCode, body)
-	}
-
-	return body, nil
 }

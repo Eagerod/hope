@@ -18,15 +18,18 @@ import (
 
 type ProxmoxHypervisor struct {
 	node hope.Node
+
+	pc *proxmox.ApiClient
 }
 
 func (p *ProxmoxHypervisor) Initialize(node hope.Node) error {
 	p.node = node
+	p.pc = proxmox.NewApiClient(p.node.User, p.node.Host)
 	return nil
 }
 
 func (p *ProxmoxHypervisor) ListNodes() ([]string, error) {
-	return proxmox.GetNodes(p.node.User, p.node.Name, p.node.Host)
+	return p.pc.GetVmNames(p.node.Name)
 }
 
 func (p *ProxmoxHypervisor) ResolveNode(node hope.Node) (hope.Node, error) {
@@ -78,7 +81,7 @@ func (p *ProxmoxHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSp
 }
 
 func (p *ProxmoxHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec hope.VMImageSpec) error {
-	err := proxmox.CreateNodeFromTemplate(p.node.User, p.node.Name, p.node.Host, node.Name, vmImageSpec.Name)
+	err := p.pc.CreateNodeFromTemplate(p.node.Name, node.Name, vmImageSpec.Name)
 	if err != nil {
 		return err
 	}
@@ -88,21 +91,21 @@ func (p *ProxmoxHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec
 	config["memory"] = node.Memory
 	config["net[0]"] = fmt.Sprintf("bridge=", node.Network)
 
-	return proxmox.ConfigureNode(p.node.User, p.node.Name, p.node.Host, node.Name, config)
+	return p.pc.ConfigureNode(p.node.Name, node.Name, config)
 }
 
 func (p *ProxmoxHypervisor) StartVM(vmName string) error {
-	return proxmox.PowerOnVmNamed(p.node.User, p.node.Name, p.node.Host, vmName)
+	return p.pc.PowerOnVmNamed(p.node.Name, vmName)
 }
 
 func (p *ProxmoxHypervisor) StopVM(vmName string) error {
-	return proxmox.PowerOffVmNamed(p.node.User, p.node.Name, p.node.Host, vmName)
+	return p.pc.PowerOffVmNamed(p.node.Name, vmName)
 }
 
 func (p *ProxmoxHypervisor) DeleteVM(vmName string) error {
-	return proxmox.DeleteVmNamed(p.node.User, p.node.Name, p.node.Host, vmName)
+	return p.pc.DeleteVmNamed(p.node.Name, vmName)
 }
 
 func (p *ProxmoxHypervisor) VMIPAddress(vmName string) (string, error) {
-	return proxmox.GetNodeIP(p.node.User, p.node.Name, p.node.Host, vmName)
+	return p.pc.GetNodeIP(p.node.Name, vmName)
 }
