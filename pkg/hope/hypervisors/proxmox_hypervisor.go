@@ -89,7 +89,7 @@ func (p *ProxmoxHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec
 	config := map[string]interface{}{}
 	config["cpu"] = node.Cpu
 	config["memory"] = node.Memory
-	config["net[0]"] = fmt.Sprintf("bridge=", node.Network)
+	config["net[0]"] = fmt.Sprintf("bridge=%s", node.Network)
 
 	return p.pc.ConfigureNode(p.node.Name, node.Name, config)
 }
