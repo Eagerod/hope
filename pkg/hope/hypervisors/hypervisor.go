@@ -8,6 +8,10 @@ import (
 // Hypervisor acts as a catch-all for "an entity that exposes access to manage
 // a virtual machine".
 type Hypervisor interface {
+	// Initialize using the provided Node.
+	Initialize(hope.Node) error
+
+	// Return a list of identifiers for the nodes present on the hypervisor.
 	ListNodes() ([]string, error)
 
 	// Ask the hypervisor for the host of the node, and return a new node with

@@ -13,10 +13,14 @@ func ToHypervisor(node hope.Node) (Hypervisor, error) {
 		return nil, fmt.Errorf("node named %s is not a hypervisor", node.Name)
 	}
 
+	var rv Hypervisor = nil
 	switch node.Engine {
 	case "esxi":
-		return &EsxiHypervisor{node}, nil
+		rv = &EsxiHypervisor{}
+	default:
+		return nil, fmt.Errorf("failed to resolve hypervisor engine: %s", node.Engine)
 	}
 
-	return nil, fmt.Errorf("failed to resolve hypervisor engine: %s", node.Engine)
+	rv.Initialize(node)
+	return rv, nil
 }
