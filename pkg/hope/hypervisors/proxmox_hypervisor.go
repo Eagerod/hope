@@ -1,6 +1,16 @@
 package hypervisors
 
 import (
+	"fmt"
+	"os"
+	"path"
+)
+
+import (
+	log "github.com/sirupsen/logrus"
+)
+
+import (
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/packer"
 	"github.com/Eagerod/hope/pkg/proxmox"
@@ -30,10 +40,35 @@ func (p *ProxmoxHypervisor) UnderlyingNode() (hope.Node, error) {
 }
 
 func (p *ProxmoxHypervisor) CopyImage(packer.JsonSpec, hope.VMs, hope.VMImageSpec) error {
-	return nil
+	return fmt.Errorf("must create vm images independently on target hosts")
 }
 
-func (p *ProxmoxHypervisor) CreateImage(hope.VMs, hope.VMImageSpec, []string, bool) (*packer.JsonSpec, error) {
+func (p *ProxmoxHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpec, args []string, force bool) (*packer.JsonSpec, error) {
+	vmDir := path.Join(vms.Root, vmImageSpec.Name)
+
+	log.Debugf("Copying contents of %s for parameter replacement.", vmDir)
+	tempDir, err := hope.ReplaceParametersInDirectoryCopy(vmDir, vmImageSpec.Parameters)
+	if err != nil {
+		return nil, err
+	}
+	defer os.RemoveAll(tempDir)
+
+	allArgs := []string{"build"}
+	for _, v := range args {
+		allArgs = append(allArgs, "-var", v)
+	}
+	allArgs = append(allArgs, ".")
+
+	packerEnvs := map[string]string{
+		"PACKER_LOG": "1",
+	}
+
+	log.Infof("Building VM Image: %s", vmImageSpec.Name)
+
+	if err := packer.ExecPackerWdEnv(tempDir, &packerEnvs, allArgs...); err != nil {
+		return nil, err
+	}
+
 	return nil, nil
 }
 
