@@ -34,16 +34,16 @@ func (p *ProxmoxHypervisor) CreateNode(hope.Node, hope.VMs, hope.VMImageSpec) er
 	return nil
 }
 
-func (p *ProxmoxHypervisor) StartVM(string) error {
+func (p *ProxmoxHypervisor) StartVM(vmName string) error {
 	return proxmox.PowerOnVmNamed(p.node.User, p.node.Name, p.node.Host, vmName)
 }
 
-func (p *ProxmoxHypervisor) StopVM(string) error {
+func (p *ProxmoxHypervisor) StopVM(vmName string) error {
 	return proxmox.PowerOffVmNamed(p.node.User, p.node.Name, p.node.Host, vmName)
 }
 
-func (p *ProxmoxHypervisor) DeleteVM(string) error {
-	return nil
+func (p *ProxmoxHypervisor) DeleteVM(vmName string) error {
+	return proxmox.DeleteVmNamed(p.node.User, p.node.Name, p.node.Host, vmName)
 }
 
 func (p *ProxmoxHypervisor) VMIPAddress(vmName string) (string, error) {

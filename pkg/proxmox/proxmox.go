@@ -154,11 +154,34 @@ func PowerOffVmNamed(user, node, host, vmName string) error {
 	return err
 }
 
+func DeleteVmNamed(user, node, host, vmName string) error {
+	vm, err := getVm(user, node, host, vmName)
+	if err != nil {
+		return err
+	}
+
+	endpoint := fmt.Sprintf("nodes/%s/qemu/%d", node, vm.VmId)
+	_, err = proxmoxDeleteRequest(user, host, endpoint)
+	return err
+}
+
 func proxmoxGetRequest(user, host, endpoint string) ([]byte, error) {
 	url := fmt.Sprintf("https://%s:8006/api2/json/%s", host, endpoint)
 	log.Trace(url)
 
 	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return proxmoxDoRequest(user, req)
+}
+
+func proxmoxDeleteRequest(user, host, endpoint string) ([]byte, error) {
+	url := fmt.Sprintf("https://%s:8006/api2/json/%s", host, endpoint)
+	log.Trace(url)
+
+	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return nil, err
 	}
