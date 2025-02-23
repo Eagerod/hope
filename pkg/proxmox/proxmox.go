@@ -15,8 +15,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// TODO: Dedicated Proxmox client kind of deal?
-
 type qemuApiResponse struct {
 	Status string `json:"status"`
 	VmId   int    `json:"vmid"`
@@ -32,9 +30,28 @@ type getNetworkInterfacesResponse struct {
 	IPAddresses []ipAddressResponse `json:"ip-addresses"`
 }
 
-func basicVmInformation(user, node, host string) ([]qemuApiResponse, error) {
-	endpoint := fmt.Sprintf("nodes/%s/qemu", node)
-	data, err := proxmoxGetRequest(user, host, endpoint)
+type ProxmoxApiClient struct {
+	User   string
+	Host   string
+	Token  string
+	Client *http.Client
+}
+
+func NewProxmoxApiClient(user, host string) *ProxmoxApiClient {
+	return &ProxmoxApiClient{
+		User:  user,
+		Host:  host,
+		Token: os.Getenv("PROXMOX_API_TOKEN"),
+		Client: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		},
+	}
+}
+
+func (p *ProxmoxApiClient) listVMs(node string) ([]qemuApiResponse, error) {
+	data, err := p.request("GET", fmt.Sprintf("nodes/%s/qemu", node), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +59,6 @@ func basicVmInformation(user, node, host string) ([]qemuApiResponse, error) {
 	var response struct {
 		Data []qemuApiResponse `json:"data"`
 	}
-
 	if err := json.Unmarshal(data, &response); err != nil {
 		return nil, err
 	}
@@ -50,8 +66,8 @@ func basicVmInformation(user, node, host string) ([]qemuApiResponse, error) {
 	return response.Data, nil
 }
 
-func getVm(user, node, host, vmName string) (qemuApiResponse, error) {
-	response, err := basicVmInformation(user, node, host)
+func (p *ProxmoxApiClient) getVm(node, vmName string) (qemuApiResponse, error) {
+	response, err := p.listVMs(node)
 	if err != nil {
 		return qemuApiResponse{}, err
 	}
@@ -62,11 +78,12 @@ func getVm(user, node, host, vmName string) (qemuApiResponse, error) {
 		}
 	}
 
-	return qemuApiResponse{}, fmt.Errorf("Failed to find a node named: %s", vmName)
+	return qemuApiResponse{}, fmt.Errorf("failed to find a node named: %s", vmName)
 }
 
 func GetNodes(user, node, host string) ([]string, error) {
-	response, err := basicVmInformation(user, node, host)
+	pc := NewProxmoxApiClient(user, host)
+	response, err := pc.listVMs(node)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +97,8 @@ func GetNodes(user, node, host string) ([]string, error) {
 }
 
 func CreateNodeFromTemplate(user, node, host, vmName, templateName string) error {
-	vm, err := getVm(user, node, host, templateName)
+	pc := NewProxmoxApiClient(user, host)
+	vm, err := pc.getVm(node, templateName)
 	if err != nil {
 		return err
 	}
@@ -89,29 +107,31 @@ func CreateNodeFromTemplate(user, node, host, vmName, templateName string) error
 	params := map[string]interface{}{}
 	params["full"] = true
 	params["name"] = vmName
-	_, err = proxmoxPostRequest(user, host, endpoint, params)
+	_, err = pc.request("POST", endpoint, params)
 	return err
 }
 
 func ConfigureNode(user, node, host, vmName string, params map[string]interface{}) error {
-	vm, err := getVm(user, node, host, vmName)
+	pc := NewProxmoxApiClient(user, host)
+	vm, err := pc.getVm(node, vmName)
 	if err != nil {
 		return err
 	}
 
 	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/config", node, vm.VmId)
-	_, err = proxmoxPutRequest(user, host, endpoint, params)
+	_, err = pc.request("PUT", endpoint, params)
 	return err
 }
 
 func GetNodeIP(user, node, host, vmName string) (string, error) {
-	vm, err := getVm(user, node, host, vmName)
+	pc := NewProxmoxApiClient(user, host)
+	vm, err := pc.getVm(node, vmName)
 	if err != nil {
 		return "", err
 	}
 
 	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/agent/network-get-interfaces", node, vm.VmId)
-	data, err := proxmoxGetRequest(user, host, endpoint)
+	data, err := pc.request("GET", endpoint, nil)
 	if err != nil {
 		return "", err
 	}
@@ -151,7 +171,8 @@ func GetNodeIP(user, node, host, vmName string) (string, error) {
 }
 
 func PowerOnVmNamed(user, node, host, vmName string) error {
-	vm, err := getVm(user, node, host, vmName)
+	pc := NewProxmoxApiClient(user, host)
+	vm, err := pc.getVm(node, vmName)
 	if err != nil {
 		return err
 	}
@@ -161,12 +182,13 @@ func PowerOnVmNamed(user, node, host, vmName string) error {
 	}
 
 	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/status/start", node, vm.VmId)
-	_, err = proxmoxPostRequest(user, host, endpoint, nil)
+	_, err = pc.request("POST", endpoint, nil)
 	return err
 }
 
 func PowerOffVmNamed(user, node, host, vmName string) error {
-	vm, err := getVm(user, node, host, vmName)
+	pc := NewProxmoxApiClient(user, host)
+	vm, err := pc.getVm(node, vmName)
 	if err != nil {
 		return err
 	}
@@ -176,87 +198,57 @@ func PowerOffVmNamed(user, node, host, vmName string) error {
 	}
 
 	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/status/stop", node, vm.VmId)
-	_, err = proxmoxPostRequest(user, host, endpoint, nil)
+	_, err = pc.request("POST", endpoint, nil)
 	return err
 }
 
 func DeleteVmNamed(user, node, host, vmName string) error {
-	vm, err := getVm(user, node, host, vmName)
+	pc := NewProxmoxApiClient(user, host)
+	vm, err := pc.getVm(node, vmName)
 	if err != nil {
 		return err
 	}
 
 	endpoint := fmt.Sprintf("nodes/%s/qemu/%d", node, vm.VmId)
-	_, err = proxmoxDeleteRequest(user, host, endpoint)
+	_, err = pc.request("DELETE", endpoint, nil)
 	return err
 }
 
-func proxmoxGetRequest(user, host, endpoint string) ([]byte, error) {
-	url := fmt.Sprintf("https://%s:8006/api2/json/%s", host, endpoint)
-	log.Trace(url)
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return proxmoxDoRequest(user, req)
-}
-
-func proxmoxDeleteRequest(user, host, endpoint string) ([]byte, error) {
-	url := fmt.Sprintf("https://%s:8006/api2/json/%s", host, endpoint)
-	log.Trace(url)
-
-	req, err := http.NewRequest("DELETE", url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return proxmoxDoRequest(user, req)
-}
-
-func proxmoxPostRequest(user, host, endpoint string, params interface{}) ([]byte, error) {
-	url := fmt.Sprintf("https://%s:8006/api2/json/%s", host, endpoint)
+func (p *ProxmoxApiClient) request(method, endpoint string, params interface{}) ([]byte, error) {
+	url := fmt.Sprintf("https://%s:8006/api2/json/%s", p.Host, endpoint)
 	log.Trace(url)
 
 	var body io.Reader = nil
 	if params != nil {
-		pureBytes, err := json.Marshal(params)
+		jsonBytes, err := json.Marshal(params)
 		if err != nil {
 			return nil, err
 		}
-
-		body = bytes.NewReader(pureBytes)
+		body = bytes.NewReader(jsonBytes)
 	}
 
-	req, err := http.NewRequest("POST", url, body)
+	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
 	}
 
-	return proxmoxDoRequest(user, req)
-}
-
-func proxmoxPutRequest(user, host, endpoint string, params interface{}) ([]byte, error) {
-	url := fmt.Sprintf("https://%s:8006/api2/json/%s", host, endpoint)
-	log.Trace(url)
-
-	var body io.Reader = nil
-	if params != nil {
-		pureBytes, err := json.Marshal(params)
-		if err != nil {
-			return nil, err
-		}
-
-		body = bytes.NewReader(pureBytes)
+	req.Header.Set("Authorization", fmt.Sprintf("PVEAPIToken=%s!%s", p.User, p.Token))
+	resp, err := p.Client.Do(req)
+	if err != nil {
+		return nil, err
 	}
+	defer resp.Body.Close()
 
-	req, err := http.NewRequest("PUT", url, body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	return proxmoxDoRequest(user, req)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("response error from %s, %d: %s", req.Host, resp.StatusCode, data)
+	}
+
+	return data, nil
 }
 
 func proxmoxDoRequest(user string, req *http.Request) ([]byte, error) {
