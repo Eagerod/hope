@@ -21,6 +21,8 @@ func ToHypervisor(node hope.Node) (Hypervisor, error) {
 		return nil, fmt.Errorf("failed to resolve hypervisor engine: %s", node.Engine)
 	}
 
-	rv.Initialize(node)
+	if err := rv.Initialize(node); err != nil {
+		return nil, err
+	}
 	return rv, nil
 }
