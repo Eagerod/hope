@@ -88,6 +88,10 @@ type MockHypervisor struct {
 	node hope.Node
 }
 
+func (m *MockHypervisor) Initialize(node hope.Node) error {
+	return nil
+}
+
 func (m *MockHypervisor) ListNodes() ([]string, error) {
 	nodes := []string{}
 	for _, n := range testNodes {
