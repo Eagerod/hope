@@ -19,7 +19,7 @@ func (p *ProxmoxHypervisor) ResolveNode(node hope.Node) (hope.Node, error) {
 }
 
 func (p *ProxmoxHypervisor) UnderlyingNode() (hope.Node, error) {
-	return hope.Node{}, nil
+	return p.node, nil
 }
 
 func (p *ProxmoxHypervisor) CopyImage(packer.JsonSpec, hope.VMs, hope.VMImageSpec) error {
@@ -46,6 +46,6 @@ func (p *ProxmoxHypervisor) DeleteVM(string) error {
 	return nil
 }
 
-func (p *ProxmoxHypervisor) VMIPAddress(string) (string, error) {
-	return "", nil
+func (p *ProxmoxHypervisor) VMIPAddress(vmName string) (string, error) {
+	return proxmox.GetNodeIP(p.node.User, p.node.Name, p.node.Host, vmName)
 }

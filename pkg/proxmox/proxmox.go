@@ -7,38 +7,125 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 )
 
 import (
 	log "github.com/sirupsen/logrus"
 )
 
-func GetNodes(user, node, host string) ([]string, error) {
-	data, err := proxmoxRequest(user, node, host, "qemu", nil)
+// TODO: Dedicated Proxmox client kind of deal?
+
+type qemuApiResponse struct {
+	Status string `json:"status"`
+	VmId   int    `json:"vmid"`
+	Name   string `json:"name"`
+}
+
+type ipAddressResponse struct {
+	IP string `json:"ip-address"`
+}
+
+type getNetworkInterfacesResponse struct {
+	Name        string              `json:"name"`
+	IPAddresses []ipAddressResponse `json:"ip-addresses"`
+}
+
+func basicVmInformation(user, node, host string) ([]qemuApiResponse, error) {
+	endpoint := fmt.Sprintf("nodes/%s/qemu", node)
+	data, err := proxmoxRequest(user, host, endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	var response struct {
-		Data []struct {
-			Name string `json:"name"`
-		} `json:"data"`
+		Data []qemuApiResponse `json:"data"`
 	}
 
 	if err := json.Unmarshal(data, &response); err != nil {
 		return nil, err
 	}
 
+	return response.Data, nil
+}
+
+func getVm(user, node, host, vmName string) (qemuApiResponse, error) {
+	response, err := basicVmInformation(user, node, host)
+	if err != nil {
+		return qemuApiResponse{}, err
+	}
+
+	for _, n := range response {
+		if n.Name == vmName {
+			return n, nil
+		}
+	}
+
+	return qemuApiResponse{}, fmt.Errorf("Failed to find a node named: %s", vmName)
+}
+
+func GetNodes(user, node, host string) ([]string, error) {
+	response, err := basicVmInformation(user, node, host)
+	if err != nil {
+		return nil, err
+	}
+
 	retVal := []string{}
-	for _, n := range response.Data {
+	for _, n := range response {
 		retVal = append(retVal, n.Name)
 	}
 
 	return retVal, nil
 }
 
-func proxmoxRequest(user, node, host, endpoint string, params map[string]string) ([]byte, error) {
-	url := fmt.Sprintf("https://%s:8006/api2/json/nodes/%s/%s", host, node, endpoint)
+func GetNodeIP(user, node, host, vmName string) (string, error) {
+	vm, err := getVm(user, node, host, vmName)
+	if err != nil {
+		return "", err
+	}
+
+	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/agent/network-get-interfaces", node, vm.VmId)
+	data, err := proxmoxRequest(user, host, endpoint, nil)
+	if err != nil {
+		return "", err
+	}
+
+	var response struct {
+		Data struct {
+			Result []getNetworkInterfacesResponse `json:"result"`
+		} `json:"data"`
+	}
+
+	if err := json.Unmarshal(data, &response); err != nil {
+		return "", err
+	}
+
+	candidateIps := []string{}
+	for _, n := range response.Data.Result {
+		if n.Name == "lo" {
+			continue
+		}
+		if strings.HasPrefix(n.Name, "cali") {
+			continue
+		}
+		if strings.HasPrefix(n.Name, "tun") {
+			continue
+		}
+		candidateIps = append(candidateIps, n.IPAddresses[0].IP)
+	}
+
+	if len(candidateIps) == 0 {
+		return "", fmt.Errorf("failed to find a non-loopback, non-tunnel, non-kubernetes IP for %s", vmName)
+	}
+	if len(candidateIps) == 1 {
+		return candidateIps[0], nil
+	}
+
+	return "", fmt.Errorf("found multiple possible IPs for %s", vmName)
+}
+
+func proxmoxRequest(user, host, endpoint string, params map[string]string) ([]byte, error) {
+	url := fmt.Sprintf("https://%s:8006/api2/json/%s", host, endpoint)
 	log.Trace(url)
 
 	req, err := http.NewRequest("GET", url, nil)
