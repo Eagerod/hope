@@ -15,7 +15,14 @@ func (p *ProxmoxHypervisor) ListNodes() ([]string, error) {
 }
 
 func (p *ProxmoxHypervisor) ResolveNode(node hope.Node) (hope.Node, error) {
-	return hope.Node{}, nil
+	ip, err := p.VMIPAddress(node.Name)
+	if err != nil {
+		return hope.Node{}, err
+	}
+
+	node.Hypervisor = ""
+	node.Host = ip
+	return node, nil
 }
 
 func (p *ProxmoxHypervisor) UnderlyingNode() (hope.Node, error) {
