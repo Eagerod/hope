@@ -39,7 +39,7 @@ func (p *ProxmoxHypervisor) StartVM(string) error {
 }
 
 func (p *ProxmoxHypervisor) StopVM(string) error {
-	return nil
+	return proxmox.PowerOffVmNamed(p.node.User, p.node.Name, p.node.Host, vmName)
 }
 
 func (p *ProxmoxHypervisor) DeleteVM(string) error {

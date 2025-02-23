@@ -139,6 +139,21 @@ func PowerOnVmNamed(user, node, host, vmName string) error {
 	return err
 }
 
+func PowerOffVmNamed(user, node, host, vmName string) error {
+	vm, err := getVm(user, node, host, vmName)
+	if err != nil {
+		return err
+	}
+
+	if vm.Status == "stopped" {
+		return nil
+	}
+
+	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/status/stop", node, vm.VmId)
+	_, err = proxmoxPostRequest(user, host, endpoint, nil)
+	return err
+}
+
 func proxmoxGetRequest(user, host, endpoint string) ([]byte, error) {
 	url := fmt.Sprintf("https://%s:8006/api2/json/%s", host, endpoint)
 	log.Trace(url)
