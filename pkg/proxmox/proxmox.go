@@ -1,6 +1,7 @@
 package proxmox
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -76,6 +77,31 @@ func GetNodes(user, node, host string) ([]string, error) {
 	}
 
 	return retVal, nil
+}
+
+func CreateNodeFromTemplate(user, node, host, vmName, templateName string) error {
+	vm, err := getVm(user, node, host, templateName)
+	if err != nil {
+		return err
+	}
+
+	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/clone", node, vm.VmId)
+	params := map[string]interface{}{}
+	params["full"] = true
+	params["name"] = vmName
+	_, err = proxmoxPostRequest(user, host, endpoint, params)
+	return err
+}
+
+func ConfigureNode(user, node, host, vmName string, params map[string]interface{}) error {
+	vm, err := getVm(user, node, host, vmName)
+	if err != nil {
+		return err
+	}
+
+	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/config", node, vm.VmId)
+	_, err = proxmoxPutRequest(user, host, endpoint, params)
+	return err
 }
 
 func GetNodeIP(user, node, host, vmName string) (string, error) {
@@ -189,11 +215,43 @@ func proxmoxDeleteRequest(user, host, endpoint string) ([]byte, error) {
 	return proxmoxDoRequest(user, req)
 }
 
-func proxmoxPostRequest(user, host, endpoint string, params map[string]string) ([]byte, error) {
+func proxmoxPostRequest(user, host, endpoint string, params interface{}) ([]byte, error) {
 	url := fmt.Sprintf("https://%s:8006/api2/json/%s", host, endpoint)
 	log.Trace(url)
 
-	req, err := http.NewRequest("POST", url, nil)
+	var body io.Reader = nil 
+	if params != nil {
+		pureBytes, err := json.Marshal(params)
+		if err != nil {
+			return nil, err
+		}
+
+		body = bytes.NewReader(pureBytes)
+	}
+
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, err
+	}
+
+	return proxmoxDoRequest(user, req)
+}
+
+func proxmoxPutRequest(user, host, endpoint string, params interface{}) ([]byte, error) {
+	url := fmt.Sprintf("https://%s:8006/api2/json/%s", host, endpoint)
+	log.Trace(url)
+
+	var body io.Reader = nil 
+	if params != nil {
+		pureBytes, err := json.Marshal(params)
+		if err != nil {
+			return nil, err
+		}
+
+		body = bytes.NewReader(pureBytes)
+	}
+
+	req, err := http.NewRequest("PUT", url, body)
 	if err != nil {
 		return nil, err
 	}

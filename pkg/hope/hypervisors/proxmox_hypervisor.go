@@ -72,8 +72,18 @@ func (p *ProxmoxHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSp
 	return nil, nil
 }
 
-func (p *ProxmoxHypervisor) CreateNode(hope.Node, hope.VMs, hope.VMImageSpec) error {
-	return nil
+func (p *ProxmoxHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec hope.VMImageSpec) error {
+	err := proxmox.CreateNodeFromTemplate(p.node.User, p.node.Name, p.node.Host, node.Name, vmImageSpec.Name)
+	if err != nil {
+		return err
+	}
+
+	config := map[string]interface{}{}
+	config["cpu"] = node.Cpu
+	config["memory"] = node.Memory
+	config["net[0]"] = fmt.Sprintf("bridge=", node.Network)
+
+	return proxmox.ConfigureNode(p.node.User, p.node.Name, p.node.Host, node.Name, config)
 }
 
 func (p *ProxmoxHypervisor) StartVM(vmName string) error {
