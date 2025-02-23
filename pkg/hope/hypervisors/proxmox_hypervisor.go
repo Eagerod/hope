@@ -69,6 +69,7 @@ func (p *ProxmoxHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSp
 
 	packerEnvs := map[string]string{
 		"PACKER_LOG": "1",
+		"PKR_VAR_proxmox_node": p.node.Name,
 	}
 
 	log.Infof("Building VM Image: %s", vmImageSpec.Name)
