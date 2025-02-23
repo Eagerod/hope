@@ -20,6 +20,11 @@ type ProxmoxHypervisor struct {
 	node hope.Node
 }
 
+func (p *ProxmoxHypervisor) Initialize(node hope.Node) error {
+	p.node = node
+	return nil
+}
+
 func (p *ProxmoxHypervisor) ListNodes() ([]string, error) {
 	return proxmox.GetNodes(p.node.User, p.node.Name, p.node.Host)
 }
