@@ -219,7 +219,7 @@ func proxmoxPostRequest(user, host, endpoint string, params interface{}) ([]byte
 	url := fmt.Sprintf("https://%s:8006/api2/json/%s", host, endpoint)
 	log.Trace(url)
 
-	var body io.Reader = nil 
+	var body io.Reader = nil
 	if params != nil {
 		pureBytes, err := json.Marshal(params)
 		if err != nil {
@@ -241,7 +241,7 @@ func proxmoxPutRequest(user, host, endpoint string, params interface{}) ([]byte,
 	url := fmt.Sprintf("https://%s:8006/api2/json/%s", host, endpoint)
 	log.Trace(url)
 
-	var body io.Reader = nil 
+	var body io.Reader = nil
 	if params != nil {
 		pureBytes, err := json.Marshal(params)
 		if err != nil {
