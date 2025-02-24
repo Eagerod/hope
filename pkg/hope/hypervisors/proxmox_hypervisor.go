@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
+	"time"
 )
 
 import (
@@ -85,6 +87,29 @@ func (p *ProxmoxHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec
 	err := p.pc.CreateNodeFromTemplate(p.node.Name, node.Name, vmImageSpec.Name)
 	if err != nil {
 		return err
+	}
+
+	// TODO: Probably only wait a few minutes tops.
+	log.Infof("Waiting for vm %s to appear on node %s", node.Name, p.node.Name)
+	for true {
+		currentVms, err := p.ListNodes()
+		if err != nil {
+			return err
+		}
+
+		found := false
+		for _, s := range currentVms {
+			if s == node.Name {
+				found = true
+			}
+		}
+
+		if found {
+			break
+		}
+
+		log.Debugf("Node %s not found yet. Only found: %s. Waiting 5 seconds...", node.Name, strings.Join(currentVms, ","))
+		time.Sleep(5 * time.Second)
 	}
 
 	config := map[string]interface{}{}
