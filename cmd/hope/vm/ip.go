@@ -29,7 +29,7 @@ func minDuration(a, b time.Duration) time.Duration {
 }
 
 var ipCmd = &cobra.Command{
-	Use:   "ip",
+	Use:   "ip <node-name>",
 	Short: "Get the IP address of a VM on the specified hypervisor.",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

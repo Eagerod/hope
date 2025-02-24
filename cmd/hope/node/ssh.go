@@ -15,7 +15,7 @@ import (
 )
 
 var sshCmd = &cobra.Command{
-	Use:   "ssh",
+	Use:   "ssh <node-name>",
 	Short: "Initializes SSH for the given host",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

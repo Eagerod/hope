@@ -22,7 +22,7 @@ func initInitCmd() {
 }
 
 var initCmd = &cobra.Command{
-	Use:   "init",
+	Use:   "init <node-name>",
 	Short: "Bootstrap a node within the cluster",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

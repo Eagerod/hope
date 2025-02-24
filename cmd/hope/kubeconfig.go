@@ -21,8 +21,9 @@ func initKubeconfigCmdFlags() {
 }
 
 var kubeconfigCmd = &cobra.Command{
-	Use:   "kubeconfig",
+	Use:   "kubeconfig [node-name]",
 	Short: "Fetch the kubeconfig from a master node",
+	Short: "Fetch the kubeconfig from a master node. If a node-name is given, fetches from that node. If not provided, will fetch from any node.",
 	Args:  cobra.RangeArgs(0, 1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 

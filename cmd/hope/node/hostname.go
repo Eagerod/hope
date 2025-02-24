@@ -21,7 +21,7 @@ func initHostnameCmdFlags() {
 }
 
 var hostnameCmd = &cobra.Command{
-	Use:   "hostname",
+	Use:   "hostname <node-name> <hostname>",
 	Short: "Set the hostname on a node",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
