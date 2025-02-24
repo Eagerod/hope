@@ -30,6 +30,12 @@ type getNetworkInterfacesResponse struct {
 	IPAddresses []ipAddressResponse `json:"ip-addresses"`
 }
 
+// Only value that needs to be consumed right now.
+type NodeConfiguration struct {
+	Net0 string `json:"net0"`
+}
+
+// https://pve.proxmox.com/pve-docs/api-viewer/#
 type ApiClient struct {
 	User   string
 	Host   string
@@ -117,6 +123,27 @@ func (p *ApiClient) CreateNodeFromTemplate(node, vmName, templateName string) er
 	params["newid"] = response.Data
 	_, err = p.request("POST", endpoint, params)
 	return err
+}
+
+func (p *ApiClient) NodeConfiguration(node, vmName string) (*NodeConfiguration, error) {
+	vm, err := p.getVm(node, vmName)
+	if err != nil {
+		return nil, err
+	}
+
+	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/config", node, vm.VmId)
+	data, err := p.request("GET", endpoint, nil)
+
+	fmt.Println(string(data))
+	var response struct {
+		Data NodeConfiguration `json:"data"`
+	}
+
+	if err := json.Unmarshal(data, &response); err != nil {
+		return nil, err
+	}
+
+	return &response.Data, nil
 }
 
 func (p *ApiClient) ConfigureNode(node, vmName string, params map[string]interface{}) error {

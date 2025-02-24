@@ -112,10 +112,25 @@ func (p *ProxmoxHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec
 		time.Sleep(5 * time.Second)
 	}
 
+	// Have to fetch the actual network details to replace the bridge
+	oConfig, err := p.pc.NodeConfiguration(p.node.Name, node.Name)
+	if err != nil {
+		return err
+	}
+
+	netComponents := strings.Split(oConfig.Net0, ",")
+	for i, c := range netComponents {
+		elems := strings.SplitN(c, "=", 2)
+		if elems[0] == "bridge" {
+			netComponents[i] = fmt.Sprintf("bridge=%s", node.Network)
+			break
+		}
+	}
+
 	config := map[string]interface{}{}
-	config["cpu"] = node.Cpu
+	config["cores"] = node.Cpu
 	config["memory"] = node.Memory
-	config["net[0]"] = fmt.Sprintf("bridge=%s", node.Network)
+	config["net0"] = strings.Join(netComponents, ",")
 
 	return p.pc.ConfigureNode(p.node.Name, node.Name, config)
 }
