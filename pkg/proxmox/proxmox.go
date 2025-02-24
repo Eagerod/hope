@@ -101,10 +101,20 @@ func (p *ApiClient) CreateNodeFromTemplate(node, vmName, templateName string) er
 		return err
 	}
 
+	data, err := p.request("GET", "cluster/nextid", nil)
+	var response struct {
+		Data string `json:"data"`
+	}
+
+	if err := json.Unmarshal(data, &response); err != nil {
+		return err
+	}
+
 	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/clone", node, vm.VmId)
 	params := map[string]interface{}{}
 	params["full"] = true
 	params["name"] = vmName
+	params["newid"] = response.Data
 	_, err = p.request("POST", endpoint, params)
 	return err
 }
@@ -209,7 +219,7 @@ func (p *ApiClient) DeleteVmNamed(node, vmName string) error {
 
 func (p *ApiClient) request(method, endpoint string, params interface{}) ([]byte, error) {
 	url := fmt.Sprintf("https://%s:8006/api2/json/%s", p.Host, endpoint)
-	log.Trace(url)
+	log.Tracef("%s: %s", method, url)
 
 	var body io.Reader = nil
 	if params != nil {
@@ -217,6 +227,7 @@ func (p *ApiClient) request(method, endpoint string, params interface{}) ([]byte
 		if err != nil {
 			return nil, err
 		}
+
 		body = bytes.NewReader(jsonBytes)
 	}
 
@@ -226,6 +237,7 @@ func (p *ApiClient) request(method, endpoint string, params interface{}) ([]byte
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("PVEAPIToken=%s!%s", p.User, p.Token))
+	req.Header.Set("Content-Type", "application/json")
 	resp, err := p.Client.Do(req)
 	if err != nil {
 		return nil, err
