@@ -70,7 +70,7 @@ func (p *ProxmoxHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSp
 	allArgs = append(allArgs, ".")
 
 	packerEnvs := map[string]string{
-		"PACKER_LOG": "1",
+		"PACKER_LOG":           "1",
 		"PKR_VAR_proxmox_node": p.node.Name,
 	}
 

@@ -41,12 +41,12 @@ var testNodes []hope.Node = []hope.Node{
 		Network:   "VM Network",
 	},
 	{
-		Name:      "pve2",
-		Role:      hope.NodeRoleHypervisor.String(),
-		Engine:    "proxmox",
-		Host:      "192.168.1.188",
-		User:      "root@pam",
-		Network:   "vmbr200",
+		Name:    "pve2",
+		Role:    hope.NodeRoleHypervisor.String(),
+		Engine:  "proxmox",
+		Host:    "192.168.1.188",
+		User:    "root@pam",
+		Network: "vmbr200",
 	},
 	{
 		Name:       "test-load-balancer",
