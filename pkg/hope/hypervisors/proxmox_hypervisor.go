@@ -91,7 +91,7 @@ func (p *ProxmoxHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec
 
 	// TODO: Probably only wait a few minutes tops.
 	log.Infof("Waiting for vm %s to appear on node %s", node.Name, p.node.Name)
-	for true {
+	for {
 		currentVms, err := p.ListNodes()
 		if err != nil {
 			return err

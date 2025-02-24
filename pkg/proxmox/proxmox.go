@@ -108,6 +108,10 @@ func (p *ApiClient) CreateNodeFromTemplate(node, vmName, templateName string) er
 	}
 
 	data, err := p.request("GET", "cluster/nextid", nil)
+	if err != nil {
+		return err
+	}
+
 	var response struct {
 		Data string `json:"data"`
 	}
@@ -133,6 +137,9 @@ func (p *ApiClient) NodeConfiguration(node, vmName string) (*NodeConfiguration, 
 
 	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/config", node, vm.VmId)
 	data, err := p.request("GET", endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
 
 	fmt.Println(string(data))
 	var response struct {
