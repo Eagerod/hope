@@ -249,6 +249,7 @@ func (p *ApiClient) request(method, endpoint string, params interface{}) ([]byte
 	log.Tracef("%s: %s", method, url)
 
 	var body io.Reader = nil
+	hasBody := false
 	if params != nil {
 		jsonBytes, err := json.Marshal(params)
 		if err != nil {
@@ -256,6 +257,7 @@ func (p *ApiClient) request(method, endpoint string, params interface{}) ([]byte
 		}
 
 		body = bytes.NewReader(jsonBytes)
+		hasBody = true
 	}
 
 	req, err := http.NewRequest(method, url, body)
@@ -264,7 +266,9 @@ func (p *ApiClient) request(method, endpoint string, params interface{}) ([]byte
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("PVEAPIToken=%s!%s", p.User, p.Token))
-	req.Header.Set("Content-Type", "application/json")
+	if hasBody {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	resp, err := p.Client.Do(req)
 	if err != nil {
 		return nil, err
