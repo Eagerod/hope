@@ -21,7 +21,7 @@ func initTokenCmd() {
 }
 
 var tokenCmd = &cobra.Command{
-	Use:   "token",
+	Use:   "token <service-account-name>",
 	Short: "Fetch a service account token from the cluster",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

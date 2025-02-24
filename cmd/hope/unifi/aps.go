@@ -17,7 +17,7 @@ import (
 )
 
 var apsCmd = &cobra.Command{
-	Use:   "ap",
+	Use:   "ap <access-point-ip>",
 	Short: "Initialize an AP by setting its inform URL",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

@@ -19,7 +19,7 @@ func initImageCmdFlags() {
 }
 
 var imageCmd = &cobra.Command{
-	Use:   "image",
+	Use:   "image <image-name>",
 	Short: "Creates a VM image from the defined packer spec.",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
