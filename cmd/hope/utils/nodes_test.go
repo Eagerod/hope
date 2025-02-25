@@ -30,56 +30,63 @@ func resetViper(t *testing.T) {
 	assert.Nil(t, err)
 }
 
+var beast1Node hope.Node = hope.Node{
+	Name:      "beast1",
+	Role:      hope.NodeRoleHypervisor.String(),
+	Engine:    "esxi",
+	Host:      "192.168.10.40",
+	User:      "root",
+	Datastore: "Main",
+	Network:   "VM Network",
+}
+var loadBalancerNode hope.Node = hope.Node{
+	Name:       "test-load-balancer",
+	Role:       hope.NodeRoleLoadBalancer.String(),
+	Hypervisor: "beast1",
+	User:       "packer",
+	Cpu:        2,
+	Memory:     256,
+}
+var master1Node hope.Node = hope.Node{
+	Name:       "test-master-01",
+	Role:       hope.NodeRoleMaster.String(),
+	Hypervisor: "beast1",
+	User:       "packer",
+	Cpu:        2,
+	Memory:     2048,
+}
+var master2Node hope.Node = hope.Node{
+	Name:   "test-master-02",
+	Role:   hope.NodeRoleMaster.String(),
+	User:   "packer",
+	Host:   "192.168.1.10",
+	Cpu:    2,
+	Memory: 2048,
+}
+var master3Node hope.Node = hope.Node{
+	Name:       "test-master-03",
+	Role:       hope.NodeRoleMaster.String(),
+	Hypervisor: "beast1",
+	User:       "packer",
+	Cpu:        2,
+	Memory:     2048,
+}
+var worker1Node hope.Node = hope.Node{
+	Name:       "test-node-01",
+	Role:       hope.NodeRoleNode.String(),
+	Hypervisor: "beast1",
+	User:       "packer",
+	Cpu:        2,
+	Memory:     4096,
+}
+
 var testNodes []hope.Node = []hope.Node{
-	{
-		Name:      "beast1",
-		Role:      hope.NodeRoleHypervisor.String(),
-		Engine:    "esxi",
-		Host:      "192.168.10.40",
-		User:      "root",
-		Datastore: "Main",
-		Network:   "VM Network",
-	},
-	{
-		Name:       "test-load-balancer",
-		Role:       hope.NodeRoleLoadBalancer.String(),
-		Hypervisor: "beast1",
-		User:       "packer",
-		Cpu:        2,
-		Memory:     256,
-	},
-	{
-		Name:       "test-master-01",
-		Role:       hope.NodeRoleMaster.String(),
-		Hypervisor: "beast1",
-		User:       "packer",
-		Cpu:        2,
-		Memory:     2048,
-	},
-	{
-		Name:   "test-master-02",
-		Role:   hope.NodeRoleMaster.String(),
-		User:   "packer",
-		Host:   "192.168.1.10",
-		Cpu:    2,
-		Memory: 2048,
-	},
-	{
-		Name:       "test-master-03",
-		Role:       hope.NodeRoleMaster.String(),
-		Hypervisor: "beast1",
-		User:       "packer",
-		Cpu:        2,
-		Memory:     2048,
-	},
-	{
-		Name:       "test-node-01",
-		Role:       hope.NodeRoleNode.String(),
-		Hypervisor: "beast1",
-		User:       "packer",
-		Cpu:        2,
-		Memory:     4096,
-	},
+	beast1Node,
+	loadBalancerNode,
+	master1Node,
+	master2Node,
+	master3Node,
+	worker1Node,
 }
 
 var oldToHypervisor func(hope.Node) (hypervisors.Hypervisor, error) = toHypervisor
