@@ -23,7 +23,7 @@ func initResetCmd() {
 }
 
 var resetCmd = &cobra.Command{
-	Use:   "reset",
+	Use:   "reset <node-name>",
 	Short: "Attempts to gracefully run kubeadm reset on the specified host",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

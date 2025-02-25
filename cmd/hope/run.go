@@ -22,7 +22,7 @@ func initRunCmdFlags() {
 }
 
 var runCmd = &cobra.Command{
-	Use:   "run",
+	Use:   "run <job-name>",
 	Short: "Execute and follow a Kubernetes job",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

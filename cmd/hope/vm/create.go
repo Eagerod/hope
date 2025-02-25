@@ -10,8 +10,9 @@ import (
 )
 
 var createCmd = &cobra.Command{
-	Use:   "create",
+	Use:   "create <image-name> <node-name>",
 	Short: "Creates the named node as a VM using its defined hypervisor.",
+	Long:  "Creates the named node as a VM using its defined hypervisor.\n\nArgs:\n  image-name: The name of the image from which to create a VM\n  node-name: The node to create from the image",
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		vmName := args[0]
