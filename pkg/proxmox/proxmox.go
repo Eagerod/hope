@@ -57,7 +57,8 @@ func NewApiClient(user, host string) *ApiClient {
 }
 
 func (p *ApiClient) listVMs(node string) ([]qemuApiResponse, error) {
-	data, err := p.request("GET", fmt.Sprintf("nodes/%s/qemu", node), nil)
+	endpoint := fmt.Sprintf("nodes/%s/qemu", node)
+	data, err := p.request("GET", endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +142,6 @@ func (p *ApiClient) NodeConfiguration(node, vmName string) (*NodeConfiguration, 
 		return nil, err
 	}
 
-	fmt.Println(string(data))
 	var response struct {
 		Data NodeConfiguration `json:"data"`
 	}
@@ -272,7 +272,8 @@ func (p *ApiClient) request(method, endpoint string, params interface{}) ([]byte
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("PVEAPIToken=%s!%s", p.User, p.Token))
+	pveToken := fmt.Sprintf("PVEAPIToken=%s!%s", p.User, p.Token)
+	req.Header.Set("Authorization", pveToken)
 	if hasBody {
 		req.Header.Set("Content-Type", "application/json")
 	}
