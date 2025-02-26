@@ -3,6 +3,7 @@ package unifi
 import (
 	"fmt"
 	"regexp"
+	"slices"
 )
 
 import (
@@ -12,7 +13,6 @@ import (
 )
 
 import (
-	"github.com/Eagerod/hope/pkg/sliceutil"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
@@ -24,7 +24,7 @@ var apsCmd = &cobra.Command{
 		apIp := args[0]
 		aps := viper.GetStringSlice("access_points")
 
-		if !sliceutil.StringInSlice(apIp, aps) {
+		if !slices.Contains(aps, apIp) {
 			return fmt.Errorf("failed to find %s in access points list", apIp)
 		}
 
