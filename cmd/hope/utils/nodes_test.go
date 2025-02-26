@@ -100,7 +100,7 @@ func (m *MockHypervisor) Initialize(node hope.Node) error {
 }
 
 func (m *MockHypervisor) ListNodes() ([]string, error) {
-	nodes := []string{	
+	nodes := []string{
 		loadBalancerNode.Name,
 		master1Node.Name,
 		master2Node.Name,
