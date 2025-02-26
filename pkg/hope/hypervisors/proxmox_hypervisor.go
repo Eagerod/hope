@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"slices"
 	"strings"
 	"time"
 )
@@ -97,14 +98,7 @@ func (p *ProxmoxHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec
 			return err
 		}
 
-		found := false
-		for _, s := range currentVms {
-			if s == node.Name {
-				found = true
-			}
-		}
-
-		if found {
+		if slices.Contains(currentVms, node.Name) {
 			break
 		}
 
