@@ -120,12 +120,8 @@ func (m *MockHypervisor) UnderlyingNode() (hope.Node, error) {
 	return m.node, nil
 }
 
-func (m *MockHypervisor) CopyImage(a packer.JsonSpec, b hope.VMs, c hope.VMImageSpec) error {
+func (m *MockHypervisor) CreateImage(a hope.VMs, b hope.VMImageSpec, c []string, d bool) error {
 	return nil
-}
-
-func (m *MockHypervisor) CreateImage(a hope.VMs, b hope.VMImageSpec, c []string, d bool) (*packer.JsonSpec, error) {
-	return nil, nil
 }
 
 func (m *MockHypervisor) CreateNode(a hope.Node, b hope.VMs, c hope.VMImageSpec) error {

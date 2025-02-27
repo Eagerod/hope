@@ -11,7 +11,6 @@ import (
 	"github.com/Eagerod/hope/pkg/esxi"
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/packer"
-	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
@@ -105,29 +104,7 @@ func (hyp *EsxiHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec 
 	}
 }
 
-func (hyp *EsxiHypervisor) CopyImage(packerSpec packer.JsonSpec, vm hope.VMs, vmImageSpec hope.VMImageSpec) error {
-	for _, builder := range packerSpec.Builders {
-		if builder.Type != "vmware-iso" {
-			continue
-		}
-
-		connectionString := hyp.node.ConnectionString()
-		remoteVmfsPath := path.Join("/", "vmfs", "volumes", hyp.node.Datastore, "ovfs", vmImageSpec.Name)
-		remoteVMPath := fmt.Sprintf("%s:%s", connectionString, remoteVmfsPath)
-
-		if err := ssh.ExecSSH(connectionString, "rm", "-rf", remoteVmfsPath); err != nil {
-			return err
-		}
-
-		if err := scp.ExecSCP("-pr", builder.OutputDirectory, remoteVMPath); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpec, args []string, force bool) (*packer.JsonSpec, error) {
+func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpec, args []string, force bool) error {
 	vmDir := path.Join(vms.Root, vmImageSpec.Name)
 	outputDir := path.Join(vms.Output, vmImageSpec.Name)
 	log.Tracef("Looking for VM definition in %s", vmDir)
@@ -137,9 +114,9 @@ func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpe
 	//   the temp directory everything gets copied into.
 	packerJsonPath := path.Join(vmDir, "packer.json")
 	if _, err := os.Stat(packerJsonPath); err != nil && os.IsNotExist(err) {
-		return nil, fmt.Errorf("VM packer file not found at path: %s", packerJsonPath)
+		return fmt.Errorf("VM packer file not found at path: %s", packerJsonPath)
 	} else if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Create full parameter set.
@@ -153,7 +130,7 @@ func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpe
 	log.Debugf("Copying contents of %s for parameter replacement.", vmDir)
 	tempDir, err := hope.ReplaceParametersInDirectoryCopy(vmDir, allParameters)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer os.RemoveAll(tempDir)
 
@@ -161,17 +138,17 @@ func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpe
 	tempPackerJsonPath := path.Join(tempDir, "packer.json")
 	packerSpec, err := packer.SpecFromPath(tempPackerJsonPath)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Packer runs out of temp dir, so directories have to be absolute.
 	packerOutDir := packerSpec.Builders[0].OutputDirectory
 	if !path.IsAbs(packerOutDir) {
-		return nil, fmt.Errorf("packer output directory %s must be absolute", packerOutDir)
+		return fmt.Errorf("packer output directory %s must be absolute", packerOutDir)
 	}
 
 	if !path.IsAbs(vms.Cache) {
-		return nil, fmt.Errorf("packer cache directory %s must be absolute", vms.Cache)
+		return fmt.Errorf("packer cache directory %s must be absolute", vms.Cache)
 	}
 
 	if force {
@@ -182,19 +159,19 @@ func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpe
 		if err != nil && os.IsNotExist(err) {
 			log.Debugf("Will create a new directory at %s...", packerOutDir)
 		} else if err != nil {
-			return nil, err
+			return err
 		} else {
 			if !stat.IsDir() {
-				return nil, fmt.Errorf("file exists at path %s", packerOutDir)
+				return fmt.Errorf("file exists at path %s", packerOutDir)
 			}
 
 			files, err := os.ReadDir(packerOutDir)
 			if err != nil {
-				return nil, err
+				return err
 			}
 
 			if len(files) != 0 {
-				return nil, fmt.Errorf("directory at path %s already exists and is not empty", packerOutDir)
+				return fmt.Errorf("directory at path %s already exists and is not empty", packerOutDir)
 			}
 		}
 	}
@@ -204,7 +181,7 @@ func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpe
 	//   isn't writable.
 	// Seems like a no brainer for packer to do that check.
 	if err := os.MkdirAll(packerOutDir, 0755); err != nil {
-		return nil, fmt.Errorf("directory at path %s is not writable; %w", packerOutDir, err)
+		return fmt.Errorf("directory at path %s is not writable; %w", packerOutDir, err)
 	}
 
 	allArgs := []string{"build"}
@@ -228,10 +205,10 @@ func (hyp *EsxiHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpe
 	log.Infof("Building VM Image: %s", vmImageSpec.Name)
 
 	if err := packer.ExecPackerWdEnv(tempDir, &packerEnvs, allArgs...); err != nil {
-		return nil, err
+		return err
 	}
 
-	return packerSpec, nil
+	return nil
 }
 
 func (hyp *EsxiHypervisor) DeleteVM(name string) error {
