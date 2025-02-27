@@ -1,8 +1,32 @@
 package hypervisors
 
 import (
+	"errors"
+)
+
+import (
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/packer"
+)
+
+var CopyImageNotImplementedError error = errors.New("CopyImage not implemented for this hypervisor")
+
+type CopyImageMode int
+
+const (
+	// The hypervisor does not support copying images between instances.
+	// Invocations to `CopyImage` should result in a
+	// `CopyImageNotImplementedError`
+	CopyImageModeNone CopyImageMode = iota
+
+	// After calling `CreateImage`, the user can reliably invoke `CopyImage`
+	// for each hypervisor in the hypervisor list.
+	CopyImageModeToAll
+
+	// After calling `CreateImage`, the user can reliably invoke `CopyImage`
+	// for each hypervisor _except_ the one with which `CreateImage`` was
+	// invoked.
+	CopyImageModeFromFirst
 )
 
 // Hypervisor acts as a catch-all for "an entity that exposes access to manage
@@ -20,6 +44,9 @@ type Hypervisor interface {
 
 	// Returns the base object used to create the hypervisor.
 	UnderlyingNode() (hope.Node, error)
+
+	// How instances this hypervisor expect images to be copied
+	CopyImageMode() CopyImageMode
 
 	// Copy an image from the packer cache to all hypervisors it should exist
 	// on.

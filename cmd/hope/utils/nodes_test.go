@@ -120,8 +120,12 @@ func (m *MockHypervisor) UnderlyingNode() (hope.Node, error) {
 	return m.node, nil
 }
 
+func (hyp *EsxiHypervisor) CopyImageMode() CopyImageMode {
+	return hypervisor.CopyImageModeNone
+}
+
 func (m *MockHypervisor) CopyImage(a packer.JsonSpec, b hope.VMs, c hope.VMImageSpec) error {
-	return nil
+	return hypervisor.CopyImageNotImplementedError
 }
 
 func (m *MockHypervisor) CreateImage(a hope.VMs, b hope.VMImageSpec, c []string, d bool) (*packer.JsonSpec, error) {

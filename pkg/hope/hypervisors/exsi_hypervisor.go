@@ -24,6 +24,10 @@ func (hyp *EsxiHypervisor) Initialize(node hope.Node) error {
 	return nil
 }
 
+func (hyp *EsxiHypervisor) CopyImageMode() CopyImageMode {
+	return CopyImageModeFromFirst
+}
+
 func (hyp *EsxiHypervisor) ListNodes() ([]string, error) {
 	v, e := esxi.ListVms(hyp.node.ConnectionString())
 	if e == nil {
