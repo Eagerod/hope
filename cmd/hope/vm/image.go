@@ -35,13 +35,6 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
-		// Each image that's made will be copied to all hypervisors that
-		//   accept that image.
-		hypervisors, err := utils.GetHypervisors()
-		if err != nil {
-			return err
-		}
-
 		log.Debugf("Creating VM %s using %d hypervisors", vm.Name, len(vm.Hypervisors))
 		for _, hypervisorName := range vm.Hypervisors {
 			hypervisor, err := utils.GetHypervisor(hypervisorName)
@@ -49,17 +42,9 @@ var imageCmd = &cobra.Command{
 				return err
 			}
 
-			packerSpec, err := hypervisor.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag)
-			if err != nil {
+			if err := hypervisor.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag); err != nil {
 				return err
 			}
-
-			for _, hv := range hypervisors {
-				if err := hv.CopyImage(*packerSpec, vms, *vm); err != nil {
-					return err
-				}
-			}
-
 		}
 
 		return nil

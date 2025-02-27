@@ -2,7 +2,6 @@ package hypervisors
 
 import (
 	"github.com/Eagerod/hope/pkg/hope"
-	"github.com/Eagerod/hope/pkg/packer"
 )
 
 // Hypervisor acts as a catch-all for "an entity that exposes access to manage
@@ -21,12 +20,8 @@ type Hypervisor interface {
 	// Returns the base object used to create the hypervisor.
 	UnderlyingNode() (hope.Node, error)
 
-	// Copy an image from the packer cache to all hypervisors it should exist
-	// on.
-	CopyImage(packer.JsonSpec, hope.VMs, hope.VMImageSpec) error
-
 	// Create an image using the given image spec.
-	CreateImage(hope.VMs, hope.VMImageSpec, []string, bool) (*packer.JsonSpec, error)
+	CreateImage(hope.VMs, hope.VMImageSpec, []string, bool) error
 
 	// Create a node from the given image spec.
 	CreateNode(hope.Node, hope.VMs, hope.VMImageSpec) error
