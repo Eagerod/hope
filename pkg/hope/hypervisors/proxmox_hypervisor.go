@@ -85,25 +85,12 @@ func (p *ProxmoxHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSp
 }
 
 func (p *ProxmoxHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec hope.VMImageSpec) error {
-	err := p.pc.CreateNodeFromTemplate(p.node.Name, node.Name, vmImageSpec.Name)
-	if err != nil {
+	if err := p.pc.CreateNodeFromTemplate(p.node.Name, node.Name, vmImageSpec.Name); err != nil {
 		return err
 	}
 
-	// TODO: Probably only wait a few minutes tops.
-	log.Infof("Waiting for vm %s to appear on node %s", node.Name, p.node.Name)
-	for {
-		currentVms, err := p.ListNodes()
-		if err != nil {
-			return err
-		}
-
-		if slices.Contains(currentVms, node.Name) {
-			break
-		}
-
-		log.Debugf("Node %s not found yet. Only found: %s. Waiting 5 seconds...", node.Name, strings.Join(currentVms, ","))
-		time.Sleep(5 * time.Second)
+	if err := p.waitForNode(5*time.Second, 5*time.Minute, node.Name); err != nil {
+		return err
 	}
 
 	// Have to fetch the actual network details to replace the bridge
@@ -143,4 +130,34 @@ func (p *ProxmoxHypervisor) DeleteVM(vmName string) error {
 
 func (p *ProxmoxHypervisor) VMIPAddress(vmName string) (string, error) {
 	return p.pc.GetNodeIP(p.node.Name, vmName)
+}
+
+func (p *ProxmoxHypervisor) waitForNode(pollInterval, timeout time.Duration, nodeName string) error {
+	ticker := time.NewTicker(pollInterval)
+	defer ticker.Stop()
+
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+
+	deadline := time.Now().Add(timeout)
+
+	log.Infof("Waiting for vm %s to appear on node %s", nodeName, p.node.Name)
+	for {
+		select {
+		case <-ticker.C:
+			currentVms, err := p.ListNodes()
+			if err != nil {
+				return err
+			}
+
+			if slices.Contains(currentVms, nodeName) {
+				return nil
+			}
+
+			log.Debugf("Node %s not found yet. Only found: %s. Waiting %s...", nodeName, strings.Join(currentVms, ","), pollInterval.String())
+			log.Tracef("Polling continues for %s...", time.Until(deadline).Round(time.Second).String())
+		case <-timer.C:
+			return fmt.Errorf("waited %s, and node %s is not yet ready", timeout.String(), nodeName)
+		}
+	}
 }
