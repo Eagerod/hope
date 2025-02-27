@@ -54,6 +54,10 @@ var imageCmd = &cobra.Command{
 				return err
 			}
 
+			if packerSpec == nil {
+				continue
+			}
+
 			for _, hv := range hypervisors {
 				if err := hv.CopyImage(*packerSpec, vms, *vm); err != nil {
 					return err
