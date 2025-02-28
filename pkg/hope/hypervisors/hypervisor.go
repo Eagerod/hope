@@ -6,17 +6,16 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/hope"
-	"github.com/Eagerod/hope/pkg/packer"
 )
 
-var CopyImageNotImplementedError error = errors.New("CopyImage not implemented for this hypervisor")
+var ErrCopyImageNotImplemented error = errors.New("CopyImage not implemented for this hypervisor")
 
 type CopyImageMode int
 
 const (
 	// The hypervisor does not support copying images between instances.
 	// Invocations to `CopyImage` should result in a
-	// `CopyImageNotImplementedError`
+	// `ErrCopyImageNotImplemented`
 	CopyImageModeNone CopyImageMode = iota
 
 	// After calling `CreateImage`, the user can reliably invoke `CopyImage`
@@ -50,10 +49,10 @@ type Hypervisor interface {
 
 	// Copy an image from the packer cache to all hypervisors it should exist
 	// on.
-	CopyImage(packer.JsonSpec, hope.VMs, hope.VMImageSpec) error
+	CopyImage(hope.VMs, hope.VMImageSpec, Hypervisor) error
 
 	// Create an image using the given image spec.
-	CreateImage(hope.VMs, hope.VMImageSpec, []string, bool) (*packer.JsonSpec, error)
+	CreateImage(hope.VMs, hope.VMImageSpec, []string, bool) error
 
 	// Create a node from the given image spec.
 	CreateNode(hope.Node, hope.VMs, hope.VMImageSpec) error

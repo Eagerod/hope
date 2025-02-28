@@ -59,28 +59,27 @@ var imageCmd = &cobra.Command{
 			firstHV := engHypervisors[0]
 			remainingHVs := engHypervisors[1:]
 
-			packerSpec, err := firstHV.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag)
-			if err != nil {
+			if err := firstHV.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag); err != nil {
 				return err
 			}
 
 			switch firstHV.CopyImageMode() {
 			case hypervisors.CopyImageModeNone:
 				for _, hv := range remainingHVs {
-					_, err := hv.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag)
+					err := hv.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag)
 					if err != nil {
 						return err
 					}
 				}
 			case hypervisors.CopyImageModeToAll:
 				for _, hv := range engHypervisors {
-					if err := hv.CopyImage(*packerSpec, vms, *vm); err != nil {
+					if err := hv.CopyImage(vms, *vm, firstHV); err != nil {
 						return err
 					}
 				}
 			case hypervisors.CopyImageModeFromFirst:
 				for _, hv := range remainingHVs {
-					if err := hv.CopyImage(*packerSpec, vms, *vm); err != nil {
+					if err := hv.CopyImage(vms, *vm, firstHV); err != nil {
 						return err
 					}
 				}
