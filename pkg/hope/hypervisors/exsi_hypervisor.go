@@ -25,7 +25,7 @@ func (hyp *EsxiHypervisor) Initialize(node hope.Node) error {
 }
 
 func (hyp *EsxiHypervisor) CopyImageMode() CopyImageMode {
-	return CopyImageModeFromFirst
+	return CopyImageModeToAll
 }
 
 func (hyp *EsxiHypervisor) ListNodes() ([]string, error) {

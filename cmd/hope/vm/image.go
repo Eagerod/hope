@@ -7,6 +7,7 @@ import (
 
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
+	"github.com/Eagerod/hope/pkg/hope/hypervisors"
 )
 
 var imageCmdParameterSlice *[]string
@@ -35,31 +36,55 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
-		// Each image that's made will be copied to all hypervisors that
-		//   accept that image.
-		hypervisors, err := utils.GetHypervisors()
-		if err != nil {
-			return err
-		}
-
-		log.Debugf("Creating VM %s using %d hypervisors", vm.Name, len(vm.Hypervisors))
+		// Group hypervisors by engine
+		hypEngMap := map[string][]hypervisors.Hypervisor{}
 		for _, hypervisorName := range vm.Hypervisors {
 			hypervisor, err := utils.GetHypervisor(hypervisorName)
 			if err != nil {
 				return err
 			}
 
-			packerSpec, err := hypervisor.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag)
+			hvNode, err := hypervisor.UnderlyingNode()
 			if err != nil {
 				return err
 			}
 
-			for _, hv := range hypervisors {
-				if err := hv.CopyImage(*packerSpec, vms, *vm); err != nil {
-					return err
-				}
+			engHVs := hypEngMap[hvNode.Engine]
+			engHVs = append(engHVs, hypervisor)
+			hypEngMap[hvNode.Engine] = engHVs
+		}
+
+		for engine, engHypervisors := range hypEngMap {
+			log.Debugf("Creating VM %s using %d %s hypervisors", vm.Name, len(engHypervisors), engine)
+			firstHV := engHypervisors[0]
+			remainingHVs := engHypervisors[1:]
+
+			packerSpec, err := firstHV.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag)
+			if err != nil {
+				return err
 			}
 
+			switch firstHV.CopyImageMode() {
+			case hypervisors.CopyImageModeNone:
+				for _, hv := range remainingHVs {
+					_, err := hv.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag)
+					if err != nil {
+						return err
+					}
+				}
+			case hypervisors.CopyImageModeToAll:
+				for _, hv := range engHypervisors {
+					if err := hv.CopyImage(*packerSpec, vms, *vm); err != nil {
+						return err
+					}
+				}
+			case hypervisors.CopyImageModeFromFirst:
+				for _, hv := range remainingHVs {
+					if err := hv.CopyImage(*packerSpec, vms, *vm); err != nil {
+						return err
+					}
+				}
+			}
 		}
 
 		return nil
