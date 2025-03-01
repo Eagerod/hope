@@ -14,7 +14,6 @@ import (
 import (
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/hope/hypervisors"
-	"github.com/Eagerod/hope/pkg/packer"
 )
 
 func resetViper(t *testing.T) {
@@ -129,12 +128,16 @@ func (m *MockHypervisor) UnderlyingNode() (hope.Node, error) {
 	return m.node, nil
 }
 
-func (m *MockHypervisor) CopyImage(a packer.JsonSpec, b hope.VMs, c hope.VMImageSpec) error {
-	return nil
+func (m *MockHypervisor) CopyImageMode() hypervisors.CopyImageMode {
+	return hypervisors.CopyImageModeNone
 }
 
-func (m *MockHypervisor) CreateImage(a hope.VMs, b hope.VMImageSpec, c []string, d bool) (*packer.JsonSpec, error) {
-	return nil, nil
+func (m *MockHypervisor) CopyImage(a hope.VMs, b hope.VMImageSpec, c hypervisors.Hypervisor) error {
+	return hypervisors.ErrCopyImageNotImplemented
+}
+
+func (m *MockHypervisor) CreateImage(a hope.VMs, b hope.VMImageSpec, c []string, d bool) error {
+	return nil
 }
 
 func (m *MockHypervisor) CreateNode(a hope.Node, b hope.VMs, c hope.VMImageSpec) error {

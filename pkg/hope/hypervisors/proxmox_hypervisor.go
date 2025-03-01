@@ -50,17 +50,21 @@ func (p *ProxmoxHypervisor) UnderlyingNode() (hope.Node, error) {
 	return p.node, nil
 }
 
-func (p *ProxmoxHypervisor) CopyImage(packer.JsonSpec, hope.VMs, hope.VMImageSpec) error {
+func (p *ProxmoxHypervisor) CopyImageMode() CopyImageMode {
+	return CopyImageModeFromFirst
+}
+
+func (p *ProxmoxHypervisor) CopyImage(vms hope.VMs, vm hope.VMImageSpec, originalHV Hypervisor) error {
 	return fmt.Errorf("must create vm images independently on target hosts")
 }
 
-func (p *ProxmoxHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpec, args []string, force bool) (*packer.JsonSpec, error) {
+func (p *ProxmoxHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpec, args []string, force bool) error {
 	vmDir := path.Join(vms.Root, vmImageSpec.Name)
 
 	log.Debugf("Copying contents of %s for parameter replacement.", vmDir)
 	tempDir, err := hope.ReplaceParametersInDirectoryCopy(vmDir, vmImageSpec.Parameters)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer os.RemoveAll(tempDir)
 
@@ -77,11 +81,7 @@ func (p *ProxmoxHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSp
 
 	log.Infof("Building VM Image: %s", vmImageSpec.Name)
 
-	if err := packer.ExecPackerWdEnv(tempDir, &packerEnvs, allArgs...); err != nil {
-		return nil, err
-	}
-
-	return nil, nil
+	return packer.ExecPackerWdEnv(tempDir, &packerEnvs, allArgs...)
 }
 
 func (p *ProxmoxHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec hope.VMImageSpec) error {

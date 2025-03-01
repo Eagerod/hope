@@ -7,6 +7,7 @@ import (
 
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
+	"github.com/Eagerod/hope/pkg/hope/hypervisors"
 )
 
 var imageCmdParameterSlice *[]string
@@ -35,35 +36,35 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
-		// Each image that's made will be copied to all hypervisors that
-		//   accept that image.
-		hypervisors, err := utils.GetHypervisors()
+		vmHypervisors := []hypervisors.Hypervisor{}
+		for _, s := range vm.Hypervisors {
+			hyp, err := utils.GetHypervisor(s)
+			if err != nil {
+				return err
+			}
+
+			vmHypervisors = append(vmHypervisors, hyp)
+		}
+
+		plans, err := hypervisors.GetEnginePlans(vmHypervisors)
 		if err != nil {
 			return err
 		}
 
-		log.Debugf("Creating VM %s using %d hypervisors", vm.Name, len(vm.Hypervisors))
-		for _, hypervisorName := range vm.Hypervisors {
-			hypervisor, err := utils.GetHypervisor(hypervisorName)
-			if err != nil {
-				return err
-			}
-
-			packerSpec, err := hypervisor.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag)
-			if err != nil {
-				return err
-			}
-
-			if packerSpec == nil {
-				continue
-			}
-
-			for _, hv := range hypervisors {
-				if err := hv.CopyImage(*packerSpec, vms, *vm); err != nil {
+		for _, plan := range plans {
+			log.Debugf("Creating VM %s using %d %s hypervisors", vm.Name, plan.NumHypervisors, plan.Engine)
+			for _, hv := range plan.BuildHypervisors {
+				if err := hv.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag); err != nil {
 					return err
 				}
 			}
 
+			firstHV := plan.BuildHypervisors[0]
+			for _, hv := range plan.CopyHypervisors {
+				if err := hv.CopyImage(vms, *vm, firstHV); err != nil {
+					return err
+				}
+			}
 		}
 
 		return nil
