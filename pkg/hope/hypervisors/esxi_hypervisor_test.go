@@ -11,7 +11,6 @@ import (
 
 import (
 	"github.com/Eagerod/hope/pkg/hope"
-	"github.com/Eagerod/hope/pkg/packer"
 	"github.com/Eagerod/hope/pkg/scp"
 	"github.com/Eagerod/hope/pkg/ssh"
 )
@@ -26,6 +25,26 @@ type EsxiHypervisorTestSuite struct {
 
 	vms            hope.VMs
 	hypervisorNode hope.Node
+}
+
+var exampleEsxiHypervisorNode1 hope.Node = hope.Node{
+	Name:      "beast1",
+	Role:      "hypervisor",
+	Engine:    "esxi",
+	Host:      "192.168.10.40",
+	User:      "root",
+	Datastore: "Main",
+	Network:   "VM Network",
+}
+
+var exampleEsxiHypervisorNode2 hope.Node = hope.Node{
+	Name:      "beast2",
+	Role:      "hypervisor",
+	Engine:    "esxi",
+	Host:      "192.168.10.41",
+	User:      "root",
+	Datastore: "Main",
+	Network:   "VM Network",
 }
 
 func (s *EsxiHypervisorTestSuite) SetupTest() {
@@ -45,15 +64,7 @@ func (s *EsxiHypervisorTestSuite) SetupTest() {
 		},
 	}
 
-	s.hypervisorNode = hope.Node{
-		Name:      "beast1",
-		Role:      "hypervisor",
-		Engine:    "esxi",
-		Host:      "192.168.10.40",
-		User:      "root",
-		Datastore: "Main",
-		Network:   "VM Network",
-	}
+	s.hypervisorNode = exampleEsxiHypervisorNode1
 }
 
 func (s *EsxiHypervisorTestSuite) TeardownTest() {
@@ -95,19 +106,10 @@ func (s *EsxiHypervisorTestSuite) TestCopyImage() {
 		return nil
 	}
 
-	packerSpec := packer.JsonSpec{
-		Builders: []packer.JsonBuilder{
-			packer.JsonBuilder{
-				Type:            "vmware-iso",
-				OutputDirectory: "/var/lib/packer/images/some-image",
-			},
-		},
-	}
-
 	esxi, err := ToHypervisor(s.hypervisorNode)
 	assert.NoError(t, err)
 
-	err = esxi.CopyImage(packerSpec, s.vms, s.vms.Images[0])
+	err = esxi.CopyImage(s.vms, s.vms.Images[0], esxi)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, scpExecutions)

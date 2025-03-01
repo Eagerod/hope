@@ -36,35 +36,32 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
-		// Group hypervisors by engine
-		hypEngMap := map[string][]hypervisors.Hypervisor{}
-		for _, hypervisorName := range vm.Hypervisors {
-			hypervisor, err := utils.GetHypervisor(hypervisorName)
+		vmHypervisors := []hypervisors.Hypervisor{}
+		for _, s := range vm.Hypervisors {
+			hyp, err := utils.GetHypervisor(s)
 			if err != nil {
 				return err
 			}
 
-			hvNode, err := hypervisor.UnderlyingNode()
-			if err != nil {
-				return err
-			}
-
-			engHVs := hypEngMap[hvNode.Engine]
-			engHVs = append(engHVs, hypervisor)
-			hypEngMap[hvNode.Engine] = engHVs
+			vmHypervisors = append(vmHypervisors, hyp)
 		}
 
-		for engine, engHypervisors := range hypEngMap {
-			log.Debugf("Creating VM %s using %d %s hypervisors", vm.Name, len(vm.Hypervisors), engine)
-			firstHV := engHypervisors[0]
+		plans, err := hypervisors.GetEnginePlans(vmHypervisors)
+		if err != nil {
+			return err
+		}
 
-			packerSpec, err := firstHV.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag)
-			if err != nil {
-				return err
+		for _, plan := range plans {
+			log.Debugf("Creating VM %s using %d %s hypervisors", vm.Name, plan.NumHypervisors, plan.Engine)
+			for _, hv := range plan.BuildHypervisors {
+				if err := hv.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag); err != nil {
+					return err
+				}
 			}
 
-			for _, hv := range engHypervisors {
-				if err := hv.CopyImage(*packerSpec, vms, *vm); err != nil {
+			firstHV := plan.BuildHypervisors[0]
+			for _, hv := range plan.CopyHypervisors {
+				if err := hv.CopyImage(vms, *vm, firstHV); err != nil {
 					return err
 				}
 			}
