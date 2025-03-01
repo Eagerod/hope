@@ -21,7 +21,7 @@ COPY . .
 RUN \
   make test && \
   make && \
-  gofmt -l . | grep . && echo "go fmt wants to make changes; run go fmt and fix linting errors." && exit 1 || exit 0
+  (gofmt -l . | grep . && echo "go fmt wants to make changes; run go fmt and fix linting errors." && exit 1 || exit 0)
 
 
 FROM debian:12
