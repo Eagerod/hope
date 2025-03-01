@@ -54,8 +54,13 @@ func (p *ProxmoxHypervisor) CopyImageMode() CopyImageMode {
 	return CopyImageModeFromFirst
 }
 
-func (p *ProxmoxHypervisor) CopyImage(vms hope.VMs, vm hope.VMImageSpec, originalHV Hypervisor) error {
-	return fmt.Errorf("must create vm images independently on target hosts")
+func (p *ProxmoxHypervisor) CopyImage(vms hope.VMs, vmImageSpec hope.VMImageSpec, originalHV Hypervisor) error {
+	originNode, err := originalHV.UnderlyingNode()
+	if err != nil {
+		return err
+	}
+
+	return p.pc.CreateNodeFromOthersTemplate(p.node.Name, originNode.Name, vmImageSpec.Name)
 }
 
 func (p *ProxmoxHypervisor) CreateImage(vms hope.VMs, vmImageSpec hope.VMImageSpec, args []string, force bool) error {

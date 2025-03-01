@@ -130,6 +130,34 @@ func (p *ApiClient) CreateNodeFromTemplate(node, vmName, templateName string) er
 	return err
 }
 
+func (p *ApiClient) CreateNodeFromOthersTemplate(node, sourceNode, templateName string) error {
+	vm, err := p.getVm(sourceNode, templateName)
+	if err != nil {
+		return err
+	}
+
+	data, err := p.request("GET", "cluster/nextid", nil)
+	if err != nil {
+		return err
+	}
+
+	var response struct {
+		Data string `json:"data"`
+	}
+
+	if err := json.Unmarshal(data, &response); err != nil {
+		return err
+	}
+
+	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/clone", node, vm.VmId)
+	params := map[string]interface{}{}
+	params["full"] = true
+	params["name"] = templateName
+	params["newid"] = response.Data
+	_, err = p.request("POST", endpoint, params)
+	return err
+}
+
 func (p *ApiClient) NodeConfiguration(node, vmName string) (*NodeConfiguration, error) {
 	vm, err := p.getVm(node, vmName)
 	if err != nil {
