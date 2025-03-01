@@ -3,7 +3,6 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"slices"
 )
 
 import (
@@ -202,12 +201,12 @@ func GetAvailableMasters() ([]hope.Node, error) {
 			return nil, err
 		}
 
-		hvNodes, err := hv.ListNodes()
+		hvHasNode, err := hypervisors.HasNode(hv, node.Name)
 		if err != nil {
 			return nil, err
 		}
 
-		if slices.Contains(hvNodes, node.Name) {
+		if hvHasNode {
 			exNode, err := expandHypervisor(node)
 			if err != nil {
 				return nil, err

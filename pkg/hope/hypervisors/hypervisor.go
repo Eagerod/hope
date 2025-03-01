@@ -2,6 +2,7 @@ package hypervisors
 
 import (
 	"errors"
+	"slices"
 )
 
 import (
@@ -112,4 +113,13 @@ func GetEnginePlans(hypervisors []Hypervisor) ([]EngineBuildPlan, error) {
 	}
 
 	return retVal, nil
+}
+
+func HasNode(hv Hypervisor, node string) (bool, error) {
+	hvNodes, err := hv.ListNodes()
+	if err != nil {
+		return false, err
+	}
+
+	return slices.Contains(hvNodes, node), nil
 }
