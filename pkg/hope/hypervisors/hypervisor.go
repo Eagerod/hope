@@ -69,3 +69,45 @@ type Hypervisor interface {
 	// Get the IP address of the VM identified by the given value.
 	VMIPAddress(string) (string, error)
 }
+
+type EngineBuildPlan struct {
+	Engine           string
+	NumHypervisors   int
+	BuildHypervisors []Hypervisor
+	CopyHypervisors  []Hypervisor
+}
+
+func GetEnginePlans(hypervisors []Hypervisor) ([]EngineBuildPlan, error) {
+	plans := map[string]EngineBuildPlan{}
+	for _, hypervisor := range hypervisors {
+		hvNode, err := hypervisor.UnderlyingNode()
+		if err != nil {
+			return nil, err
+		}
+
+		plan := plans[hvNode.Engine]
+		plan.NumHypervisors += 1
+		switch hypervisor.CopyImageMode() {
+		case CopyImageModeNone:
+			plan.BuildHypervisors = append(plan.BuildHypervisors, hypervisor)
+		case CopyImageModeToAll:
+			if len(plan.BuildHypervisors) == 0 {
+				plan.BuildHypervisors = append(plan.BuildHypervisors, hypervisor)
+			}
+			plan.CopyHypervisors = append(plan.CopyHypervisors, hypervisor)
+		case CopyImageModeFromFirst:
+			if len(plan.BuildHypervisors) == 0 {
+				plan.BuildHypervisors = append(plan.BuildHypervisors, hypervisor)
+			} else {
+				plan.CopyHypervisors = append(plan.CopyHypervisors, hypervisor)
+			}
+		}
+	}
+
+	retVal := []EngineBuildPlan{}
+	for _, plan := range plans {
+		retVal = append(retVal, plan)
+	}
+
+	return retVal, nil
+}

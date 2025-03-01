@@ -36,52 +36,31 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
-		type hypervisorBuildCopy struct {
-			nHyps            int
-			buildHypervisors []hypervisors.Hypervisor
-			copyHypervisors  []hypervisors.Hypervisor
-		}
-		hypEngMap := map[string]hypervisorBuildCopy{}
-		for _, hypervisorName := range vm.Hypervisors {
-			hypervisor, err := utils.GetHypervisor(hypervisorName)
+		vmHypervisors := []hypervisors.Hypervisor{}
+		for _, s := range vm.Hypervisors {
+			hyp, err := utils.GetHypervisor(s)
 			if err != nil {
 				return err
 			}
 
-			hvNode, err := hypervisor.UnderlyingNode()
-			if err != nil {
-				return err
-			}
-
-			hbc := hypEngMap[hvNode.Engine]
-			hbc.nHyps += 1
-			switch hypervisor.CopyImageMode() {
-			case hypervisors.CopyImageModeNone:
-				hbc.buildHypervisors = append(hbc.buildHypervisors, hypervisor)
-			case hypervisors.CopyImageModeToAll:
-				if len(hbc.buildHypervisors) == 0 {
-					hbc.buildHypervisors = append(hbc.buildHypervisors, hypervisor)
-				}
-				hbc.copyHypervisors = append(hbc.copyHypervisors, hypervisor)
-			case hypervisors.CopyImageModeFromFirst:
-				if len(hbc.buildHypervisors) == 0 {
-					hbc.buildHypervisors = append(hbc.buildHypervisors, hypervisor)
-				} else {
-					hbc.copyHypervisors = append(hbc.copyHypervisors, hypervisor)
-				}
-			}
+			vmHypervisors = append(vmHypervisors, hyp)
 		}
 
-		for engine, hbc := range hypEngMap {
-			log.Debugf("Creating VM %s using %d %s hypervisors", vm.Name, hbc.nHyps, engine)
-			for _, hv := range hbc.buildHypervisors {
+		plans, err := hypervisors.GetEnginePlans(vmHypervisors)
+		if err != nil {
+			return err
+		}
+
+		for _, plan := range plans {
+			log.Debugf("Creating VM %s using %d %s hypervisors", vm.Name, plan.NumHypervisors, plan.Engine)
+			for _, hv := range plan.BuildHypervisors {
 				if err := hv.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag); err != nil {
 					return err
 				}
 			}
 
-			firstHV := hbc.buildHypervisors[0]
-			for _, hv := range hbc.copyHypervisors {
+			firstHV := plan.BuildHypervisors[0]
+			for _, hv := range plan.CopyHypervisors {
 				if err := hv.CopyImage(vms, *vm, firstHV); err != nil {
 					return err
 				}
