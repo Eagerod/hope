@@ -27,6 +27,26 @@ type EsxiHypervisorTestSuite struct {
 	hypervisorNode hope.Node
 }
 
+var exampleEsxiHypervisorNode1 hope.Node = hope.Node{
+	Name:      "beast1",
+	Role:      "hypervisor",
+	Engine:    "esxi",
+	Host:      "192.168.10.40",
+	User:      "root",
+	Datastore: "Main",
+	Network:   "VM Network",
+}
+
+var exampleEsxiHypervisorNode2 hope.Node = hope.Node{
+	Name:      "beast2",
+	Role:      "hypervisor",
+	Engine:    "esxi",
+	Host:      "192.168.10.41",
+	User:      "root",
+	Datastore: "Main",
+	Network:   "VM Network",
+}
+
 func (s *EsxiHypervisorTestSuite) SetupTest() {
 	s.oldExecSSH = ssh.ExecSSH
 	s.oldExecSCP = scp.ExecSCP
@@ -44,15 +64,7 @@ func (s *EsxiHypervisorTestSuite) SetupTest() {
 		},
 	}
 
-	s.hypervisorNode = hope.Node{
-		Name:      "beast1",
-		Role:      "hypervisor",
-		Engine:    "esxi",
-		Host:      "192.168.10.40",
-		User:      "root",
-		Datastore: "Main",
-		Network:   "VM Network",
-	}
+	s.hypervisorNode = exampleEsxiHypervisorNode1
 }
 
 func (s *EsxiHypervisorTestSuite) TeardownTest() {

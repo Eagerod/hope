@@ -86,6 +86,7 @@ func GetEnginePlans(hypervisors []Hypervisor) ([]EngineBuildPlan, error) {
 		}
 
 		plan := plans[hvNode.Engine]
+		plan.Engine = hvNode.Engine
 		plan.NumHypervisors += 1
 		switch hypervisor.CopyImageMode() {
 		case CopyImageModeNone:
@@ -102,6 +103,7 @@ func GetEnginePlans(hypervisors []Hypervisor) ([]EngineBuildPlan, error) {
 				plan.CopyHypervisors = append(plan.CopyHypervisors, hypervisor)
 			}
 		}
+		plans[hvNode.Engine] = plan
 	}
 
 	retVal := []EngineBuildPlan{}
