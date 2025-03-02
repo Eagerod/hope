@@ -15,8 +15,6 @@ import (
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
-var toHypervisor func(hope.Node) (hypervisors.Hypervisor, error) = hypervisors.ToHypervisor
-
 func getNodes() ([]hope.Node, error) {
 	var nodes []hope.Node
 	err := viper.UnmarshalKey("nodes", &nodes)
@@ -133,7 +131,7 @@ func GetHypervisors() ([]hypervisors.Hypervisor, error) {
 
 	for _, node := range nodes {
 		if node.IsHypervisor() {
-			hypervisor, err := toHypervisor(node)
+			hypervisor, err := hypervisors.ToHypervisor(node)
 			if err != nil {
 				return nil, err
 			}
@@ -167,7 +165,7 @@ func GetHypervisor(name string) (hypervisors.Hypervisor, error) {
 
 	for _, node := range nodes {
 		if node.Name == name {
-			return toHypervisor(node)
+			return hypervisors.ToHypervisor(node)
 		}
 	}
 
