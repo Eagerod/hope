@@ -3,7 +3,6 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"slices"
 )
 
 import (
@@ -15,8 +14,6 @@ import (
 	"github.com/Eagerod/hope/pkg/hope/hypervisors"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
-
-var toHypervisor func(hope.Node) (hypervisors.Hypervisor, error) = hypervisors.ToHypervisor
 
 func getNodes() ([]hope.Node, error) {
 	var nodes []hope.Node
@@ -134,7 +131,7 @@ func GetHypervisors() ([]hypervisors.Hypervisor, error) {
 
 	for _, node := range nodes {
 		if node.IsHypervisor() {
-			hypervisor, err := toHypervisor(node)
+			hypervisor, err := hypervisors.ToHypervisor(node)
 			if err != nil {
 				return nil, err
 			}
@@ -168,7 +165,7 @@ func GetHypervisor(name string) (hypervisors.Hypervisor, error) {
 
 	for _, node := range nodes {
 		if node.Name == name {
-			return toHypervisor(node)
+			return hypervisors.ToHypervisor(node)
 		}
 	}
 
@@ -202,12 +199,12 @@ func GetAvailableMasters() ([]hope.Node, error) {
 			return nil, err
 		}
 
-		hvNodes, err := hv.ListNodes()
+		hvHasNode, err := hypervisors.HasNode(hv, node.Name)
 		if err != nil {
 			return nil, err
 		}
 
-		if slices.Contains(hvNodes, node.Name) {
+		if hvHasNode {
 			exNode, err := expandHypervisor(node)
 			if err != nil {
 				return nil, err

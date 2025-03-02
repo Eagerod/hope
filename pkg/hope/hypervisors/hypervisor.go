@@ -2,6 +2,7 @@ package hypervisors
 
 import (
 	"errors"
+	"slices"
 )
 
 import (
@@ -36,6 +37,17 @@ type Hypervisor interface {
 
 	// Return a list of identifiers for the nodes present on the hypervisor.
 	ListNodes() ([]string, error)
+
+	// Return a list of identifiers for the images available to be copied to
+	// the hypervisor.
+	// Images in this list may not be in a state where they can be created
+	// using `CreateNode` yet, and may still need to be copied to the
+	// hypervisor
+	ListBuiltImages(hope.VMs) ([]string, error)
+
+	// Return a list of identifiers for image on the hypervisor that could be
+	// cloned/created right now.
+	ListAvailableImages(hope.VMs) ([]string, error)
 
 	// Ask the hypervisor for the host of the node, and return a new node with
 	// reachable IP in its host field.
@@ -112,4 +124,31 @@ func GetEnginePlans(hypervisors []Hypervisor) ([]EngineBuildPlan, error) {
 	}
 
 	return retVal, nil
+}
+
+func HasNode(hv Hypervisor, node string) (bool, error) {
+	hvNodes, err := hv.ListNodes()
+	if err != nil {
+		return false, err
+	}
+
+	return slices.Contains(hvNodes, node), nil
+}
+
+func HasBuiltImage(hv Hypervisor, vms hope.VMs, imageName string) (bool, error) {
+	hvImages, err := hv.ListBuiltImages(vms)
+	if err != nil {
+		return false, err
+	}
+
+	return slices.Contains(hvImages, imageName), nil
+}
+
+func HasAvailableImage(hv Hypervisor, vms hope.VMs, imageName string) (bool, error) {
+	hvImages, err := hv.ListAvailableImages(vms)
+	if err != nil {
+		return false, err
+	}
+
+	return slices.Contains(hvImages, imageName), nil
 }
