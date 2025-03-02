@@ -111,6 +111,23 @@ func (p *ApiClient) getTemplate(node, templateName string) (qemuApiResponse, err
 	return qemuApiResponse{}, fmt.Errorf("failed to find a template named: %s", templateName)
 }
 
+func (p *ApiClient) getClusterNextId() (string, error) {
+	data, err := p.request("GET", "cluster/nextid", nil)
+	if err != nil {
+		return "", err
+	}
+
+	var response struct {
+		Data string `json:"data"`
+	}
+
+	if err := json.Unmarshal(data, &response); err != nil {
+		return "", err
+	}
+
+	return response.Data, nil
+}
+
 func (p *ApiClient) GetVmNames(node string) ([]string, error) {
 	response, err := p.listVMs(node, false)
 	if err != nil {
@@ -145,16 +162,8 @@ func (p *ApiClient) CreateNodeFromTemplate(node, vmName, templateName string) er
 		return err
 	}
 
-	data, err := p.request("GET", "cluster/nextid", nil)
+	nextId, err := p.getClusterNextId()
 	if err != nil {
-		return err
-	}
-
-	var response struct {
-		Data string `json:"data"`
-	}
-
-	if err := json.Unmarshal(data, &response); err != nil {
 		return err
 	}
 
@@ -162,7 +171,7 @@ func (p *ApiClient) CreateNodeFromTemplate(node, vmName, templateName string) er
 	params := map[string]interface{}{}
 	params["full"] = true
 	params["name"] = vmName
-	params["newid"] = response.Data
+	params["newid"] = nextId
 	_, err = p.request("POST", endpoint, params)
 	return err
 }
@@ -175,16 +184,8 @@ func (p *ApiClient) CreateNodeFromOthersTemplate(node, sourceNode, templateName 
 		return err
 	}
 
-	data, err := p.request("GET", "cluster/nextid", nil)
+	nextId, err := p.getClusterNextId()
 	if err != nil {
-		return err
-	}
-
-	var response struct {
-		Data string `json:"data"`
-	}
-
-	if err := json.Unmarshal(data, &response); err != nil {
 		return err
 	}
 
@@ -192,7 +193,7 @@ func (p *ApiClient) CreateNodeFromOthersTemplate(node, sourceNode, templateName 
 	params := map[string]interface{}{}
 	params["full"] = true
 	params["name"] = templateName
-	params["newid"] = response.Data
+	params["newid"] = nextId
 	_, err = p.request("POST", endpoint, params)
 	return err
 }
