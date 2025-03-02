@@ -36,6 +36,10 @@ func (p *ProxmoxHypervisor) ListNodes() ([]string, error) {
 }
 
 func (p *ProxmoxHypervisor) ListBuiltImages(vms hope.VMs) ([]string, error) {
+	// With the right adaptation of arguments, it might be possible to ask
+	// other ProxmoxHypervisors for their list of built images.
+	// With that, this client could return some union of all available
+	// templates, rather than just the node attached to this instance.
 	return p.pc.GetTemplateNames(p.node.Name)
 }
 
@@ -167,7 +171,8 @@ func (p *ProxmoxHypervisor) waitForNode(pollInterval, timeout time.Duration, nod
 				return nil
 			}
 
-			log.Debugf("Node %s not found yet. Only found: %s. Waiting %s...", nodeName, strings.Join(currentVms, ","), pollInterval.String())
+			log.Debugf("Node %s not found yet. Waiting %s...", nodeName, pollInterval.String())
+			log.Tracef("Found: %s", strings.Join(currentVms, ","))
 			log.Tracef("Polling continues for %s...", time.Until(deadline).Round(time.Second).String())
 		case <-timer.C:
 			return fmt.Errorf("waited %s, and node %s is not yet ready", timeout.String(), nodeName)
