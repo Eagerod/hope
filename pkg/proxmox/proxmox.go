@@ -131,6 +131,8 @@ func (p *ApiClient) CreateNodeFromTemplate(node, vmName, templateName string) er
 }
 
 func (p *ApiClient) CreateNodeFromOthersTemplate(node, sourceNode, templateName string) error {
+	// Process technical depends on shared vs. non-shared storage.
+	// Assume unshared, and clone, then migrate.
 	vm, err := p.getVm(sourceNode, templateName)
 	if err != nil {
 		return err

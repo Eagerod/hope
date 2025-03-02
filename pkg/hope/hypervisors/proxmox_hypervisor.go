@@ -35,6 +35,14 @@ func (p *ProxmoxHypervisor) ListNodes() ([]string, error) {
 	return p.pc.GetVmNames(p.node.Name)
 }
 
+func (p *ProxmoxHypervisor) ListBuiltImages(vms hope.VMs) ([]string, error) {
+	return p.pc.GetVmNames(p.node.Name)
+}
+
+func (p *ProxmoxHypervisor) ListAvailableImages(hope.VMs) ([]string, error) {
+	return p.pc.GetVmNames(p.node.Name)
+}
+
 func (p *ProxmoxHypervisor) ResolveNode(node hope.Node) (hope.Node, error) {
 	ip, err := p.VMIPAddress(node.Name)
 	if err != nil {
