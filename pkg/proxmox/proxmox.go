@@ -16,9 +16,10 @@ import (
 )
 
 type qemuApiResponse struct {
-	Status string `json:"status"`
-	VmId   int    `json:"vmid"`
-	Name   string `json:"name"`
+	Status   string `json:"status"`
+	VmId     int    `json:"vmid"`
+	Name     string `json:"name"`
+	Template int    `json:"template"`
 }
 
 type ipAddressResponse struct {
@@ -56,7 +57,7 @@ func NewApiClient(user, host string) *ApiClient {
 	}
 }
 
-func (p *ApiClient) listVMs(node string) ([]qemuApiResponse, error) {
+func (p *ApiClient) listVMs(node string, templates bool) ([]qemuApiResponse, error) {
 	endpoint := fmt.Sprintf("nodes/%s/qemu", node)
 	data, err := p.request("GET", endpoint, nil)
 	if err != nil {
@@ -70,11 +71,18 @@ func (p *ApiClient) listVMs(node string) ([]qemuApiResponse, error) {
 		return nil, err
 	}
 
-	return response.Data, nil
+	retVal := []qemuApiResponse{}
+	for _, r := range response.Data {
+		if (r.Template == 1) == templates {
+			retVal = append(retVal, r)
+		}
+	}
+
+	return retVal, nil
 }
 
 func (p *ApiClient) getVm(node, vmName string) (qemuApiResponse, error) {
-	response, err := p.listVMs(node)
+	response, err := p.listVMs(node, false)
 	if err != nil {
 		return qemuApiResponse{}, err
 	}
@@ -88,8 +96,37 @@ func (p *ApiClient) getVm(node, vmName string) (qemuApiResponse, error) {
 	return qemuApiResponse{}, fmt.Errorf("failed to find a node named: %s", vmName)
 }
 
+func (p *ApiClient) getTemplate(node, templateName string) (qemuApiResponse, error) {
+	response, err := p.listVMs(node, true)
+	if err != nil {
+		return qemuApiResponse{}, err
+	}
+
+	for _, n := range response {
+		if n.Name == templateName {
+			return n, nil
+		}
+	}
+
+	return qemuApiResponse{}, fmt.Errorf("failed to find a template named: %s", templateName)
+}
+
 func (p *ApiClient) GetVmNames(node string) ([]string, error) {
-	response, err := p.listVMs(node)
+	response, err := p.listVMs(node, false)
+	if err != nil {
+		return nil, err
+	}
+
+	retVal := []string{}
+	for _, n := range response {
+		retVal = append(retVal, n.Name)
+	}
+
+	return retVal, nil
+}
+
+func (p *ApiClient) GetTemplateNames(node string) ([]string, error) {
+	response, err := p.listVMs(node, true)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +140,7 @@ func (p *ApiClient) GetVmNames(node string) ([]string, error) {
 }
 
 func (p *ApiClient) CreateNodeFromTemplate(node, vmName, templateName string) error {
-	vm, err := p.getVm(node, templateName)
+	vm, err := p.getTemplate(node, templateName)
 	if err != nil {
 		return err
 	}
