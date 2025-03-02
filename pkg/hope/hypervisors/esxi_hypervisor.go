@@ -78,12 +78,19 @@ func (hyp *EsxiHypervisor) ListBuiltImages(vms hope.VMs) ([]string, error) {
 func (hyp *EsxiHypervisor) ListAvailableImages(vms hope.VMs) ([]string, error) {
 	remoteVmfsPath := path.Join("/", "vmfs", "volumes", hyp.node.Datastore, "ovfs")
 
-	output, err := ssh.GetSSH(hyp.node.ConnectionString(), "find", remoteVmfsPath, "-type", "d")
+	output, err := ssh.GetSSH(hyp.node.ConnectionString(), "find", remoteVmfsPath, "-type", "d", "-maxdepth", "1")
 	if err != nil {
 		return nil, err
 	}
 
-	return strings.Split(output, "\n"), nil
+	retVal := []string{}
+	trimPrefix := remoteVmfsPath + "/"
+	for _, fullpath := range strings.Split(output, "\n") {
+		relPath := strings.TrimPrefix(fullpath, trimPrefix)
+		retVal = append(retVal, relPath)
+	}
+
+	return retVal, nil
 }
 
 func (hyp *EsxiHypervisor) ResolveNode(node hope.Node) (hope.Node, error) {
