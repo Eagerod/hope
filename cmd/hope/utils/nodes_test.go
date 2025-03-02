@@ -88,8 +88,6 @@ var testNodes []hope.Node = []hope.Node{
 	worker1Node,
 }
 
-var oldToHypervisor func(hope.Node) (hypervisors.Hypervisor, error) = toHypervisor
-
 type MockHypervisor struct {
 	node hope.Node
 }
@@ -178,14 +176,17 @@ func toHypervisorStub(node hope.Node) (hypervisors.Hypervisor, error) {
 // function.
 type NodesTestSuite struct {
 	suite.Suite
+
+	originalToHypervisor hypervisors.ToHypervisorFactoryFunc
 }
 
 func (s *NodesTestSuite) SetupTest() {
-	toHypervisor = toHypervisorStub
+	s.originalToHypervisor = hypervisors.ToHypervisor
+	hypervisors.ToHypervisor = toHypervisorStub
 }
 
 func (s *NodesTestSuite) TeardownTest() {
-	toHypervisor = oldToHypervisor
+	hypervisors.ToHypervisor = s.originalToHypervisor
 }
 
 // Actual test method to run the suite
