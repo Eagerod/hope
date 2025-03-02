@@ -54,6 +54,25 @@ var imageCmd = &cobra.Command{
 		for _, plan := range plans {
 			log.Debugf("Creating VM %s using %d %s hypervisors", vm.Name, plan.NumHypervisors, plan.Engine)
 			for _, hv := range plan.BuildHypervisors {
+				hvNode, err := hv.UnderlyingNode()
+				if err != nil {
+					return err
+				}
+
+				if !imageCmdForceFlag {
+					log.Tracef("Searching for %s on %s before attempting build...", vm.Name, hvNode.Name)
+					hvHasBuiltImage, err := hypervisors.HasBuiltImage(hv, vms, vm.Name)
+					if err != nil {
+						return err
+					}
+
+					if hvHasBuiltImage {
+						log.Infof("Hypervisor %s already has built image: %s, skipping image creation", hvNode.Name, vm.Name)
+						continue
+					}
+				}
+
+				log.Infof("Beginning build of %s on %s", vm.Name, hvNode.Name)
 				if err := hv.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag); err != nil {
 					return err
 				}
@@ -61,6 +80,24 @@ var imageCmd = &cobra.Command{
 
 			firstHV := plan.BuildHypervisors[0]
 			for _, hv := range plan.CopyHypervisors {
+				hvNode, err := hv.UnderlyingNode()
+				if err != nil {
+					return err
+				}
+
+				if !imageCmdForceFlag {
+					log.Tracef("Searching for %s on %s before attempting copy...", vm.Name, hvNode.Name)
+					hvHasAvailableImage, err := hypervisors.HasAvailableImage(hv, vms, vm.Name)
+					if err != nil {
+						return err
+					}
+
+					if hvHasAvailableImage {
+						log.Infof("Hypervisor %s already has available image: %s, skipping image copy", hvNode.Name, vm.Name)
+						continue
+					}
+				}
+
 				if err := hv.CopyImage(vms, *vm, firstHV); err != nil {
 					return err
 				}

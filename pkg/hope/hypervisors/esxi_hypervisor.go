@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -34,6 +35,55 @@ func (hyp *EsxiHypervisor) ListNodes() ([]string, error) {
 		return *v, nil
 	}
 	return nil, e
+}
+
+func (hyp *EsxiHypervisor) ListBuiltImages(vms hope.VMs) ([]string, error) {
+	imageDirectories := []string{}
+
+	entries, err := os.ReadDir(vms.Output)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, e := range entries {
+		if !e.IsDir() {
+			continue
+		}
+
+		hasDisk := false
+		hasVM := false
+
+		files, err := os.ReadDir(path.Join(vms.Output, e.Name()))
+		if err != nil {
+			return nil, err
+		}
+
+		for _, fn := range files {
+			ext := filepath.Ext(fn.Name())
+			if ext == ".vmdk" {
+				hasDisk = true
+			} else if ext == ".ovf" || ext == ".vmx" {
+				hasVM = true
+			}
+		}
+
+		if hasDisk && hasVM {
+			imageDirectories = append(imageDirectories, e.Name())
+		}
+	}
+
+	return imageDirectories, nil
+}
+
+func (hyp *EsxiHypervisor) ListAvailableImages(vms hope.VMs) ([]string, error) {
+	remoteVmfsPath := path.Join("/", "vmfs", "volumes", hyp.node.Datastore, "ovfs")
+
+	output, err := ssh.GetSSH(hyp.node.ConnectionString(), "find", remoteVmfsPath, "-type", "d")
+	if err != nil {
+		return nil, err
+	}
+
+	return strings.Split(output, "\n"), nil
 }
 
 func (hyp *EsxiHypervisor) ResolveNode(node hope.Node) (hope.Node, error) {

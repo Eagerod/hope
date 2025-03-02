@@ -109,6 +109,22 @@ func (m *MockHypervisor) ListNodes() ([]string, error) {
 	return nodes, nil
 }
 
+func (m *MockHypervisor) ListBuiltImages(vms hope.VMs) ([]string, error) {
+	nodes := []string{
+		"load-balancer",
+		"kubernetes-node",
+	}
+	return nodes, nil
+}
+
+func (m *MockHypervisor) ListAvailableImages(vms hope.VMs) ([]string, error) {
+	nodes := []string{
+		"load-balancer",
+		"kubernetes-node",
+	}
+	return nodes, nil
+}
+
 func (m *MockHypervisor) ResolveNode(node hope.Node) (hope.Node, error) {
 	node.Hypervisor = ""
 	node.Host = node.Name
