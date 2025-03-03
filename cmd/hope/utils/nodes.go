@@ -15,15 +15,15 @@ import (
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
-type ErrNodeNotFound struct {
+type NodeNotFoundError struct {
 	node string
 }
 
-func NewErrNodeNotFound(node string) error {
-	return ErrNodeNotFound{node}
+func NewNodeNotFoundError(node string) error {
+	return NodeNotFoundError{node}
 }
 
-func (e ErrNodeNotFound) Error() string {
+func (e NodeNotFoundError) Error() string {
 	return fmt.Sprintf("failed to find node: %s", e.node)
 }
 
@@ -77,7 +77,7 @@ func GetBareNode(name string) (hope.Node, error) {
 		}
 	}
 
-	return hope.Node{}, NewErrNodeNotFound(name)
+	return hope.Node{}, NewNodeNotFoundError(name)
 }
 
 func GetBareNodeTypes(types []string) ([]hope.Node, error) {
@@ -268,7 +268,7 @@ func GetLoadBalancer() (hope.Node, error) {
 		}
 	}
 
-	return hope.Node{}, NewErrNodeNotFound("load-balancer")
+	return hope.Node{}, NewNodeNotFoundError("load-balancer")
 }
 
 func HypervisorForNodeNamed(name string) (*hypervisors.Hypervisor, error) {
