@@ -15,6 +15,18 @@ import (
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
 
+type ErrNodeNotFound struct {
+	node string
+}
+
+func NewErrNodeNotFound(node string) error {
+	return ErrNodeNotFound{node}
+}
+
+func (e ErrNodeNotFound) Error() string {
+	return fmt.Sprintf("failed to find node: %s", e.node)
+}
+
 func getNodes() ([]hope.Node, error) {
 	var nodes []hope.Node
 	err := viper.UnmarshalKey("nodes", &nodes)
@@ -65,7 +77,7 @@ func GetBareNode(name string) (hope.Node, error) {
 		}
 	}
 
-	return hope.Node{}, fmt.Errorf("failed to find a node named %s", name)
+	return hope.Node{}, NewErrNodeNotFound(name)
 }
 
 func GetBareNodeTypes(types []string) ([]hope.Node, error) {
@@ -256,10 +268,7 @@ func GetLoadBalancer() (hope.Node, error) {
 		}
 	}
 
-	// This feels dirty, and a little broken.
-	// Maybe need a dedicated NodeNotFound kind of error that can be handled
-	//   independently of other errors if desired.
-	return hope.Node{}, nil
+	return hope.Node{}, NewErrNodeNotFound("load-balancer")
 }
 
 func HypervisorForNodeNamed(name string) (*hypervisors.Hypervisor, error) {
