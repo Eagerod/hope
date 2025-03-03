@@ -52,7 +52,7 @@ var initCmd = &cobra.Command{
 
 		var lbp *hope.Node = nil
 		loadBalancer, err := utils.GetLoadBalancer()
-		if _, ok := err.(utils.NodeNotFoundError); err != nil && !ok {
+		if _, ok := err.(*utils.NodeNotFoundError); err != nil && !ok {
 			return err
 		} else if !ok {
 			lbp = &loadBalancer

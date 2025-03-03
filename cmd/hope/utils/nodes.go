@@ -20,10 +20,10 @@ type NodeNotFoundError struct {
 }
 
 func NewNodeNotFoundError(node string) error {
-	return NodeNotFoundError{node}
+	return &NodeNotFoundError{node}
 }
 
-func (e NodeNotFoundError) Error() string {
+func (e *NodeNotFoundError) Error() string {
 	return fmt.Sprintf("failed to find node: %s", e.node)
 }
 
