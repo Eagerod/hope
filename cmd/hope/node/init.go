@@ -1,6 +1,7 @@
 package node
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -51,10 +52,11 @@ var initCmd = &cobra.Command{
 		}
 
 		var lbp *hope.Node = nil
+		var nnf *utils.NodeNotFoundError
 		loadBalancer, err := utils.GetLoadBalancer()
-		if _, ok := err.(*utils.NodeNotFoundError); err != nil && !ok {
+		if err != nil && !errors.As(err, &nnf) {
 			return err
-		} else if !ok {
+		} else if err == nil {
 			lbp = &loadBalancer
 		}
 
