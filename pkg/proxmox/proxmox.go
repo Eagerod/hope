@@ -176,26 +176,21 @@ func (p *ApiClient) CreateNodeFromTemplate(node, vmName, templateName string) er
 	return err
 }
 
-func (p *ApiClient) CreateNodeFromOthersTemplate(node, sourceNode, templateName string) error {
-	// Process technical depends on shared vs. non-shared storage.
-	// Assume unshared, and clone, then migrate.
-	vm, err := p.getVm(sourceNode, templateName)
+func (p *ApiClient) MigrateTemplate(sourceNode, destNode, templateName string) error {
+	vm, err := p.getTemplate(sourceNode, templateName)
 	if err != nil {
 		return err
 	}
 
-	nextId, err := p.getClusterNextId()
-	if err != nil {
-		return err
-	}
-
-	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/clone", node, vm.VmId)
+	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/migrate", sourceNode, vm.VmId)
 	params := map[string]interface{}{}
-	params["full"] = true
-	params["name"] = templateName
-	params["newid"] = nextId
+	params["target"] = destNode
 	_, err = p.request("POST", endpoint, params)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p *ApiClient) NodeConfiguration(node, vmName string) (*NodeConfiguration, error) {
@@ -223,6 +218,17 @@ func (p *ApiClient) NodeConfiguration(node, vmName string) (*NodeConfiguration, 
 
 func (p *ApiClient) ConfigureNode(node, vmName string, params map[string]interface{}) error {
 	vm, err := p.getVm(node, vmName)
+	if err != nil {
+		return err
+	}
+
+	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/config", node, vm.VmId)
+	_, err = p.request("PUT", endpoint, params)
+	return err
+}
+
+func (p *ApiClient) ConfigureTemplate(node, vmName string, params map[string]interface{}) error {
+	vm, err := p.getTemplate(node, vmName)
 	if err != nil {
 		return err
 	}
