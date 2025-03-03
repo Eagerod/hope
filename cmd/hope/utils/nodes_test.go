@@ -37,6 +37,9 @@ var beast1Node hope.Node = hope.Node{
 	User:      "root",
 	Datastore: "Main",
 	Network:   "VM Network",
+	Parameters: []string{
+		"INSECURE=true",
+	},
 }
 var loadBalancerNode hope.Node = hope.Node{
 	Name:       "test-load-balancer",
