@@ -27,21 +27,21 @@ func (hyp *EsxiHypervisor) Initialize(node hope.Node) error {
 	hyp.node = node
 
 	errs := []error{}
-	for _, s := range node.Parameters {
-		key, value, _ := strings.Cut(s, "=")
-		switch key {
-		case "INSECURE":
-			switch value {
-			case "true", "1":
-				hyp.insecure = true
-			case "false", "0":
-				hyp.insecure = false
-			default:
-				errs = append(errs, fmt.Errorf("unknown value '%s' for INSECURE in ESXI hypervisor", value))
-			}
+	pm := ParameterMap(node.Parameters)
+	if insecure, ok := pm["INSECURE"]; ok {
+		switch insecure {
+		case "true", "1":
+			hyp.insecure = true
+		case "false", "0":
+			hyp.insecure = false
 		default:
-			errs = append(errs, fmt.Errorf("unknown property '%s' in ESXI hypervisor", key))
+			errs = append(errs, fmt.Errorf("unknown value '%s' for INSECURE in ESXI hypervisor", insecure))
 		}
+		delete(pm, "INSECURE")
+	}
+
+	for key := range pm {
+		errs = append(errs, fmt.Errorf("unknown property '%s' in ESXI hypervisor", key))
 	}
 
 	return errors.Join(errs...)
