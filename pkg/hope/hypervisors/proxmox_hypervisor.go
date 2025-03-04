@@ -26,21 +26,21 @@ import (
 type ProxmoxHypervisor struct {
 	node hope.Node
 
-	pc *proxmox.ApiClient
+	pc       *proxmox.ApiClient
+	insecure bool
 }
 
 func (p *ProxmoxHypervisor) Initialize(node hope.Node) error {
 	p.node = node
 
 	errs := []error{}
-	useInsecureTransport := false
 	pm := ParameterMap(node.Parameters)
 	if insecure, ok := pm["INSECURE"]; ok {
 		switch insecure {
 		case "true", "1":
-			useInsecureTransport = true
+			p.insecure = true
 		case "false", "0":
-			useInsecureTransport = false
+			p.insecure = false
 		default:
 			errs = append(errs, fmt.Errorf("unknown value '%s' for INSECURE in Proxmox hypervisor", insecure))
 		}
@@ -54,7 +54,7 @@ func (p *ProxmoxHypervisor) Initialize(node hope.Node) error {
 	proxmoxToken := os.Getenv("PROXMOX_API_TOKEN")
 	p.pc = proxmox.NewApiClient(p.node.User, p.node.Host, proxmoxToken)
 
-	if useInsecureTransport {
+	if p.insecure {
 		p.pc.Client.Transport = &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
@@ -124,7 +124,7 @@ func (p *ProxmoxHypervisor) CopyImage(vms hope.VMs, vmImageSpec hope.VMImageSpec
 		return err
 	}
 
-	if err := p.pc.MigrateTemplate(originalProxmoxHypervisor.node.Name, p.node.Name, tempNodeName); err != nil {
+	if err := p.pc.MigrateTemplate(originalProxmoxHypervisor.node.Name, p.node.Name, tempNodeName, p.insecure); err != nil {
 		return err
 	}
 

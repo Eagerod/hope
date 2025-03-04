@@ -170,7 +170,7 @@ func (p *ApiClient) CreateNodeFromTemplate(node, vmName, templateName string) er
 	return err
 }
 
-func (p *ApiClient) MigrateTemplate(sourceNode, destNode, templateName string) error {
+func (p *ApiClient) MigrateTemplate(sourceNode, destNode, templateName string, insecure bool) error {
 	vm, err := p.getTemplate(sourceNode, templateName)
 	if err != nil {
 		return err
@@ -179,6 +179,11 @@ func (p *ApiClient) MigrateTemplate(sourceNode, destNode, templateName string) e
 	endpoint := fmt.Sprintf("nodes/%s/qemu/%d/migrate", sourceNode, vm.VmId)
 	params := map[string]interface{}{}
 	params["target"] = destNode
+	if insecure {
+		params["migration_type"] = "insecure"
+	} else {
+		params["migration_type"] = "secure"
+	}
 	_, err = p.request("POST", endpoint, params)
 	if err != nil {
 		return err
