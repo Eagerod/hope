@@ -1,6 +1,7 @@
 package hypervisors
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -18,11 +19,32 @@ import (
 
 type EsxiHypervisor struct {
 	node hope.Node
+
+	insecure bool
 }
 
 func (hyp *EsxiHypervisor) Initialize(node hope.Node) error {
 	hyp.node = node
-	return nil
+
+	errs := []error{}
+	pm := ParameterMap(node.Parameters)
+	if insecure, ok := pm["INSECURE"]; ok {
+		switch insecure {
+		case "true", "1":
+			hyp.insecure = true
+		case "false", "0":
+			hyp.insecure = false
+		default:
+			errs = append(errs, fmt.Errorf("unknown value '%s' for INSECURE in ESXI hypervisor", insecure))
+		}
+		delete(pm, "INSECURE")
+	}
+
+	for key := range pm {
+		errs = append(errs, fmt.Errorf("unknown property '%s' in ESXI hypervisor", key))
+	}
+
+	return errors.Join(errs...)
 }
 
 func (hyp *EsxiHypervisor) CopyImageMode() CopyImageMode {
@@ -138,10 +160,16 @@ func (hyp *EsxiHypervisor) CreateNode(node hope.Node, vms hope.VMs, vmImageSpec 
 		fmt.Sprintf("--net:'%s=%s'", sourceNetworkName, hyp.node.Network),
 		fmt.Sprintf("--numberOfCpus:'*'=%d", node.Cpu),
 		fmt.Sprintf("--memorySize:'*'=%d", node.Memory),
-		"--noSSLVerify",
+	}
+
+	if hyp.insecure {
+		allArgs = append(allArgs, "--noSSLVerify")
+	}
+
+	allArgs = append(allArgs, []string{
 		remoteOvfPath,
 		"vi://root@localhost",
-	}
+	}...)
 
 	// Check to see if the ESXI_ROOT_PASSWORD environment if set.
 	// If so, pass it on to the ssh invocation to help limit user

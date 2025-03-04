@@ -12,6 +12,8 @@ nodes:
     user: root
     datastore: Main
     network: VM Network
+    parameters:
+      - INSECURE=true
   - name: pve2
     role: hypervisor
     engine: proxmox

@@ -77,6 +77,45 @@ func TestEsxiHypervisor(t *testing.T) {
 	suite.Run(t, new(EsxiHypervisorTestSuite))
 }
 
+func (s *EsxiHypervisorTestSuite) TestInitialize() {
+	t := s.T()
+
+	n1 := exampleEsxiHypervisorNode1
+	n1.Parameters = []string{
+		"INSECURE=true",
+	}
+
+	hyp := EsxiHypervisor{}
+	err := hyp.Initialize(n1)
+	assert.NoError(t, err)
+	assert.True(t, hyp.insecure)
+
+	n1.Parameters = []string{
+		"INSECURE=0",
+	}
+
+	hyp = EsxiHypervisor{}
+	err = hyp.Initialize(n1)
+	assert.NoError(t, err)
+	assert.False(t, hyp.insecure)
+
+	n1.Parameters = []string{
+		"insecure=0",
+	}
+
+	hyp = EsxiHypervisor{}
+	err = hyp.Initialize(n1)
+	assert.Equal(t, "unknown property 'insecure' in ESXI hypervisor", err.Error())
+
+	n1.Parameters = []string{
+		"INSECURE=yes",
+	}
+
+	hyp = EsxiHypervisor{}
+	err = hyp.Initialize(n1)
+	assert.Equal(t, "unknown value 'yes' for INSECURE in ESXI hypervisor", err.Error())
+}
+
 // Basically a smoke test, don't want to define a ton of yaml blocks to test
 // this extensively quite yet.
 func (s *EsxiHypervisorTestSuite) TestCopyImage() {
