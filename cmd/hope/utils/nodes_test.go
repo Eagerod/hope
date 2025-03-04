@@ -37,6 +37,9 @@ var beast1Node hope.Node = hope.Node{
 	User:      "root",
 	Datastore: "Main",
 	Network:   "VM Network",
+	Parameters: []string{
+		"INSECURE=true",
+	},
 }
 var loadBalancerNode hope.Node = hope.Node{
 	Name:       "test-load-balancer",
@@ -243,7 +246,7 @@ func (s *NodesTestSuite) TestGetNode() {
 	assert.Equal(t, expected, node)
 
 	_, err = GetNode("sets-node-01")
-	assert.Equal(t, "failed to find a node named sets-node-01", err.Error())
+	assert.Equal(t, "failed to find node: sets-node-01", err.Error())
 }
 
 func (s *NodesTestSuite) TestHasNode() {

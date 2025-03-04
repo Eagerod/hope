@@ -3,6 +3,7 @@ package hypervisors
 import (
 	"errors"
 	"slices"
+	"strings"
 )
 
 import (
@@ -151,4 +152,15 @@ func HasAvailableImage(hv Hypervisor, vms hope.VMs, imageName string) (bool, err
 	}
 
 	return slices.Contains(hvImages, imageName), nil
+}
+
+func ParameterMap(params []string) map[string]string {
+	retVal := map[string]string{}
+
+	for _, s := range params {
+		key, value, _ := strings.Cut(s, "=")
+		retVal[key] = value
+	}
+
+	return retVal
 }

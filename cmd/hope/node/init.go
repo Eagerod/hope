@@ -1,6 +1,7 @@
 package node
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -50,15 +51,15 @@ var initCmd = &cobra.Command{
 			return err
 		}
 
-		loadBalancer, err := utils.GetLoadBalancer()
-		if err != nil && loadBalancer != (hope.Node{}) {
-			return err
-		}
-
 		var lbp *hope.Node = nil
-		if loadBalancer != (hope.Node{}) {
+		var nnf *utils.NodeNotFoundError
+		loadBalancer, err := utils.GetLoadBalancer()
+		if err != nil && !errors.As(err, &nnf) {
+			return err
+		} else if err == nil {
 			lbp = &loadBalancer
 		}
+
 		loadBalancerHost := viper.GetString("load_balancer_host")
 
 		if node.IsMasterAndNode() {

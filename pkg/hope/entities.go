@@ -129,6 +129,7 @@ type Node struct {
 	Network    string
 	Cpu        int
 	Memory     int
+	Parameters []string
 }
 
 // VMImageSpec - Defines the structure needed to populate a Packer job to

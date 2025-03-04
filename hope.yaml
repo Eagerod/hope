@@ -12,6 +12,8 @@ nodes:
     user: root
     datastore: Main
     network: VM Network
+    parameters:
+      - INSECURE=true
   # Master Load Balancer
   # Just one of these; manages providing a single endpoint for the set of
   #   master nodes.
