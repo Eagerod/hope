@@ -1,7 +1,10 @@
 package hypervisors
 
 import (
+	"crypto/tls"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path"
 	"slices"
@@ -28,8 +31,36 @@ type ProxmoxHypervisor struct {
 
 func (p *ProxmoxHypervisor) Initialize(node hope.Node) error {
 	p.node = node
-	p.pc = proxmox.NewApiClient(p.node.User, p.node.Host)
-	return nil
+
+	errs := []error{}
+	useInsecureTransport := false
+	pm := ParameterMap(node.Parameters)
+	if insecure, ok := pm["INSECURE"]; ok {
+		switch insecure {
+		case "true", "1":
+			useInsecureTransport = true
+		case "false", "0":
+			useInsecureTransport = false
+		default:
+			errs = append(errs, fmt.Errorf("unknown value '%s' for INSECURE in Proxmox hypervisor", insecure))
+		}
+		delete(pm, "INSECURE")
+	}
+
+	for key := range pm {
+		errs = append(errs, fmt.Errorf("unknown property '%s' in Proxmox hypervisor", key))
+	}
+
+	proxmoxToken := os.Getenv("PROXMOX_API_TOKEN")
+	p.pc = proxmox.NewApiClient(p.node.User, p.node.Host, proxmoxToken)
+
+	if useInsecureTransport {
+		p.pc.Client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+	}
+
+	return errors.Join(errs...)
 }
 
 func (p *ProxmoxHypervisor) ListNodes() ([]string, error) {

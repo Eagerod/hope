@@ -2,12 +2,10 @@ package proxmox
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 )
 
@@ -44,16 +42,12 @@ type ApiClient struct {
 	Client *http.Client
 }
 
-func NewApiClient(user, host string) *ApiClient {
+func NewApiClient(user, host, apiToken string) *ApiClient {
 	return &ApiClient{
-		User:  user,
-		Host:  host,
-		Token: os.Getenv("PROXMOX_API_TOKEN"),
-		Client: &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			},
-		},
+		User:   user,
+		Host:   host,
+		Token:  apiToken,
+		Client: &http.Client{},
 	}
 }
 
