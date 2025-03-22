@@ -305,7 +305,7 @@ var deployCmd = &cobra.Command{
 					allArgs = append(allArgs, "--version", resource.Helm.Version)
 				}
 
-				allArgs = append(allArgs, resource.Helm.Name, resource.Helm.Chart)
+				allArgs = append(allArgs, resource.Helm.Release, resource.Helm.Chart)
 				if err := helm.ExecHelm(allArgs...); err != nil {
 					return err
 				}

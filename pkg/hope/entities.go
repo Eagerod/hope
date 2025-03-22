@@ -94,7 +94,7 @@ type ExecSpec struct {
 
 type HelmSpec struct {
 	Namespace  string
-	Name       string
+	Release    string
 	Repo       string
 	Path       string
 	Chart      string

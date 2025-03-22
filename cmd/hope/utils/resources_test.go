@@ -74,7 +74,7 @@ var testResources []hope.Resource = []hope.Resource{
 		Name: "helm-repo",
 		Helm: hope.HelmSpec{
 			Namespace:  "storage-system",
-			Name:       "freenas-iscsi",
+			Release:    "freenas-iscsi",
 			Repo:       "democratic-csi",
 			Path:       "https://democratic-csi.github.io/charts/",
 			Chart:      "democratic-csi/democratic-csi",

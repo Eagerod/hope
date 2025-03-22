@@ -206,7 +206,7 @@ resources:
     helm:
       namespace: storage-system
       repo: democratic-csi
-      name: freenas-iscsi
+      release: freenas-iscsi
       path: https://democratic-csi.github.io/charts/
       chart: democratic-csi/democratic-csi
       version: "0.13.7"

@@ -124,7 +124,7 @@ var removeCmd = &cobra.Command{
 			case hope.ResourceTypeExec:
 				log.Debug("Skipping removal of exec resource type.")
 			case hope.ResourceTypeHelm:
-				return helm.ExecHelm("uninstall", resource.Helm.Name)
+				return helm.ExecHelm("uninstall", resource.Helm.Release)
 			default:
 				return fmt.Errorf("resource type (%s) not implemented", resourceType)
 			}
