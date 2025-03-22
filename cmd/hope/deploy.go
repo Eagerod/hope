@@ -254,28 +254,9 @@ var deployCmd = &cobra.Command{
 					return err
 				}
 			case hope.ResourceTypeHelm:
-				haveRepo := false
-				currentRepos, err := helm.GetHelm("repo", "list")
-				if err != nil {
+				if hasRepo, err := helm.HasRepo(resource.Helm.Repo, resource.Helm.Path); err != nil {
 					return err
-				}
-
-				for _, repoLine := range strings.Split(currentRepos, "\n") {
-					repoComponents := strings.Fields(repoLine)
-					if repoComponents[0] != resource.Helm.Repo {
-						continue
-					}
-					// Could normalize to trim /
-					if repoComponents[1] != resource.Helm.Path {
-						return fmt.Errorf("already have a different helm repo called: %s", resource.Helm.Repo)
-					}
-					if repoComponents[1] == resource.Helm.Path {
-						haveRepo = true
-						break
-					}
-				}
-
-				if !haveRepo {
+				} else if !hasRepo {
 					if err := helm.ExecHelm("repo", "add", resource.Helm.Repo, resource.Helm.Path); err != nil {
 						return err
 					}
