@@ -268,7 +268,14 @@ var deployCmd = &cobra.Command{
 				}
 
 				if len(resource.Helm.ValuesFile) != 0 {
-					allArgs = append(allArgs, "--values", resource.Helm.ValuesFile)
+					log.Trace("Copying values file for parameter replacement")
+					tempFile, err := hope.ReplaceParametersInFileCopy(resource.Helm.ValuesFile, parameters)
+					if err != nil {
+						return err
+					}
+					defer os.Remove(tempFile)
+
+					allArgs = append(allArgs, "--values", tempFile)
 				}
 
 				if len(resource.Helm.Version) != 0 {
