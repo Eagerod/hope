@@ -71,16 +71,17 @@ var testResources []hope.Resource = []hope.Resource{
 		Tags:           []string{"another-tag"},
 	},
 	{
-		Name: "helm-repo",
+		Name: "kubernetes-dashboard-helm",
 		Helm: hope.HelmSpec{
-			Namespace:  "storage-system",
-			Release:    "freenas-iscsi",
-			Repo:       "democratic-csi",
-			Path:       "https://democratic-csi.github.io/charts/",
-			Chart:      "democratic-csi/democratic-csi",
-			Version:    "0.13.7",
-			ValuesFile: "./freenas-values.yaml",
+			Namespace:  "kubernetes-dashboard",
+			Release:    "kubernetes-dashboard",
+			Repo:       "kubernetes-dashboard",
+			Path:       "https://kubernetes.github.io/dashboard/",
+			Chart:      "kubernetes-dashboard/kubernetes-dashboard",
+			Version:    "7.11.1",
+			ValuesFile: "test/kubernetes-dashboard-values.yaml",
 		},
+		Parameters: []string{"THE_PARAM=the-value"},
 	},
 }
 
