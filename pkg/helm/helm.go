@@ -28,13 +28,13 @@ var GetHelm GetHelmFunc = func(args ...string) (string, error) {
 	return string(outputBytes), err
 }
 
-func HasRepo(repo, address string) (bool, error) {
+func HasRepo(repo, aUrl string) (bool, error) {
 	currentRepos, err := GetHelm("repo", "list")
 	if err != nil {
 		return false, err
 	}
 
-	normalizedAddress := strings.TrimRight(address, "/")
+	normalizedUrl := strings.TrimRight(aUrl, "/")
 
 	for _, repoLine := range strings.Split(currentRepos, "\n") {
 		repoComponents := strings.Fields(repoLine)
@@ -43,8 +43,8 @@ func HasRepo(repo, address string) (bool, error) {
 		}
 
 		repoComponents[1] = strings.TrimRight(repoComponents[1], "/")
-		if repoComponents[1] != normalizedAddress {
-			return false, fmt.Errorf("already have a different helm repo called: %s", repo)
+		if repoComponents[1] != normalizedUrl {
+			return false, fmt.Errorf("local helm repo '%s' has a different url than expected", repo)
 		}
 
 		return true, nil
