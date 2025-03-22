@@ -21,6 +21,7 @@ import (
 
 	"github.com/Eagerod/hope/pkg/docker"
 	"github.com/Eagerod/hope/pkg/envsubst"
+	"github.com/Eagerod/hope/pkg/helm"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 	"github.com/Eagerod/hope/pkg/packer"
 	"github.com/Eagerod/hope/pkg/scp"
@@ -287,5 +288,17 @@ func patchInvocations() {
 	packer.ExecPackerWdEnv = func(workDir string, env *map[string]string, args ...string) error {
 		log.Debug("packer ", strings.Join(args, " "))
 		return oldExecPackerWdEnv(workDir, env, args...)
+	}
+
+	oldExecHelm := helm.ExecHelm
+	helm.ExecHelm = func(args ...string) error {
+		log.Debug("helm ", strings.Join(args, " "))
+		return oldExecHelm(args...)
+	}
+
+	oldGetHelm := helm.GetHelm
+	helm.GetHelm = func(args ...string) (string, error) {
+		log.Debug("helm ", strings.Join(args, " "))
+		return oldGetHelm(args...)
 	}
 }

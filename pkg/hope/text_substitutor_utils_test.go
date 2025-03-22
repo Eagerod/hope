@@ -35,3 +35,14 @@ func TestReplaceParametersInString(t *testing.T) {
 	os.Unsetenv("HELLO")
 	os.Unsetenv("WORLD")
 }
+
+func TestReplaceParametersInFileCopy(t *testing.T) {
+	f, err := ReplaceParametersInFileCopy("../../test/small-recursive", []string{"WORLD=turtle"})
+	assert.NoError(t, err)
+	defer os.Remove(f)
+
+	content, err := os.ReadFile(f)
+	assert.NoError(t, err)
+
+	assert.Equal(t, "Hello, turtle!\n", string(content))
+}

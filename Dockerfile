@@ -74,6 +74,14 @@ RUN \
     curl -fsSL "https://dl.k8s.io/release/${KUBERNETES_VERSION}/bin/linux/${ARCH}/kubelet" -o /usr/bin/kubelet && \
     chmod +x /usr/bin/kubeadm /usr/bin/kubelet /usr/bin/kubectl
 
+ARG HELM_VERSION=3.17.2
+
+# Helm
+RUN \
+    curl -fsS https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz | \
+    tar xzf - > /usr/bin/helm && \
+    chmod 755 /usr/bin/helm
+
 COPY --from=builder /app/build/hope /usr/bin/hope
 
 VOLUME ["/src"]

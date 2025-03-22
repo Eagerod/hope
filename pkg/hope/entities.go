@@ -32,6 +32,10 @@ const (
 
 	// ResourceTypeExec - Execute a script in a running pod/container.
 	ResourceTypeExec
+
+	// ResourceTypeHelm - Add a helm chart, and ensure the version specified
+	// is running in the cluster.
+	ResourceTypeHelm
 )
 
 type NodeRole int
@@ -88,6 +92,16 @@ type ExecSpec struct {
 	Command  []string
 }
 
+type HelmSpec struct {
+	Namespace  string
+	Release    string
+	Repo       string
+	Path       string
+	Chart      string
+	Version    string
+	ValuesFile string
+}
+
 // Resource - Properties that can appear in any resources.
 // There may be a better way of doing this, but with a pretty generic list of
 // items appearing in a yaml file, maybe not.
@@ -101,6 +115,7 @@ type Resource struct {
 	Job            string
 	Exec           ExecSpec
 	Tags           []string
+	Helm           HelmSpec
 }
 
 // Job - Properties that can appear in any ephemeral job definition.
@@ -162,6 +177,8 @@ func (rt ResourceType) String() string {
 		return "job"
 	case ResourceTypeExec:
 		return "exec"
+	case ResourceTypeHelm:
+		return "helm"
 	}
 
 	return fmt.Sprintf("%%!ResourceType(%d)", rt)
@@ -215,6 +232,9 @@ func (resource *Resource) GetType() (ResourceType, error) {
 	}
 	if len(resource.Exec.Selector) != 0 && len(resource.Exec.Command) != 0 {
 		detectedTypes = append(detectedTypes, ResourceTypeExec)
+	}
+	if len(resource.Helm.Repo) != 0 && len(resource.Helm.Path) != 0 && len(resource.Helm.Chart) != 0 {
+		detectedTypes = append(detectedTypes, ResourceTypeHelm)
 	}
 
 	switch len(detectedTypes) {

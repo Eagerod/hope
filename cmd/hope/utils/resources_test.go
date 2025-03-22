@@ -70,6 +70,19 @@ var testResources []hope.Resource = []hope.Resource{
 		FileParameters: []string{"SCRIPT_SH_FILE=test/script.sh"},
 		Tags:           []string{"another-tag"},
 	},
+	{
+		Name: "kubernetes-dashboard-helm",
+		Helm: hope.HelmSpec{
+			Namespace:  "kubernetes-dashboard",
+			Release:    "kubernetes-dashboard",
+			Repo:       "kubernetes-dashboard",
+			Path:       "https://kubernetes.github.io/dashboard/",
+			Chart:      "kubernetes-dashboard/kubernetes-dashboard",
+			Version:    "7.11.1",
+			ValuesFile: "test/kubernetes-dashboard-values.yaml",
+		},
+		Parameters: []string{"THE_PARAM=the-value"},
+	},
 }
 
 // Basically a smoke test, don't want to define a ton of yaml blocks to test

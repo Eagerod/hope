@@ -14,6 +14,7 @@ import (
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
 	"github.com/Eagerod/hope/pkg/docker"
+	"github.com/Eagerod/hope/pkg/helm"
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/kubeutil"
 )
@@ -250,6 +251,43 @@ var deployCmd = &cobra.Command{
 				allArgs = append(allArgs, resource.Exec.Command...)
 
 				if err := kubeutil.ExecKubectl(kubectl, allArgs...); err != nil {
+					return err
+				}
+			case hope.ResourceTypeHelm:
+				if hasRepo, err := helm.HasRepo(resource.Helm.Repo, resource.Helm.Path); err != nil {
+					return err
+				} else if !hasRepo {
+					if err := helm.ExecHelm("repo", "add", resource.Helm.Repo, resource.Helm.Path); err != nil {
+						return err
+					}
+				}
+
+				if err := helm.ExecHelm("repo", "update", resource.Helm.Repo); err != nil {
+					return err
+				}
+
+				allArgs := []string{"upgrade", "--install"}
+				if len(resource.Helm.Namespace) != 0 {
+					allArgs = append(allArgs, "--namespace", resource.Helm.Namespace, "--create-namespace")
+				}
+
+				if len(resource.Helm.ValuesFile) != 0 {
+					log.Trace("Copying values file for parameter replacement")
+					tempFile, err := hope.ReplaceParametersInFileCopy(resource.Helm.ValuesFile, parameters)
+					if err != nil {
+						return err
+					}
+					defer os.Remove(tempFile)
+
+					allArgs = append(allArgs, "--values", tempFile)
+				}
+
+				if len(resource.Helm.Version) != 0 {
+					allArgs = append(allArgs, "--version", resource.Helm.Version)
+				}
+
+				allArgs = append(allArgs, resource.Helm.Release, resource.Helm.Chart)
+				if err := helm.ExecHelm(allArgs...); err != nil {
 					return err
 				}
 			default:

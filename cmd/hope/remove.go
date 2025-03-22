@@ -13,6 +13,7 @@ import (
 
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
+	"github.com/Eagerod/hope/pkg/helm"
 	"github.com/Eagerod/hope/pkg/hope"
 )
 
@@ -122,6 +123,8 @@ var removeCmd = &cobra.Command{
 				log.Debug("Skipping removal of job resource type.")
 			case hope.ResourceTypeExec:
 				log.Debug("Skipping removal of exec resource type.")
+			case hope.ResourceTypeHelm:
+				return helm.ExecHelm("uninstall", resource.Helm.Release)
 			default:
 				return fmt.Errorf("resource type (%s) not implemented", resourceType)
 			}
