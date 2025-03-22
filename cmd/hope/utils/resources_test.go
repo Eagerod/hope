@@ -70,6 +70,18 @@ var testResources []hope.Resource = []hope.Resource{
 		FileParameters: []string{"SCRIPT_SH_FILE=test/script.sh"},
 		Tags:           []string{"another-tag"},
 	},
+	{
+		Name: "helm-repo",
+		Helm: hope.HelmSpec{
+			Namespace:  "storage-system",
+			Name:       "freenas-iscsi",
+			Repo:       "democratic-csi",
+			Path:       "https://democratic-csi.github.io/charts/",
+			Chart:      "democratic-csi/democratic-csi",
+			Version:    "0.13.7",
+			ValuesFile: "./freenas-values.yaml",
+		},
+	},
 }
 
 // Basically a smoke test, don't want to define a ton of yaml blocks to test
