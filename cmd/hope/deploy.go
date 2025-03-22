@@ -261,7 +261,6 @@ var deployCmd = &cobra.Command{
 				}
 
 				for _, repoLine := range strings.Split(currentRepos, "\n") {
-					fmt.Println(repoLine)
 					repoComponents := strings.Fields(repoLine)
 					if repoComponents[0] != resource.Helm.Repo {
 						continue
