@@ -31,6 +31,28 @@ func ReplaceParametersInFile(path string, parameters []string) (string, error) {
 	return ReplaceParametersWithSubstitutor(t, parameters)
 }
 
+// ReplaceParametersInFileCopy - Copy the provided file to a temp file, and
+// replace parameters in the files.
+// Returns the temp path to the copied file, and the caller must clean up
+// that file itself, unless an error occurs.
+func ReplaceParametersInFileCopy(path string, parameters []string) (string, error) {
+	str, err := ReplaceParametersInFile(path, parameters)
+	if err != nil {
+		return "", err
+	}
+
+	tf, err := os.CreateTemp("", "")
+	if err != nil {
+		return "", err
+	}
+
+	if _, err := tf.WriteString(str); err != nil {
+		return "", err
+	}
+
+	return tf.Name(), nil
+}
+
 func ReplaceParametersWithSubstitutor(t *TextSubstitutor, parameters []string) (string, error) {
 	envParams := []string{}
 	directParams := map[string]string{}

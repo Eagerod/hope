@@ -202,6 +202,17 @@ resources:
     fileParameters:
       - SCRIPT_SH_FILE=test/script.sh
     tags: [another-tag]
+  - name: kubernetes-dashboard-helm
+    helm:
+      namespace: kubernetes-dashboard
+      repo: kubernetes-dashboard
+      release: kubernetes-dashboard
+      path: https://kubernetes.github.io/dashboard/
+      chart: kubernetes-dashboard/kubernetes-dashboard
+      version: "7.11.1"
+      valuesFile: test/kubernetes-dashboard-values.yaml
+    parameters:
+      - THE_PARAM=the-value
 # Jobs contains a collection of specifications of templated jobs that can be
 #   run on demand in the cluster.
 # These jobs shouldn't be associated to the deployment of any particular

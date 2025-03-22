@@ -1,0 +1,4 @@
+app:
+  labels:
+    test-label: "true"
+    param-label: ${THE_PARAM}
