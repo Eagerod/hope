@@ -126,8 +126,12 @@ func TryConfigureSSH(log *logrus.Entry, node *Node) error {
 }
 
 func CopySSHKeyToAuthorizedKeys(log *logrus.Entry, node *Node) error {
-	connectionString := node.ConnectionString()
-	osCmd := exec.Command("ssh-copy-id", connectionString, "-o", "StrictHostKeyChecking=no")
+	args := []string{
+		"-o", "StrictHostKeyChecking=no",
+		node.ConnectionString(),
+	}
+	log.Debug("ssh-copy-id ", strings.Join(args, " "))
+	osCmd := exec.Command("ssh-copy-id", args...)
 	osCmd.Stdin = os.Stdin
 	osCmd.Stdout = os.Stdout
 	osCmd.Stderr = os.Stderr

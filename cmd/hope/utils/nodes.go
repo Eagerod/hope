@@ -13,10 +13,19 @@ import (
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/hope/hypervisors"
 	"github.com/Eagerod/hope/pkg/kubeutil"
-	"github.com/Eagerod/hope/pkg/sliceutil"
 )
 
-var toHypervisor func(hope.Node) (hypervisors.Hypervisor, error) = hypervisors.ToHypervisor
+type NodeNotFoundError struct {
+	node string
+}
+
+func NewNodeNotFoundError(node string) error {
+	return &NodeNotFoundError{node}
+}
+
+func (e *NodeNotFoundError) Error() string {
+	return fmt.Sprintf("failed to find node: %s", e.node)
+}
 
 func getNodes() ([]hope.Node, error) {
 	var nodes []hope.Node
@@ -68,7 +77,7 @@ func GetBareNode(name string) (hope.Node, error) {
 		}
 	}
 
-	return hope.Node{}, fmt.Errorf("failed to find a node named %s", name)
+	return hope.Node{}, NewNodeNotFoundError(name)
 }
 
 func GetBareNodeTypes(types []string) ([]hope.Node, error) {
@@ -134,7 +143,7 @@ func GetHypervisors() ([]hypervisors.Hypervisor, error) {
 
 	for _, node := range nodes {
 		if node.IsHypervisor() {
-			hypervisor, err := toHypervisor(node)
+			hypervisor, err := hypervisors.ToHypervisor(node)
 			if err != nil {
 				return nil, err
 			}
@@ -168,7 +177,7 @@ func GetHypervisor(name string) (hypervisors.Hypervisor, error) {
 
 	for _, node := range nodes {
 		if node.Name == name {
-			return toHypervisor(node)
+			return hypervisors.ToHypervisor(node)
 		}
 	}
 
@@ -187,24 +196,32 @@ func GetAvailableMasters() ([]hope.Node, error) {
 	}
 
 	for _, node := range nodes {
-		if node.IsMaster() {
-			hv, err := GetHypervisor(node.Hypervisor)
+		if !node.IsMaster() {
+			continue
+		}
+
+		if node.Hypervisor == "" {
+			retVal = append(retVal, node)
+			continue
+		}
+
+		// Need to get more node details from hypervisor
+		hv, err := GetHypervisor(node.Hypervisor)
+		if err != nil {
+			return nil, err
+		}
+
+		hvHasNode, err := hypervisors.HasNode(hv, node.Name)
+		if err != nil {
+			return nil, err
+		}
+
+		if hvHasNode {
+			exNode, err := expandHypervisor(node)
 			if err != nil {
 				return nil, err
 			}
-
-			hvNodes, err := hv.ListNodes()
-			if err != nil {
-				return nil, err
-			}
-
-			if sliceutil.StringInSlice(node.Name, hvNodes) {
-				exNode, err := expandHypervisor(node)
-				if err != nil {
-					return nil, err
-				}
-				retVal = append(retVal, exNode)
-			}
+			retVal = append(retVal, exNode)
 		}
 	}
 
@@ -251,10 +268,7 @@ func GetLoadBalancer() (hope.Node, error) {
 		}
 	}
 
-	// This feels dirty, and a little broken.
-	// Maybe need a dedicated NodeNotFound kind of error that can be handled
-	//   independently of other errors if desired.
-	return hope.Node{}, nil
+	return hope.Node{}, NewNodeNotFoundError("load-balancer")
 }
 
 func HypervisorForNodeNamed(name string) (*hypervisors.Hypervisor, error) {

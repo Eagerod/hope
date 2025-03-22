@@ -1,6 +1,7 @@
 package node
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -22,7 +23,7 @@ func initInitCmd() {
 }
 
 var initCmd = &cobra.Command{
-	Use:   "init",
+	Use:   "init <node-name>",
 	Short: "Bootstrap a node within the cluster",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -36,7 +37,12 @@ var initCmd = &cobra.Command{
 		// Load balancer have a super lightweight init, so run its init before
 		//   fetching some potentially heavier state from the cluster.
 		if node.IsLoadBalancer() {
-			return hope.InitLoadBalancer(log.WithFields(log.Fields{}), &node)
+			masters, err := utils.GetAvailableMasters()
+			if err != nil {
+				return err
+			}
+
+			return hope.InitLoadBalancer(log.WithFields(log.Fields{}), &node, &masters)
 		}
 
 		podNetworkCidr := viper.GetString("pod_network_cidr")
@@ -45,16 +51,21 @@ var initCmd = &cobra.Command{
 			return err
 		}
 
+		var lbp *hope.Node = nil
+		var nnf *utils.NodeNotFoundError
 		loadBalancer, err := utils.GetLoadBalancer()
-		if err != nil && loadBalancer != (hope.Node{}) {
+		if err != nil && !errors.As(err, &nnf) {
 			return err
+		} else if err == nil {
+			lbp = &loadBalancer
 		}
+
 		loadBalancerHost := viper.GetString("load_balancer_host")
 
 		if node.IsMasterAndNode() {
 			log.Info("Node ", node.Host, " appears to be both master and node. Creating master and removing NoSchedule taint...")
 
-			if err := hope.CreateClusterMaster(log.WithFields(log.Fields{}), &node, podNetworkCidr, &loadBalancer, loadBalancerHost, &masters, initCmdForce); err != nil {
+			if err := hope.CreateClusterMaster(log.WithFields(log.Fields{}), &node, podNetworkCidr, lbp, loadBalancerHost, &masters, initCmdForce); err != nil {
 				return err
 			}
 
@@ -67,7 +78,7 @@ var initCmd = &cobra.Command{
 
 			return hope.TaintNodeByHost(kubectl, &node, "node-role.kubernetes.io/master:NoSchedule-")
 		} else if node.IsMaster() {
-			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), &node, podNetworkCidr, &loadBalancer, loadBalancerHost, &masters, initCmdForce)
+			return hope.CreateClusterMaster(log.WithFields(log.Fields{}), &node, podNetworkCidr, lbp, loadBalancerHost, &masters, initCmdForce)
 		} else if node.IsNode() {
 			return hope.CreateClusterNode(log.WithFields(log.Fields{}), &node, &masters, initCmdForce)
 		} else {

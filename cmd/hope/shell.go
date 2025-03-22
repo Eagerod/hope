@@ -21,7 +21,7 @@ func initShellCmd() {
 }
 
 var shellCmd = &cobra.Command{
-	Use:   "shell",
+	Use:   "shell [exec args]...",
 	Short: "Start a shell, or run a command in the provided pod or any pod matching a label.",
 	Args:  cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {

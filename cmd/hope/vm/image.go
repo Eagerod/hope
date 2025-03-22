@@ -7,6 +7,7 @@ import (
 
 import (
 	"github.com/Eagerod/hope/cmd/hope/utils"
+	"github.com/Eagerod/hope/pkg/hope/hypervisors"
 )
 
 var imageCmdParameterSlice *[]string
@@ -19,7 +20,7 @@ func initImageCmdFlags() {
 }
 
 var imageCmd = &cobra.Command{
-	Use:   "image",
+	Use:   "image <image-name>",
 	Short: "Creates a VM image from the defined packer spec.",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -35,31 +36,72 @@ var imageCmd = &cobra.Command{
 			return err
 		}
 
-		// Each image that's made will be copied to all hypervisors that
-		//   accept that image.
-		hypervisors, err := utils.GetHypervisors()
+		vmHypervisors := []hypervisors.Hypervisor{}
+		for _, s := range vm.Hypervisors {
+			hyp, err := utils.GetHypervisor(s)
+			if err != nil {
+				return err
+			}
+
+			vmHypervisors = append(vmHypervisors, hyp)
+		}
+
+		plans, err := hypervisors.GetEnginePlans(vmHypervisors)
 		if err != nil {
 			return err
 		}
 
-		log.Debugf("Creating VM %s using %d hypervisors", vm.Name, len(vm.Hypervisors))
-		for _, hypervisorName := range vm.Hypervisors {
-			hypervisor, err := utils.GetHypervisor(hypervisorName)
-			if err != nil {
-				return err
-			}
+		for _, plan := range plans {
+			log.Debugf("Creating VM %s using %d %s hypervisors", vm.Name, plan.NumHypervisors, plan.Engine)
+			for _, hv := range plan.BuildHypervisors {
+				hvNode, err := hv.UnderlyingNode()
+				if err != nil {
+					return err
+				}
 
-			packerSpec, err := hypervisor.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag)
-			if err != nil {
-				return err
-			}
+				if !imageCmdForceFlag {
+					log.Tracef("Searching for %s on %s before attempting build...", vm.Name, hvNode.Name)
+					hvHasBuiltImage, err := hypervisors.HasBuiltImage(hv, vms, vm.Name)
+					if err != nil {
+						return err
+					}
 
-			for _, hv := range hypervisors {
-				if err := hv.CopyImage(*packerSpec, vms, *vm); err != nil {
+					if hvHasBuiltImage {
+						log.Infof("Hypervisor %s already has built image: %s, skipping image creation", hvNode.Name, vm.Name)
+						continue
+					}
+				}
+
+				log.Infof("Beginning build of %s on %s", vm.Name, hvNode.Name)
+				if err := hv.CreateImage(vms, *vm, *imageCmdParameterSlice, imageCmdForceFlag); err != nil {
 					return err
 				}
 			}
 
+			firstHV := plan.BuildHypervisors[0]
+			for _, hv := range plan.CopyHypervisors {
+				hvNode, err := hv.UnderlyingNode()
+				if err != nil {
+					return err
+				}
+
+				if !imageCmdForceFlag {
+					log.Tracef("Searching for %s on %s before attempting copy...", vm.Name, hvNode.Name)
+					hvHasAvailableImage, err := hypervisors.HasAvailableImage(hv, vms, vm.Name)
+					if err != nil {
+						return err
+					}
+
+					if hvHasAvailableImage {
+						log.Infof("Hypervisor %s already has available image: %s, skipping image copy", hvNode.Name, vm.Name)
+						continue
+					}
+				}
+
+				if err := hv.CopyImage(vms, *vm, firstHV); err != nil {
+					return err
+				}
+			}
 		}
 
 		return nil

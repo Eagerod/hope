@@ -23,7 +23,7 @@ func initRemoveCmdFlags() {
 }
 
 var removeCmd = &cobra.Command{
-	Use:   "remove",
+	Use:   "remove [resource-name]...",
 	Short: "Remove Kubernetes resources defined in the hope file",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Why not?

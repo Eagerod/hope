@@ -12,6 +12,8 @@ nodes:
     user: root
     datastore: Main
     network: VM Network
+    parameters:
+      - INSECURE=true
   # Master Load Balancer
   # Just one of these; manages providing a single endpoint for the set of
   #   master nodes.
@@ -34,7 +36,7 @@ nodes:
     user: packer
   - name: test-master-02
     role: master
-    hypervisor: beast1
+    host: 192.168.1.10
     cpu: 2
     memory: 2048
     user: packer

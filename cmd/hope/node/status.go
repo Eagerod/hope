@@ -26,7 +26,7 @@ func initStatusCmd() {
 }
 
 var statusCmd = &cobra.Command{
-	Use:   "status",
+	Use:   "status [node-name]",
 	Short: "Checks the status of nodes from the manifest, and prints names, along with statuses.",
 	Args:  cobra.RangeArgs(0, 1),
 	RunE: func(cmd *cobra.Command, args []string) error {

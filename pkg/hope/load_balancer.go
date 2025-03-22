@@ -17,9 +17,28 @@ import (
 
 // Just forwards to `SetLoadBalancerHosts`.
 // There may be a time where this does more.
-func InitLoadBalancer(log *logrus.Entry, node *Node) error {
+func InitLoadBalancer(log *logrus.Entry, node *Node, masters *[]Node) error {
 	log.Debug("Starting to bootstrap a simple NGINX load balancer for API Servers at ", node.Host)
-	return SetLoadBalancerHosts(log, node, &[]Node{})
+	return SetLoadBalancerHosts(log, node, masters)
+}
+
+// Build the nginx.conf file contents setting the given nodes as upstreams.
+func loadBalancerConfigurationFile(log *logrus.Entry, upstreams *[]Node) string {
+	// In the case where there are no masters yet, send traffic to a black
+	//   hole.
+	// Prevents Nginx from crash looping; upstream servers need at least one
+	masterUpstreamContents := ""
+	if len(*upstreams) == 0 {
+		masterUpstreamContents = "server 0.0.0.0:6443;"
+	} else {
+		masterIps := []string{}
+		for _, master := range *upstreams {
+			masterUpstreamContents = fmt.Sprintf("%s\n        server %s:6443;", masterUpstreamContents, master.Host)
+			masterIps = append(masterIps, fmt.Sprintf("%s:6443", master.Host))
+		}
+		log.Infof("Setting load balancer upstreams to: %s", strings.Join(masterIps, ", "))
+	}
+	return fmt.Sprintf(NginxConfig, masterUpstreamContents)
 }
 
 func SetLoadBalancerHosts(log *logrus.Entry, node *Node, masters *[]Node) error {
@@ -29,19 +48,7 @@ func SetLoadBalancerHosts(log *logrus.Entry, node *Node, masters *[]Node) error 
 
 	connectionString := node.ConnectionString()
 
-	// In the case where there are no masters yet, send traffic to a black
-	//   hole.
-	// Prevents Nginx from crash looping; upstream servers need at least one
-	//   endpoint.
-	masterUpstreamContents := ""
-	if len(*masters) == 0 {
-		masterUpstreamContents = "server 0.0.0.0:6443;"
-	} else {
-		for _, master := range *masters {
-			masterUpstreamContents = fmt.Sprintf("%s\n        server %s:6443;", masterUpstreamContents, master.Host)
-		}
-	}
-	populatedConfig := fmt.Sprintf(NginxConfig, masterUpstreamContents)
+	populatedConfig := loadBalancerConfigurationFile(log, masters)
 	configTempFilename := uuid.New().String()
 	dest := fmt.Sprintf("%s:%s", connectionString, configTempFilename)
 	if err := scp.ExecSCPBytes([]byte(populatedConfig), dest); err != nil {

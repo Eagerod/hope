@@ -17,6 +17,10 @@ import (
 	"github.com/Eagerod/hope/pkg/ssh"
 )
 
+// Sets up any configuration on Kubernetes nodes that are common between
+// control-plane nodes, and worker nodes.
+// TODO: Consider writing these files using file provisioners in Packer
+// instead?
 func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 	if !node.IsKubernetesNode() {
 		return fmt.Errorf("Node has role %s, should not prepare as Kubernetes node", node.Role)
@@ -29,30 +33,6 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 	log.Debug("Preparing Kubernetes components at ", node.Host)
 
 	connectionString := node.ConnectionString()
-
-	// TODO: Create a function in ssh pkg that allows for running
-	//   multi-statement commands on the target without needing to manually
-	//   construct the string.
-	// TODO: Consider writing these files using file provisioners in Packer
-	//   instead?
-	commands := []string{
-		"mkdir -p /etc/sysconfig",
-		"echo \"\" > /etc/sysconfig/docker-storage",
-		"echo \"\" > /etc/sysconfig/docker-storage-setup",
-		fmt.Sprintf("echo \"%s\" > /etc/docker/daemon.json", strings.ReplaceAll(DockerDaemonJson, "\"", "\\\"")),
-		fmt.Sprintf("echo \"%s\" > /etc/sysctl.d/k8s.conf", K8SConf),
-		fmt.Sprintf("echo \"%s\" > /proc/sys/net/ipv4/ip_forward", IpForward),
-	}
-	commandString := fmt.Sprintf("'%s'", strings.Join(commands, " && "))
-
-	if err := ssh.ExecSSH(connectionString, "sudo", "sh", "-c", commandString); err != nil {
-		return err
-	}
-
-	// Various other setups.
-	if err := ssh.ExecSSH(connectionString, "sudo", "sed", "-i", "'/--exec-opt native.cgroupdriver/d'", "/usr/lib/systemd/system/docker.service"); err != nil {
-		return err
-	}
 
 	// Different versions of kubeabm will install their kubeadm.conf under
 	//   different paths; take the first one found from known paths.
@@ -92,9 +72,7 @@ func setupCommonNodeRequirements(log *logrus.Entry, node *Node) error {
 	daemonsScript := fmt.Sprintf("\"%s\"", strings.Join(
 		[]string{
 			"systemctl daemon-reload",
-			"systemctl enable docker",
 			"systemctl enable kubelet",
-			"systemctl restart docker",
 			"systemctl restart kubelet",
 		},
 		" && ",
@@ -176,7 +154,7 @@ func CreateClusterMaster(log *logrus.Entry, node *Node, podNetworkCidr string, l
 		return err
 	}
 
-	existingMasters := (*masters)[1:]
+	existingMasters := lbMasters[1:]
 	joinCommand, err := KubeadmGetClusterJoinCommandFromAnyMaster(&existingMasters)
 	if err != nil {
 		return err

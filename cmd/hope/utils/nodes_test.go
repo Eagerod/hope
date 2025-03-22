@@ -14,7 +14,6 @@ import (
 import (
 	"github.com/Eagerod/hope/pkg/hope"
 	"github.com/Eagerod/hope/pkg/hope/hypervisors"
-	"github.com/Eagerod/hope/pkg/packer"
 )
 
 func resetViper(t *testing.T) {
@@ -30,70 +29,99 @@ func resetViper(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-var testNodes []hope.Node = []hope.Node{
-	{
-		Name:      "beast1",
-		Role:      hope.NodeRoleHypervisor.String(),
-		Engine:    "esxi",
-		Host:      "192.168.10.40",
-		User:      "root",
-		Datastore: "Main",
-		Network:   "VM Network",
-	},
-	{
-		Name:       "test-load-balancer",
-		Role:       hope.NodeRoleLoadBalancer.String(),
-		Hypervisor: "beast1",
-		User:       "packer",
-		Cpu:        2,
-		Memory:     256,
-	},
-	{
-		Name:       "test-master-01",
-		Role:       hope.NodeRoleMaster.String(),
-		Hypervisor: "beast1",
-		User:       "packer",
-		Cpu:        2,
-		Memory:     2048,
-	},
-	{
-		Name:       "test-master-02",
-		Role:       hope.NodeRoleMaster.String(),
-		Hypervisor: "beast1",
-		User:       "packer",
-		Cpu:        2,
-		Memory:     2048,
-	},
-	{
-		Name:       "test-master-03",
-		Role:       hope.NodeRoleMaster.String(),
-		Hypervisor: "beast1",
-		User:       "packer",
-		Cpu:        2,
-		Memory:     2048,
-	},
-	{
-		Name:       "test-node-01",
-		Role:       hope.NodeRoleNode.String(),
-		Hypervisor: "beast1",
-		User:       "packer",
-		Cpu:        2,
-		Memory:     4096,
+var beast1Node hope.Node = hope.Node{
+	Name:      "beast1",
+	Role:      hope.NodeRoleHypervisor.String(),
+	Engine:    "esxi",
+	Host:      "192.168.10.40",
+	User:      "root",
+	Datastore: "Main",
+	Network:   "VM Network",
+	Parameters: []string{
+		"INSECURE=true",
 	},
 }
+var loadBalancerNode hope.Node = hope.Node{
+	Name:       "test-load-balancer",
+	Role:       hope.NodeRoleLoadBalancer.String(),
+	Hypervisor: "beast1",
+	User:       "packer",
+	Cpu:        2,
+	Memory:     256,
+}
+var master1Node hope.Node = hope.Node{
+	Name:       "test-master-01",
+	Role:       hope.NodeRoleMaster.String(),
+	Hypervisor: "beast1",
+	User:       "packer",
+	Cpu:        2,
+	Memory:     2048,
+}
+var master2Node hope.Node = hope.Node{
+	Name:   "test-master-02",
+	Role:   hope.NodeRoleMaster.String(),
+	User:   "packer",
+	Host:   "192.168.1.10",
+	Cpu:    2,
+	Memory: 2048,
+}
+var master3Node hope.Node = hope.Node{
+	Name:       "test-master-03",
+	Role:       hope.NodeRoleMaster.String(),
+	Hypervisor: "beast1",
+	User:       "packer",
+	Cpu:        2,
+	Memory:     2048,
+}
+var worker1Node hope.Node = hope.Node{
+	Name:       "test-node-01",
+	Role:       hope.NodeRoleNode.String(),
+	Hypervisor: "beast1",
+	User:       "packer",
+	Cpu:        2,
+	Memory:     4096,
+}
 
-var oldToHypervisor func(hope.Node) (hypervisors.Hypervisor, error) = toHypervisor
+var testNodes []hope.Node = []hope.Node{
+	beast1Node,
+	loadBalancerNode,
+	master1Node,
+	master2Node,
+	master3Node,
+	worker1Node,
+}
 
 type MockHypervisor struct {
 	node hope.Node
 }
 
+func (m *MockHypervisor) Initialize(node hope.Node) error {
+	return nil
+}
+
 func (m *MockHypervisor) ListNodes() ([]string, error) {
-	nodes := []string{}
-	for _, n := range testNodes {
-		if !n.IsHypervisor() {
-			nodes = append(nodes, n.Name)
-		}
+	nodes := []string{
+		loadBalancerNode.Name,
+		master1Node.Name,
+		master2Node.Name,
+		master3Node.Name,
+		worker1Node.Name,
+	}
+	return nodes, nil
+}
+
+func (m *MockHypervisor) ListBuiltImages(vms hope.VMs) ([]string, error) {
+	nodes := []string{
+		"load-balancer",
+		"kubernetes-node",
+	}
+	return nodes, nil
+}
+
+func (m *MockHypervisor) ListAvailableImages(vms hope.VMs) ([]string, error) {
+	nodes := []string{
+		"load-balancer",
+		"kubernetes-node",
 	}
 	return nodes, nil
 }
@@ -108,12 +136,16 @@ func (m *MockHypervisor) UnderlyingNode() (hope.Node, error) {
 	return m.node, nil
 }
 
-func (m *MockHypervisor) CopyImage(a packer.JsonSpec, b hope.VMs, c hope.VMImageSpec) error {
-	return nil
+func (m *MockHypervisor) CopyImageMode() hypervisors.CopyImageMode {
+	return hypervisors.CopyImageModeNone
 }
 
-func (m *MockHypervisor) CreateImage(a hope.VMs, b hope.VMImageSpec, c []string, d bool) (*packer.JsonSpec, error) {
-	return nil, nil
+func (m *MockHypervisor) CopyImage(a hope.VMs, b hope.VMImageSpec, c hypervisors.Hypervisor) error {
+	return hypervisors.ErrCopyImageNotImplemented
+}
+
+func (m *MockHypervisor) CreateImage(a hope.VMs, b hope.VMImageSpec, c []string, d bool) error {
+	return nil
 }
 
 func (m *MockHypervisor) CreateNode(a hope.Node, b hope.VMs, c hope.VMImageSpec) error {
@@ -147,14 +179,17 @@ func toHypervisorStub(node hope.Node) (hypervisors.Hypervisor, error) {
 // function.
 type NodesTestSuite struct {
 	suite.Suite
+
+	originalToHypervisor hypervisors.ToHypervisorFactoryFunc
 }
 
 func (s *NodesTestSuite) SetupTest() {
-	toHypervisor = toHypervisorStub
+	s.originalToHypervisor = hypervisors.ToHypervisor
+	hypervisors.ToHypervisor = toHypervisorStub
 }
 
 func (s *NodesTestSuite) TeardownTest() {
-	toHypervisor = oldToHypervisor
+	hypervisors.ToHypervisor = s.originalToHypervisor
 }
 
 // Actual test method to run the suite
@@ -201,7 +236,7 @@ func (s *NodesTestSuite) TestGetNode() {
 	t := s.T()
 	resetViper(t)
 
-	expected := testNodes[5]
+	expected := worker1Node
 	expected.Host = "test-node-01"
 	expected.Hypervisor = ""
 
@@ -211,7 +246,7 @@ func (s *NodesTestSuite) TestGetNode() {
 	assert.Equal(t, expected, node)
 
 	_, err = GetNode("sets-node-01")
-	assert.Equal(t, "failed to find a node named sets-node-01", err.Error())
+	assert.Equal(t, "failed to find node: sets-node-01", err.Error())
 }
 
 func (s *NodesTestSuite) TestHasNode() {
@@ -226,7 +261,7 @@ func (s *NodesTestSuite) TestGetAnyMaster() {
 	t := s.T()
 	resetViper(t)
 
-	expected := testNodes[2]
+	expected := master1Node
 	expected.Host = "test-master-01"
 	expected.Hypervisor = ""
 
@@ -247,14 +282,14 @@ func (s *NodesTestSuite) TestGetHypervisors() {
 
 	node, err := hypervisors[0].UnderlyingNode()
 	assert.NoError(t, err)
-	assert.Equal(t, testNodes[0], node)
+	assert.Equal(t, beast1Node, node)
 }
 
 func (s *NodesTestSuite) TestGetHypervisor() {
 	t := s.T()
 	resetViper(t)
 
-	expected := testNodes[0]
+	expected := beast1Node
 
 	hypervisor, err := GetHypervisor("beast1")
 	assert.Nil(t, err)
@@ -276,10 +311,16 @@ func (s *NodesTestSuite) TestGetAvailableMasters() {
 	t := s.T()
 	resetViper(t)
 
-	expectedOrig := testNodes[2:5]
+	expectedOrig := []hope.Node{master1Node, master2Node, master3Node}
 	expected := []hope.Node{}
+
 	for i, n := range expectedOrig {
-		n.Host = fmt.Sprintf("test-master-0%d", i+1)
+		if i == 1 {
+			n.Host = "192.168.1.10"
+		} else {
+			n.Host = fmt.Sprintf("test-master-0%d", i+1)
+		}
+
 		n.Hypervisor = ""
 		expected = append(expected, n)
 	}
@@ -294,7 +335,7 @@ func (s *NodesTestSuite) TestGetLoadBalancer() {
 	t := s.T()
 	resetViper(t)
 
-	expected := testNodes[1]
+	expected := loadBalancerNode
 	expected.Host = "test-load-balancer"
 	expected.Hypervisor = ""
 
