@@ -295,4 +295,10 @@ func patchInvocations() {
 		log.Debug("helm ", strings.Join(args, " "))
 		return oldExecHelm(args...)
 	}
+
+	oldGetHelm := helm.GetHelm
+	helm.GetHelm = func(args ...string) (string, error) {
+		log.Debug("helm ", strings.Join(args, " "))
+		return oldGetHelm(args...)
+	}
 }
