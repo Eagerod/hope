@@ -1,20 +1,13 @@
 package helm
 
 import (
-	// "fmt"
 	"testing"
 )
 
 import (
-	// "github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
-
-// import (
-// 	"github.com/Eagerod/hope/pkg/hope"
-// 	"github.com/Eagerod/hope/pkg/hope/hypervisors"
-// )
 
 // Implemented as a suite to allow manipulating the helm wrapper func.
 type HelmTestSuite struct {
