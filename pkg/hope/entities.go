@@ -233,7 +233,7 @@ func (resource *Resource) GetType() (ResourceType, error) {
 	if len(resource.Exec.Selector) != 0 && len(resource.Exec.Command) != 0 {
 		detectedTypes = append(detectedTypes, ResourceTypeExec)
 	}
-	if len(resource.Helm.Repo) != 0 && len(resource.Helm.Path) != 0 && len(resource.Helm.Chart) != 0 {
+	if len(resource.Helm.Repo) != 0 && len(resource.Helm.Path) != 0 && len(resource.Helm.Chart) != 0 && len(resource.Helm.Release) != 0 {
 		detectedTypes = append(detectedTypes, ResourceTypeHelm)
 	}
 
