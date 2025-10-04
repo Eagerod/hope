@@ -270,6 +270,9 @@ func (p *ApiClient) GetNodeIP(node, vmName string) (string, error) {
 		if strings.HasPrefix(n.Name, "tun") {
 			continue
 		}
+		if strings.HasPrefix(n.Name, "docker") {
+			continue
+		}
 
 		if len(n.IPAddresses) > 0 {
 			candidateIps = append(candidateIps, n.IPAddresses[0].IP)
