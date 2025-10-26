@@ -25,6 +25,7 @@ func initListCmd() {
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "lists the nodes present in the hope config file.",
+	Args:  cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(*listCmdTypeSlice) == 0 {
 			*listCmdTypeSlice = []string{
