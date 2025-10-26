@@ -28,6 +28,7 @@ func initDeployCmdFlags() {
 var deployCmd = &cobra.Command{
 	Use:   "deploy [resource-name]...",
 	Short: "Deploy Kubernetes resources defined in the hope file",
+	Args:  cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var resources *[]hope.Resource
 

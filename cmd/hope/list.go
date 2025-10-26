@@ -25,6 +25,7 @@ func initListCmdFlags() {
 var listCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List resources that belong to a particular set of tags",
+	Args:  cobra.ArbitraryArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var resources *[]hope.Resource
 
