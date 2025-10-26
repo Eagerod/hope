@@ -14,6 +14,7 @@ var VersionBuild string = "unstable-dev"
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Prints the version number and exits",
+	Args:  cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Print straight to console, since log level shouldn't dictate
 		//   whether or not this makes it to console.
