@@ -12,6 +12,7 @@ var RootCommand = &cobra.Command{
 
 func InitNodeCommand() {
 	RootCommand.AddCommand(hostnameCmd)
+	RootCommand.AddCommand(hypervisorCmd)
 	RootCommand.AddCommand(initCmd)
 	RootCommand.AddCommand(listCmd)
 	RootCommand.AddCommand(resetCmd)
