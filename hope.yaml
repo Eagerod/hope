@@ -14,6 +14,12 @@ nodes:
     network: VM Network
     parameters:
       - INSECURE=true
+  - name: pve2
+    role: hypervisor
+    engine: proxmox
+    host: 192.168.1.188
+    user: root@pam
+    network: vmbr200
   # Master Load Balancer
   # Just one of these; manages providing a single endpoint for the set of
   #   master nodes.

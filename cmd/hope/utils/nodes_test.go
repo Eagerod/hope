@@ -41,6 +41,14 @@ var beast1Node hope.Node = hope.Node{
 		"INSECURE=true",
 	},
 }
+var pve2Node hope.Node = hope.Node{
+	Name:    "pve2",
+	Role:    hope.NodeRoleHypervisor.String(),
+	Engine:  "proxmox",
+	Host:    "192.168.1.188",
+	User:    "root@pam",
+	Network: "vmbr200",
+}
 var loadBalancerNode hope.Node = hope.Node{
 	Name:       "test-load-balancer",
 	Role:       hope.NodeRoleLoadBalancer.String(),
@@ -84,6 +92,7 @@ var worker1Node hope.Node = hope.Node{
 
 var testNodes []hope.Node = []hope.Node{
 	beast1Node,
+	pve2Node,
 	loadBalancerNode,
 	master1Node,
 	master2Node,
@@ -217,7 +226,7 @@ func (s *NodesTestSuite) TestGetNodeNames() {
 		roles     []string
 		nodeNames []string
 	}{
-		{"Hypervisors", []string{hope.NodeRoleHypervisor.String()}, []string{"beast1"}},
+		{"Hypervisors", []string{hope.NodeRoleHypervisor.String()}, []string{"beast1", "pve2"}},
 		{"Load Balancers", []string{hope.NodeRoleLoadBalancer.String()}, []string{"test-load-balancer"}},
 		{"Masters", []string{hope.NodeRoleMaster.String()}, []string{"test-master-01", "test-master-02", "test-master-03"}},
 		{"Nodes", []string{hope.NodeRoleNode.String()}, []string{"test-node-01"}},
@@ -268,7 +277,7 @@ func (s *NodesTestSuite) TestGetAnyMaster() {
 	node, err := GetAnyMaster()
 	assert.Nil(t, err)
 
-	assert.Equal(t, node, expected)
+	assert.Equal(t, expected, node)
 }
 
 func (s *NodesTestSuite) TestGetHypervisors() {
@@ -278,11 +287,15 @@ func (s *NodesTestSuite) TestGetHypervisors() {
 	hypervisors, err := GetHypervisors()
 	assert.Nil(t, err)
 
-	assert.Equal(t, 1, len(hypervisors))
+	assert.Equal(t, 2, len(hypervisors))
 
 	node, err := hypervisors[0].UnderlyingNode()
 	assert.NoError(t, err)
 	assert.Equal(t, beast1Node, node)
+
+	node, err = hypervisors[1].UnderlyingNode()
+	assert.NoError(t, err)
+	assert.Equal(t, pve2Node, node)
 }
 
 func (s *NodesTestSuite) TestGetHypervisor() {
@@ -342,5 +355,5 @@ func (s *NodesTestSuite) TestGetLoadBalancer() {
 	node, err := GetLoadBalancer()
 	assert.Nil(t, err)
 
-	assert.Equal(t, node, expected)
+	assert.Equal(t, expected, node)
 }
