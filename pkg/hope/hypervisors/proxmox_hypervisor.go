@@ -201,7 +201,11 @@ func (p *ProxmoxHypervisor) StartVM(vmName string) error {
 }
 
 func (p *ProxmoxHypervisor) StopVM(vmName string) error {
-	return p.pc.PowerOffVmNamed(p.node.Name, vmName)
+	if err := p.pc.PowerOffVmNamed(p.node.Name, vmName); err != nil {
+		return err
+	}
+
+	return p.waitForNodeStopped(1*time.Second, 1*time.Minute, vmName)
 }
 
 func (p *ProxmoxHypervisor) DeleteVM(vmName string) error {
@@ -270,6 +274,36 @@ func (p *ProxmoxHypervisor) waitForTemplate(pollInterval, timeout time.Duration,
 			log.Tracef("Polling continues for %s...", time.Until(deadline).Round(time.Second).String())
 		case <-timer.C:
 			return fmt.Errorf("waited %s, and template %s is not yet ready", timeout.String(), templateName)
+		}
+	}
+}
+
+func (p *ProxmoxHypervisor) waitForNodeStopped(pollInterval, timeout time.Duration, nodeName string) error {
+	ticker := time.NewTicker(pollInterval)
+	defer ticker.Stop()
+
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+
+	deadline := time.Now().Add(timeout)
+
+	log.Tracef("Waiting for node %s to power down", nodeName)
+	for {
+		select {
+		case <-ticker.C:
+			status, err := p.pc.VmStatus(p.node.Name, nodeName)
+			if err != nil {
+				return err
+			}
+
+			if status == "stopped" {
+				return nil
+			}
+
+			log.Tracef("Node not powered down yet: %s", nodeName)
+			log.Tracef("Polling continues for %s...", time.Until(deadline).Round(time.Second).String())
+		case <-timer.C:
+			return fmt.Errorf("waited %s, and node %s is not powered down yet", timeout.String(), nodeName)
 		}
 	}
 }

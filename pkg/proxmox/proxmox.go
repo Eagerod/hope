@@ -319,6 +319,15 @@ func (p *ApiClient) PowerOffVmNamed(node, vmName string) error {
 	return err
 }
 
+func (p *ApiClient) VmStatus(node, vmName string) (string, error) {
+	vm, err := p.getVm(node, vmName)
+	if err != nil {
+		return "", err
+	}
+
+	return vm.Status, nil
+}
+
 func (p *ApiClient) DeleteVmNamed(node, vmName string) error {
 	vm, err := p.getVm(node, vmName)
 	if err != nil {
