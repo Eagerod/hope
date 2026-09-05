@@ -8,6 +8,7 @@
 package hope
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -77,6 +78,7 @@ func ReplaceParametersWithSubstitutor(t *TextSubstitutor, parameters []string) (
 }
 
 func replaceParametersInDirectory(dir string, parameters []string) error {
+	parameters = append(parameters, fmt.Sprintf("HOPE_TEMP_DIRECTORY_PATH=%s", dir))
 	return filepath.Walk(dir, func(apath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
