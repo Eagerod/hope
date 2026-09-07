@@ -6,6 +6,7 @@ import (
 )
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -265,7 +266,7 @@ func (s *NodesTestSuite) TestGetAnyMaster() {
 	expected.Host = "test-master-01"
 	expected.Hypervisor = ""
 
-	node, err := GetAnyMaster()
+	node, err := GetAnyMaster(log.WithFields(log.Fields{}))
 	assert.Nil(t, err)
 
 	assert.Equal(t, node, expected)

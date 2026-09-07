@@ -6,6 +6,7 @@ import (
 )
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -118,7 +119,7 @@ func HasNode(name string) bool {
 	return false
 }
 
-func GetAnyMaster() (hope.Node, error) {
+func GetAnyMaster(log *logrus.Entry) (hope.Node, error) {
 	nodes, err := getNodes()
 	if err != nil {
 		return hope.Node{}, err
@@ -126,7 +127,17 @@ func GetAnyMaster() (hope.Node, error) {
 
 	for _, node := range nodes {
 		if node.IsMaster() {
-			return expandHypervisor(node)
+			// Try to expand hypervisor, but if we're in the middle of
+			// redeploying the first master node, have to make sure we fall
+			// back.
+			n, err := expandHypervisor(node)
+			if err != nil {
+				log.Warn("Failed to expand ", node.Name, "'s Hypervisor.")
+				continue
+			}
+
+			return n, nil
+
 		}
 	}
 
@@ -228,32 +239,13 @@ func GetAvailableMasters() ([]hope.Node, error) {
 	return retVal, nil
 }
 
-func KubectlFromAnyMaster() (*kubeutil.Kubectl, error) {
-	// To prevent "dereferencing" all the master nodes in advance, and making
-	//   a ton of extra network traffic, do them incrementally until a valid
-	//   kubeconfig is found.
-	nodes, err := getNodes()
+func KubectlFromAnyMaster(log *logrus.Entry) (*kubeutil.Kubectl, error) {
+	node, err := GetAnyMaster(log)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("failed to find a kubeconfig file in any of the master nodes")
 	}
 
-	for _, node := range nodes {
-		if !node.IsMaster() {
-			continue
-		}
-
-		nNode, err := expandHypervisor(node)
-		if err != nil {
-			return nil, err
-		}
-
-		kubectl, err := kubeutil.NewKubectlFromNode(nNode.ConnectionString())
-		if err == nil {
-			return kubectl, nil
-		}
-	}
-
-	return nil, errors.New("failed to find a kubeconfig file in any of the master nodes")
+	return kubeutil.NewKubectlFromNode(node.ConnectionString())
 }
 
 func GetLoadBalancer() (hope.Node, error) {

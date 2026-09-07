@@ -61,7 +61,7 @@ var rootCmd = &cobra.Command{
 
 		switch possibleSubcommand {
 		case proxySubcommandKubectl:
-			kubectl, err := utils.KubectlFromAnyMaster()
+			kubectl, err := utils.KubectlFromAnyMaster(log.WithFields(log.Fields{}))
 			if err != nil {
 				return err
 			}

@@ -69,7 +69,7 @@ var runCmd = &cobra.Command{
 			return err
 		}
 
-		kubectl, err := utils.KubectlFromAnyMaster()
+		kubectl, err := utils.KubectlFromAnyMaster(log.WithFields(log.Fields{}))
 		if err != nil {
 			return err
 		}

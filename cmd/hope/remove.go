@@ -43,7 +43,7 @@ var removeCmd = &cobra.Command{
 			return nil
 		}
 
-		kubectl, err := utils.KubectlFromAnyMaster()
+		kubectl, err := utils.KubectlFromAnyMaster(log.WithFields(log.Fields{}))
 		if err != nil {
 			return err
 		}

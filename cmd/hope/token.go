@@ -6,6 +6,7 @@ import (
 )
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +28,7 @@ var tokenCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		username := args[0]
 
-		kubectl, err := utils.KubectlFromAnyMaster()
+		kubectl, err := utils.KubectlFromAnyMaster(log.WithFields(log.Fields{}))
 		if err != nil {
 			return err
 		}

@@ -6,6 +6,7 @@ import (
 )
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -34,7 +35,7 @@ var shellCmd = &cobra.Command{
 			return errors.New("nothing to run against")
 		}
 
-		kubectl, err := utils.KubectlFromAnyMaster()
+		kubectl, err := utils.KubectlFromAnyMaster(log.WithFields(log.Fields{}))
 		if err != nil {
 			return err
 		}

@@ -83,7 +83,7 @@ var deployCmd = &cobra.Command{
 		var kubectl *kubeutil.Kubectl
 		if hasKubernetesResource {
 			var err error
-			kubectl, err = utils.KubectlFromAnyMaster()
+			kubectl, err = utils.KubectlFromAnyMaster(log.WithFields(log.Fields{}))
 			if err != nil {
 				return err
 			}

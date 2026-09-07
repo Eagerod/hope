@@ -38,7 +38,7 @@ var resetCmd = &cobra.Command{
 			return fmt.Errorf("host (%s) not found in list of Kubernetes nodes", node.Host)
 		}
 
-		kubectl, err := utils.KubectlFromAnyMaster()
+		kubectl, err := utils.KubectlFromAnyMaster(log.WithFields(log.Fields{}))
 		if err != nil {
 			if !resetCmdForce {
 				return err

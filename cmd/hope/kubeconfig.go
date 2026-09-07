@@ -29,7 +29,7 @@ var kubeconfigCmd = &cobra.Command{
 
 		var master hope.Node
 		if len(args) == 0 {
-			aMaster, err := utils.GetAnyMaster()
+			aMaster, err := utils.GetAnyMaster(log.WithFields(log.Fields{}))
 			if err != nil {
 				return err
 			}

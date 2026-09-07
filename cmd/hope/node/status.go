@@ -72,7 +72,7 @@ var statusCmd = &cobra.Command{
 
 		for _, node := range nodes {
 			if node.IsKubernetesNode() {
-				kubectl, err = utils.KubectlFromAnyMaster()
+				kubectl, err = utils.KubectlFromAnyMaster(log.WithFields(log.Fields{}))
 				if err != nil {
 					return err
 				}
