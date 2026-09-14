@@ -19,7 +19,7 @@ var resetCmdDeleteLocalData bool
 
 func initResetCmd() {
 	resetCmd.Flags().BoolVarP(&resetCmdForce, "force", "f", false, "run kubeadm reset even if the node isn't a part of the cluster")
-	resetCmd.Flags().BoolVarP(&resetCmdDeleteLocalData, "delete-local-data", "d", false, "pass the --delete-local-data flag to kubectl drain")
+	resetCmd.Flags().BoolVarP(&resetCmdDeleteLocalData, "delete-local-data", "d", false, "pass the --delete-emptydir-data=true flag to kubectl drain")
 }
 
 var resetCmd = &cobra.Command{

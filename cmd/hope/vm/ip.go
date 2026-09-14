@@ -57,7 +57,8 @@ var ipCmd = &cobra.Command{
 				return nil
 			}
 
-			log.Debugf("VM hasn't bound an IP address yet. Waiting %d seconds before checking again...", sleepDuration)
+			log.Debugf("VM hasn't bound an IP address yet. Reason: %s", err.Error())
+			log.Debugf("Waiting %d seconds before checking again...", sleepDuration)
 			time.Sleep(sleepDuration * time.Second)
 			sleepDuration = minDuration(sleepDuration*2, 10)
 		}

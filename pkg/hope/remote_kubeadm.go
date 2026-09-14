@@ -40,7 +40,7 @@ func KubeadmResetRemote(log *logrus.Entry, kubectl *kubeutil.Kubectl, node *Node
 				"--ignore-daemonsets",
 			}
 			if deleteLocalData {
-				args = append(args, "--delete-local-data")
+				args = append(args, "--delete-emptydir-data=true")
 			}
 
 			if err := kubeutil.ExecKubectl(kubectl, args...); err != nil {

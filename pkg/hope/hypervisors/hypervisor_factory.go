@@ -19,6 +19,8 @@ var ToHypervisor ToHypervisorFactoryFunc = func(node hope.Node) (Hypervisor, err
 	switch node.Engine {
 	case "esxi":
 		rv = &EsxiHypervisor{}
+	case "proxmox":
+		rv = &ProxmoxHypervisor{}
 	default:
 		return nil, fmt.Errorf("failed to resolve hypervisor engine: %s", node.Engine)
 	}
