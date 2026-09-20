@@ -43,8 +43,7 @@ func DoDockerBuild(log *logrus.Entry, resource Resource) error {
 			return err
 		}
 
-		outputLines := strings.Split(output, "\n")
-		if len(outputLines) == 0 {
+		if len(output) == 0 {
 			log.Infof("No Docker images like %s not found locally, must pull from upstream.", pullImage)
 			ifNotPresentShouldPull = true
 		} else {
@@ -59,6 +58,7 @@ func DoDockerBuild(log *logrus.Entry, resource Resource) error {
 
 			log.Tracef("Searching for local copy of tag: %s", searchTag)
 
+			outputLines := strings.Split(output, "\n")
 			imageFound := false
 			for _, imageTag := range outputLines {
 				if imageTag == searchTag {
@@ -76,8 +76,14 @@ func DoDockerBuild(log *logrus.Entry, resource Resource) error {
 	}
 
 	if ifNotPresentShouldPull || pullConstraintAlways {
-		if err := docker.ExecDocker("pull", pullImage); err != nil {
-			return fmt.Errorf("failed to find image named %s", pullImage)
+		err := docker.ExecDocker("pull", pullImage)
+
+		if err != nil {
+			if isBuildCommand {
+				log.Debugf("Docker image matching %s not found on upstream, must build", pullImage)
+			} else {
+				return fmt.Errorf("failed to find image named %s", pullImage)
+			}
 		}
 	}
 
